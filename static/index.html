@@ -33,6 +33,13 @@
                 <label class="settings-option">
                     <input type="radio" name="theme" value="dark" checked> Dark Mode
                 </label>
+                <div class="settings-heading" style="margin-top:12px">Stream Quality</div>
+                <label class="settings-option">
+                    <input type="radio" name="stream-quality" value="flac" checked> FLAC Hi-Res (Lossless)
+                </label>
+                <label class="settings-option">
+                    <input type="radio" name="stream-quality" value="aac"> AAC Hi-Fi (211 kbps)
+                </label>
             </div>
         </div>
     </nav>
@@ -57,7 +64,7 @@
 
                     <p class="quality-info">
                         <em id="source-quality"></em><br>
-                        <em>Stream quality: 48kHz FLAC / HLS Lossless</em>
+                        <em id="stream-quality">Stream quality: 48kHz FLAC / HLS Lossless</em>
                     </p>
 
                     <div class="rating-row">

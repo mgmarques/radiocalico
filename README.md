@@ -5,8 +5,8 @@
 <h1 align="center">Radio Calico</h1>
 
 <p align="center">
-  <strong>A live lossless audio streaming web player</strong><br>
-  Ad-free, subscription-free, 24-bit / 48 kHz FLAC via HLS
+  <strong>A live audio streaming web player</strong><br>
+  Ad-free, subscription-free — 48 kHz FLAC lossless or AAC Hi-Fi 211 kbps via HLS
 </p>
 
 <p align="center">
@@ -17,11 +17,11 @@
 
 ## What is Radio Calico?
 
-Radio Calico is a web-based live audio streaming player that delivers lossless audio (FLAC/HLS) from AWS CloudFront. It features real-time track metadata, album artwork from iTunes, user ratings, account management with profiles, social sharing, and a feedback system — all built with vanilla JavaScript (no frameworks) and a Python Flask backend.
+Radio Calico is a web-based live audio streaming player that delivers audio via HLS from AWS CloudFront (48kHz FLAC lossless or AAC Hi-Fi 211 kbps, user-selectable). It features real-time track metadata, album artwork from iTunes, user ratings, account management with profiles, social sharing, and a feedback system — all built with vanilla JavaScript (no frameworks) and a Python Flask backend.
 
 ### Key Features
 
-- **Lossless Streaming** — 24-bit / 48 kHz FLAC delivered via HLS (CloudFront CDN)
+- **Adaptive Streaming** — 48 kHz FLAC lossless or AAC Hi-Fi 211 kbps, user-selectable via settings (CloudFront CDN)
 - **Real-time Metadata** — artist, title, album, artwork update as songs change
 - **Track Ratings** — thumbs up/down with IP-based deduplication
 - **User Accounts** — register, login, profile with music genre preferences
@@ -39,34 +39,50 @@ Radio Calico is a web-based live audio streaming player that delivers lossless a
 ### Light Mode
 
 <p align="center">
-  <img src="docs/1_LightMode.png" alt="Radio Calico Light Mode" width="700">
+  <img src="docs/!_LightMode.png" alt="Radio Calico Light Mode" width="700">
 </p>
 
-*Light theme — Now Playing with album artwork, metadata, ratings, share/search buttons, player bar, Recently Played with filters, and sticky footer.*
+*Light theme — Now Playing with album artwork, metadata, ratings, share buttons (WhatsApp, X, Telegram, Spotify, YouTube Music, Amazon), player bar, Recently Played with filters, and sticky footer.*
+
+### Settings / Configurations
+
+<p align="center">
+  <img src="docs/2_Configurations.png" alt="Radio Calico Settings" width="700">
+</p>
+
+*Settings dropdown — Light/Dark theme toggle and Stream Quality selection (FLAC Hi-Res lossless or AAC Hi-Fi).*
 
 ### Dark Mode (Default)
 
 <p align="center">
-  <img src="docs/2_DarkMode.png" alt="Radio Calico Dark Mode" width="700">
+  <img src="docs/3_DarkMode.png" alt="Radio Calico Dark Mode" width="700">
 </p>
 
-*Dark theme — settings dropdown showing Light/Dark toggle. All colors adapt via CSS custom property overrides.*
+*Dark theme — all colors adapt via CSS custom property overrides. Default theme on first visit.*
 
 ### Login / Register
 
 <p align="center">
-  <img src="docs/2_login.png" alt="Radio Calico Login Drawer" width="700">
+  <img src="docs/4_Loggin.png" alt="Radio Calico Login Drawer" width="700">
 </p>
 
-*Hamburger menu opens a slide-out drawer with Login/Register form. Feedback section appears after login.*
+*Hamburger menu opens a slide-out drawer with Login/Register form.*
 
-### User Profile & Feedback
+### User Profile
 
 <p align="center">
-  <img src="docs/3_loged.png" alt="Radio Calico Profile & Feedback" width="700">
+  <img src="docs/5_Profile.png" alt="Radio Calico User Profile" width="700">
 </p>
 
-*Logged-in view — profile with nickname, email, music genre preferences (tag-style checkboxes), "About You" text area, and feedback form with email/X buttons.*
+*Logged-in view — profile with nickname, email, music genre preferences (tag-style checkboxes), and "About You" text area.*
+
+### Feedback
+
+<p align="center">
+  <img src="docs/6_Feedback.png" alt="Radio Calico Feedback" width="700">
+</p>
+
+*Feedback form — submit via email (stored in DB), or post on X/Twitter or Telegram.*
 
 ---
 
@@ -401,7 +417,7 @@ radiocalico/
 | Layer | Technology | Purpose |
 | ----- | ---------- | ------- |
 | CDN | AWS CloudFront | Audio stream + metadata delivery |
-| Streaming | HLS (M3U8 + TS) | Adaptive lossless audio streaming |
+| Streaming | HLS (M3U8 + TS) | Adaptive audio streaming (FLAC or AAC) |
 | Frontend | Vanilla JS + HTML5 + CSS | Player UI (no framework, no build step) |
 | Streaming Lib | HLS.js v1.x (CDN) | HLS decoding in non-Safari browsers |
 | Metadata | CloudFront JSON | Track info (metadatav2.json) |

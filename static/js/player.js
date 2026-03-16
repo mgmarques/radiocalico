@@ -1,4 +1,9 @@
 const STREAM_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8';
+const STREAM_LABELS = {
+    flac: 'FLAC Hi-Res (Lossless)',
+    aac:  'AAC Hi-Fi (211 kbps)',
+};
+let currentStreamQuality = localStorage.getItem('rc-stream-quality') || 'flac';
 const METADATA_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/metadatav2.json';
 const METADATA_DEBOUNCE_MS = 3000; // min interval between metadata fetches
 const MAX_HISTORY = 20;
@@ -243,10 +248,23 @@ function initHls() {
     hls.loadSource(STREAM_URL);
     hls.attachMedia(audio);
 
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
         hlsRetryCount = 0;
         playBtn.disabled = false;
         showPlayIcon('play');
+        // Force HLS level based on user's quality choice
+        // Master playlist: level 0 = FLAC, level 1 = AAC
+        if (data.levels && data.levels.length > 1) {
+            const targetCodec = currentStreamQuality === 'flac' ? 'flac' : 'mp4a';
+            const idx = data.levels.findIndex(l =>
+                l.audioCodec && l.audioCodec.toLowerCase().includes(targetCodec)
+            );
+            if (idx >= 0) {
+                hls.currentLevel = idx;
+                hls.loadLevel = idx;
+                hls.nextLevel = idx; // lock to prevent auto-switching
+            }
+        }
     });
 
     // Parse raw ID3 data from HLS fragments as fallback
@@ -837,6 +855,38 @@ document.querySelectorAll('input[name="theme"]').forEach(radio => {
 // Restore saved theme
 const savedTheme = localStorage.getItem('rc-theme') || 'dark';
 applyTheme(savedTheme);
+
+// ── Stream quality toggle ─────────────────────────────────────
+function updateStreamQualityDisplay() {
+    const el = document.getElementById('stream-quality');
+    if (el) el.textContent = `Stream quality: ${STREAM_LABELS[currentStreamQuality]}`;
+}
+
+function applyStreamQuality(quality) {
+    if (quality === currentStreamQuality) return;
+    currentStreamQuality = quality;
+    localStorage.setItem('rc-stream-quality', quality);
+    updateStreamQualityDisplay();
+    const wasPlaying = playing;
+    if (Hls.isSupported()) {
+        initHls();
+        if (wasPlaying) {
+            audio.play().catch(() => { playing = false; showPlayIcon('play'); });
+        }
+    } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+        audio.src = STREAM_URL;
+        if (wasPlaying) audio.play();
+    }
+}
+
+document.querySelectorAll('input[name="stream-quality"]').forEach(radio => {
+    radio.addEventListener('change', (e) => applyStreamQuality(e.target.value));
+});
+
+// Restore saved stream quality
+const sqRadio = document.querySelector(`input[name="stream-quality"][value="${currentStreamQuality}"]`);
+if (sqRadio) sqRadio.checked = true;
+updateStreamQualityDisplay();
 
 if (Hls.isSupported()) {
     initHls();
