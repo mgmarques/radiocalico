@@ -1,0 +1,18 @@
+# Environment variables (contains credentials)
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+api/venv/
+api/.coverage
+api/.pytest_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# macOS
+.DS_Store

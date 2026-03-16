@@ -1,0 +1,2 @@
+[bandit]
+exclude = venv,test_app.py,conftest.py
