@@ -7,26 +7,35 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 ## Architecture
 
 - **Frontend**: Vanilla JavaScript + HTML5 + CSS (no framework). Single-page app served from `static/`.
-- **Backend**: Python Flask API (`api/app.py`) on port 5000 with MySQL 5.7 (Homebrew) for data storage.
+- **Backend**: Python Flask API (`api/app.py`) on port 5000 with MySQL 5.7 (local/Homebrew) or MySQL 8.0 (Docker) for data storage.
 - **Streaming**: HLS via CloudFront CDN, decoded by HLS.js (non-Safari) or native (Safari).
 - **Metadata**: Fetched from CloudFront `metadatav2.json` (not ID3 tags). Provides current track + 5 previous tracks.
 - **Artwork & Duration**: iTunes Search API (client-side). `trackTimeMillis` used for duration display.
 - **Ratings**: Stored in local MySQL only. CloudFront host does NOT accept ratings.
 - **Auth**: Token-based authentication. Passwords hashed with PBKDF2 (260k iterations) + random salt. Timing-safe comparison via hmac.compare_digest. Tokens stored in `localStorage`.
-- **Testing**: pytest + pytest-cov (99% coverage). Security: bandit (SAST) + safety (dependency scan).
+- **Testing**: Python: pytest + pytest-cov (99% coverage). JS: Jest + jsdom (44 tests). Security: bandit (SAST) + safety (dependency scan).
 
 ## File Tree
 
 ```text
 radiocalico/
 ├── CLAUDE.md                       # Claude Code guidelines (this file)
-├── Makefile                        # CI/CD automation (test, coverage, security)
+├── Makefile                        # CI/CD automation (local + Docker)
+├── Dockerfile                      # Multi-stage: dev (Flask) + prod (gunicorn)
+├── docker-compose.yml              # Dev/prod profiles with MySQL + nginx
+├── .dockerignore                   # Docker build exclusions
+├── package.json                    # Node.js config (Jest for JS tests)
+├── jest.config.js                  # Jest configuration
 ├── design.md                       # Full architecture and design document
 ├── RadioCalico_Style_Guide.txt     # Brand colors, typography, component specs
 ├── RadioCalicoLayout.png           # UI layout reference image
 ├── RadioCalicoLogoTM.png           # Logo with trademark
 ├── SomeLikesSogs.txt               # Sample liked songs reference
 ├── stream_URL.txt                  # Stream URL reference
+├── db/
+│   └── init.sql                    # Database schema (auto-run by Docker MySQL)
+├── nginx/
+│   └── nginx.conf                  # Reverse proxy: static files + /api proxy (prod)
 ├── api/
 │   ├── app.py                      # Flask REST API + static file serving
 │   ├── .env.example                # Environment variable template
@@ -43,7 +52,8 @@ radiocalico/
 │   ├── css/
 │   │   └── player.css              # All styles, responsive layout, design tokens
 │   └── js/
-│       └── player.js               # Playback, metadata, artwork, ratings, auth, sharing
+│       ├── player.js               # Playback, metadata, artwork, ratings, auth, sharing
+│       └── player.test.js          # 44 JavaScript unit tests (Jest + jsdom)
 └── .claude/
     └── commands/
         ├── start.md                # /start — launch dev environment
@@ -64,12 +74,17 @@ radiocalico/
 | `static/js/player.js` | Playback, metadata, artwork, ratings, auth, profile, sharing, feedback |
 | `static/css/player.css` | All styles, responsive layout, design tokens, dark/light themes |
 | `api/app.py` | Flask REST API: ratings, auth, profile, feedback + static file serving |
-| `api/test_app.py` | 61 unit tests covering all endpoints (99% coverage) |
+| `api/test_app.py` | 61 Python unit tests covering all endpoints (99% coverage) |
+| `static/js/player.test.js` | 44 JavaScript unit tests (Jest + jsdom) |
 | `api/conftest.py` | Pytest fixtures: test DB setup/teardown, client, auth helpers |
 | `api/.env.example` | Environment variable template (DB creds, Flask config, CORS) |
 | `api/requirements.txt` | Python dependencies (flask, flask-cors, pymysql, python-dotenv, flask-limiter) |
 | `api/requirements-dev.txt` | Dev dependencies (pytest, pytest-cov, bandit, safety) |
-| `Makefile` | CI/CD targets: test, coverage, security, ci |
+| `Makefile` | CI/CD targets: test, coverage, security, ci, Docker |
+| `Dockerfile` | Multi-stage build: dev (Flask debug) + prod (gunicorn 4 workers) |
+| `docker-compose.yml` | Dev/prod profiles with MySQL 8.0 + nginx (prod) |
+| `nginx/nginx.conf` | Nginx reverse proxy config: static files + /api proxy |
+| `db/init.sql` | Database schema (auto-run on first Docker MySQL startup) |
 | `design.md` | Full architecture and design document |
 | `RadioCalico_Style_Guide.txt` | Brand colors, typography, component specs |
 
@@ -82,6 +97,8 @@ radiocalico/
 - **iTunes Search API**: `https://itunes.apple.com/search?term=...&entity=song&limit=1`
 
 ### Local API (Flask on port 5000)
+
+When running via Docker, access the app at the port configured by `APP_PORT` (default: 5050).
 
 #### Ratings (no auth required)
 
@@ -118,7 +135,7 @@ radiocalico/
 - **Theme persistence**: `localStorage` key `rc-theme` stores `"light"` or `"dark"`. Default: dark.
 - **Stream quality**: `localStorage` key `rc-stream-quality` stores `"flac"` or `"aac"`. Default: flac. Switching forces the HLS level to the matching codec.
 - **Share buttons**: Use platform URL schemes (wa.me, x.com/intent, t.me/share/url, open.spotify.com/search, music.youtube.com/search, amazon.com/s with digital-music filter). Facebook removed (sharer doesn't support plain text sharing).
-- **Testing**: All new API routes must have corresponding tests in `test_app.py`. Run `make ci` before merging.
+- **Testing**: All new API routes must have corresponding tests in `test_app.py`. New JS functions must be tested in `player.test.js`. Run `make ci` before merging.
 
 ## Common Tasks
 
@@ -139,7 +156,7 @@ brew services start mysql@5.7
 
 ### Access the app
 
-Always use `http://127.0.0.1:5000`. Do NOT use port 8080 or any other static server — Flask serves everything.
+Local dev: `http://127.0.0.1:5000`. Docker: `http://127.0.0.1:5050` (configurable via `APP_PORT`). Do NOT use port 8080 or any other static server — Flask serves everything.
 
 ### Hard refresh (clear cached JS/CSS in Chrome)
 
@@ -148,10 +165,21 @@ Always use `http://127.0.0.1:5000`. Do NOT use port 8080 or any other static ser
 ### Run tests
 
 ```bash
-make test      # Run all unit tests (61 tests)
-make coverage  # Tests + coverage report (fails if <99%)
+make test      # Run all tests: Python (61) + JavaScript (44)
+make test-py   # Run Python unit tests only
+make test-js   # Run JavaScript unit tests only
+make coverage  # Python tests + coverage report (fails if <99%)
 make security  # Bandit SAST + Safety dependency scan
-make ci        # Full pipeline: coverage + security
+make ci        # Full pipeline: Python coverage + JS tests + security
+```
+
+### Docker
+
+```bash
+make docker-dev    # Dev: Flask debug + hot reload + MySQL
+make docker-prod   # Prod: gunicorn (4 workers) + MySQL (detached)
+make docker-down   # Stop all containers and remove volumes
+make docker-test   # Run all tests inside the dev container
 ```
 
 ### Query feedback
@@ -299,10 +327,13 @@ CREATE TABLE feedback (
 
 ### Test Suite
 
-- **61 unit tests** in `api/test_app.py` covering all endpoints and helper functions
-- **99.47% code coverage** (only `app.run()` uncovered — unreachable in tests)
-- Uses isolated `radiocalico_test` database (created/destroyed per test via `conftest.py`)
-- Fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
+**105 total tests** across Python and JavaScript:
+
+- **61 Python tests** in `api/test_app.py` — all endpoints and helper functions (99% coverage)
+- **44 JavaScript tests** in `static/js/player.test.js` — pure functions, DOM, ratings, auth, sharing, history, theme, quality
+- Python uses isolated `radiocalico_test` database (created/destroyed per test via `conftest.py`)
+- Python fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
+- JS uses Jest + jsdom with mocked `fetch`, `Hls.js`, `localStorage`, `window.open`
 
 ### Security Scanning
 
@@ -313,28 +344,31 @@ CREATE TABLE feedback (
 
 | Target | Description |
 | ------ | ----------- |
-| `make install` | Install all dev dependencies |
-| `make test` | Run all unit tests |
-| `make coverage` | Tests + coverage (fails if <99%) |
+| `make install` | Install all dev dependencies (Python + npm) |
+| `make test` | Run all tests (Python + JavaScript) |
+| `make test-py` | Run Python unit tests only |
+| `make test-js` | Run JavaScript unit tests only |
+| `make coverage` | Python tests + coverage (fails if <99%) |
 | `make security` | Bandit + Safety scans |
-| `make ci` | Full pipeline: coverage + security |
+| `make ci` | Full pipeline: Python coverage + JS tests + security |
 
 ## Important Notes
 
 - **Metadata comes from CloudFront JSON**, not ID3 tags. The ID3 parser is implemented as fallback but the stream does not currently embed ID3 tags.
 - **Database credentials are loaded from environment variables** via python-dotenv (`api/.env.example` provides the template). `CORS_ORIGIN` env var controls allowed CORS origins.
 - **Debug mode is off by default**, controlled by `FLASK_DEBUG` env var.
-- **Tests exist** — 61 tests with 99% coverage. Run `make ci` before merging changes. Add tests for new endpoints.
+- **Tests exist** — 105 tests (61 Python + 44 JS). Run `make ci` before merging changes. Add tests for new endpoints and JS functions.
 - **iTunes API** is called client-side for artwork — no proxy or caching layer yet.
 - **Ratings are local only** — not sent to the CloudFront/stream host.
 - **Cache issues** — after editing static files, users must hard refresh (`Cmd+Shift+R`) to see changes.
-- **Port conflicts** — do NOT run a separate static server. Flask on port 5000 serves everything.
+- **Port conflicts** — do NOT run a separate static server. Flask on port 5000 (local) or 5050 (Docker) serves everything. Port 5000 on macOS may conflict with AirPlay Receiver.
 - **Feedback is stored in DB** — no email sending configured. Query `feedback` table to read submissions.
+- **Docker** uses MySQL 8.0 with `mysql_native_password` auth plugin for PyMySQL compatibility. Runs as non-root `appuser`. Production uses nginx (static files + reverse proxy) → gunicorn (4 workers, API only). Dev uses Flask directly. `FLASK_HOST=0.0.0.0` is set in Docker containers so Flask accepts external connections.
 
 ## Known Gotchas
 
 1. **`/ratings/summary` 404**: If Flask logs show `/ratings/summary` without `/api` prefix, the browser is serving a cached old JS file. Fix: hard refresh.
-2. **Port 8080 vs 5000**: If the app appears on port 8080, an old static server is running. Kill it (`lsof -i :8080`) and use Flask on 5000.
+2. **Port 8080 vs 5000/5050**: If the app appears on port 8080, an old static server is running. Kill it (`lsof -i :8080`) and use Flask on 5000 (local) or 5050 (Docker).
 3. **Metadata 404**: The metadata JSON is at the root (`/metadatav2.json`), NOT under `/hls/`.
 4. **`audio.currentTime` is wrong for elapsed**: It returns HLS buffer position, not actual song time. Use wall-clock `Date.now() - songStartTime`.
 5. **Duplicate ratings in DB**: Before adding unique constraint, must delete existing duplicates first.

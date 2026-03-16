@@ -1,3 +1,17 @@
+/**
+ * Radio Calico — Live Audio Streaming Web Player
+ *
+ * Client-side module that handles HLS audio playback, track metadata display,
+ * album artwork fetching (iTunes API), user ratings, authentication, profile
+ * management, feedback submission, social sharing, and theme/quality settings.
+ *
+ * The player streams lossless audio via HLS from AWS CloudFront, displays
+ * track metadata from a CloudFront JSON endpoint, and stores ratings and
+ * user data through a local Flask API on port 5000.
+ *
+ * @module player
+ */
+
 const STREAM_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8';
 const STREAM_LABELS = {
     flac: 'FLAC Hi-Res (Lossless)',
@@ -51,6 +65,10 @@ let hlsRetryCount = 0;
 const history  = [];
 
 // ── Icons ───────────────────────────────────────────────────
+/**
+ * Toggles visibility of the play, pause, and spinner icons on the play button.
+ * @param {string} name - Icon to display: 'play', 'pause', or 'spinner'.
+ */
 function showPlayIcon(name) {
     iconPlay.style.display  = name === 'play'    ? '' : 'none';
     iconPause.style.display = name === 'pause'   ? '' : 'none';
@@ -58,6 +76,14 @@ function showPlayIcon(name) {
 }
 
 // ── Artwork ──────────────────────────────────────────────────
+/**
+ * Fetches album artwork and track duration from the iTunes Search API.
+ * Updates the artwork element with the retrieved image (or a placeholder on failure)
+ * and sets the global trackDuration from iTunes trackTimeMillis.
+ * @async
+ * @param {string} artist - The artist name to search for.
+ * @param {string} title - The track title to search for.
+ */
 async function fetchArtwork(artist, title) {
     try {
         const q = encodeURIComponent(`${artist} ${title}`);
@@ -82,6 +108,14 @@ async function fetchArtwork(artist, title) {
 }
 
 // ── Track metadata ──────────────────────────────────────────
+/**
+ * Updates the Now Playing display with new track information. If the track
+ * has changed, pushes the previous track into history, resets the song timer,
+ * fetches new artwork, and refreshes the rating UI.
+ * @param {string} artist - The artist name.
+ * @param {string} title - The track title.
+ * @param {string} album - The album name.
+ */
 function updateTrack(artist, title, album) {
     const key = `${artist}|${title}`;
     if (key === currentTrack) return;
@@ -106,6 +140,13 @@ function updateTrack(artist, title, album) {
     updateRatingUI();
 }
 
+/**
+ * Adds a track to the front of the history array and re-renders the list.
+ * Caps the history at MAX_HISTORY entries.
+ * @param {string} artist - The artist name.
+ * @param {string} title - The track title.
+ * @param {string} album - The album name.
+ */
 function pushHistory(artist, title, album) {
     if (!artist && !title) return;
     history.unshift({ artist, title, album: album || '' });
@@ -117,6 +158,12 @@ let prevFilter = 'all'; // 'all', 'up', 'down'
 let historyLimit = 5;
 let lastSummary = {};
 
+/**
+ * Renders the Recently Played list in the DOM. Fetches the latest ratings
+ * summary from the API, applies the active filter, and builds the HTML list
+ * with track info and rating badges.
+ * @async
+ */
 async function renderHistory() {
     if (!history.length) {
         prevList.innerHTML = '<li class="prev-empty">No tracks yet</li>';
@@ -149,10 +196,20 @@ async function renderHistory() {
     }).join('');
 }
 
+/**
+ * Escapes a string for safe insertion into HTML, replacing &, <, >, ", and '.
+ * @param {string} str - The raw string to escape.
+ * @returns {string} The HTML-escaped string.
+ */
 function escHtml(str) {
     return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+/**
+ * Returns the history array filtered by the active filter (all/up/down)
+ * and sliced to the current historyLimit.
+ * @returns {Array<{artist: string, title: string, album: string}>} Filtered track entries.
+ */
 function getFilteredHistory() {
     return history.slice(0, historyLimit).filter(h => {
         if (prevFilter === 'all') return true;
@@ -166,6 +223,12 @@ function getFilteredHistory() {
 }
 
 // ── ID3 parser (decodes text frames from raw ID3v2 bytes) ───
+/**
+ * Parses raw ID3v2 tag bytes and extracts text frames (TPE1, TIT2, TALB, etc.).
+ * Supports UTF-8, UTF-16, UTF-16BE, and ISO-8859-1 text encodings.
+ * @param {Uint8Array} raw - The raw ID3v2 tag bytes.
+ * @returns {Object.<string, string>} Map of frame IDs to their decoded text values.
+ */
 function parseID3Frames(raw) {
     const frames = {};
     if (raw.length < 10) return frames;
@@ -198,6 +261,12 @@ function parseID3Frames(raw) {
 }
 
 // ── Process parsed metadata fields ──────────────────────────
+/**
+ * Processes parsed ID3 metadata fields and updates the track display.
+ * Extracts TPE1 (artist), TIT2 (title), and TALB (album) fields and
+ * delegates to updateTrack if artist or title are present.
+ * @param {Object.<string, string>} fields - Map of ID3 frame IDs to text values.
+ */
 function handleMetadataFields(fields) {
     const artist = fields['TPE1'] || null;
     const title  = fields['TIT2'] || null;
@@ -215,6 +284,11 @@ function handleMetadataFields(fields) {
 }
 
 // ── Timed-metadata text-track listener (works for both HLS.js & Safari) ──
+/**
+ * Sets up listeners on the audio element's metadata text tracks to capture
+ * timed metadata cues (works for both HLS.js and Safari native HLS).
+ * Attaches cuechange handlers to existing and future metadata tracks.
+ */
 function setupMetadataTextTracks() {
     function onCueChange() {
         const cues = this.activeCues;
@@ -241,6 +315,12 @@ function setupMetadataTextTracks() {
 }
 
 // ── HLS setup ───────────────────────────────────────────────
+/**
+ * Initializes (or reinitializes) the HLS.js player instance. Destroys any
+ * existing instance, loads the stream source, and registers event handlers
+ * for manifest parsing, ID3 metadata, fragment changes, level loading,
+ * and fatal errors with exponential backoff retry.
+ */
 function initHls() {
     if (hls) { hls.destroy(); hls = null; }
 
@@ -311,6 +391,11 @@ function initHls() {
 }
 
 // ── Playback ─────────────────────────────────────────────────
+/**
+ * Toggles audio playback between playing and paused states.
+ * Shows a spinner while buffering, switches to pause icon on play,
+ * and reverts to play icon on pause or failure.
+ */
 function togglePlay() {
     if (!playing) {
         playing = true;
@@ -329,6 +414,11 @@ function togglePlay() {
 }
 
 // ── Time display ─────────────────────────────────────────────
+/**
+ * Formats a number of seconds into a "m:ss" time string.
+ * @param {number} s - Seconds to format.
+ * @returns {string} Formatted time string (e.g. "3:05"), or "0:00" if invalid.
+ */
 function formatTime(s) {
     if (!isFinite(s) || s < 0) return '0:00';
     const m = Math.floor(s / 60);
@@ -365,6 +455,12 @@ muteBtn.addEventListener('click', () => {
 });
 
 // ── Ratings ───────────────────────────────────────────────────
+/**
+ * Fetches the ratings summary from the API and updates the like/dislike
+ * count badges for the given station (track).
+ * @async
+ * @param {string} station - The station key ("Artist - Title").
+ */
 async function fetchTrackRatings(station) {
     try {
         const res = await fetch('/api/ratings/summary');
@@ -376,6 +472,12 @@ async function fetchTrackRatings(station) {
     } catch (e) { console.warn('Track ratings fetch failed:', e); }
 }
 
+/**
+ * Checks whether the current user (by IP) has already rated a given station.
+ * @async
+ * @param {string} station - The station key ("Artist - Title").
+ * @returns {Promise<boolean>} True if the user has already rated this track.
+ */
 async function checkIfRated(station) {
     try {
         const res = await fetch(`/api/ratings/check?station=${encodeURIComponent(station)}`);
@@ -385,6 +487,11 @@ async function checkIfRated(station) {
     } catch (e) { console.warn('Rating check failed:', e); return false; }
 }
 
+/**
+ * Refreshes the rating buttons and feedback text for the currently displayed track.
+ * Checks if the user has already rated and fetches the latest counts.
+ * @async
+ */
 async function updateRatingUI() {
     const station = `${artistEl.textContent} - ${trackEl.textContent}`;
     const alreadyRated = await checkIfRated(station);
@@ -394,6 +501,12 @@ async function updateRatingUI() {
     fetchTrackRatings(station);
 }
 
+/**
+ * Submits a thumbs-up or thumbs-down rating for the current track to the API.
+ * Disables rating buttons after a successful submission or duplicate detection.
+ * @async
+ * @param {number} score - 1 for thumbs up, 0 for thumbs down.
+ */
 async function submitRating(score) {
     const station = `${artistEl.textContent} - ${trackEl.textContent}`;
     try {
@@ -423,6 +536,10 @@ rateDown.addEventListener('click', () => submitRating(0));
 playBtn.addEventListener('click', togglePlay);
 
 // ── Share buttons ────────────────────────────────────────────
+/**
+ * Retrieves the current artwork image URL sized for sharing (300x300).
+ * @returns {string} The sharing-sized artwork URL, or an empty string if no artwork is loaded.
+ */
 function getArtworkUrl() {
     const img = artworkEl.querySelector('img');
     if (!img) return '';
@@ -430,6 +547,11 @@ function getArtworkUrl() {
     return img.src.replace(ARTWORK_SIZE, SHARE_ARTWORK_SIZE);
 }
 
+/**
+ * Builds the share text for the Now Playing track, including artist, title,
+ * album, and artwork URL.
+ * @returns {string} Formatted share text for social platforms.
+ */
 function getShareText() {
     const artist = artistEl.textContent;
     const title  = trackEl.textContent;
@@ -473,6 +595,12 @@ document.getElementById('share-amazon').addEventListener('click', () => {
 });
 
 // ── Recently Played share buttons ────────────────────────────
+/**
+ * Builds a numbered text list of recently played tracks for sharing.
+ * Respects the active filter and track limit, and includes rating counts
+ * in plain text format (no emoji, for URL encoding compatibility).
+ * @returns {string} Formatted recently played list, or empty string if no tracks.
+ */
 function getRecentlyPlayedText() {
     const filtered = getFilteredHistory();
     if (!filtered.length) return '';
@@ -519,6 +647,13 @@ document.getElementById('prev-limit').addEventListener('change', (e) => {
 // ── Metadata fetching ────────────────────────────────────────
 let lastMetadataFetch = 0;
 
+/**
+ * Fetches track metadata from the CloudFront JSON endpoint. Schedules a
+ * delayed track update (using HLS latency) so the UI changes when the
+ * listener hears the new song. Also merges previous tracks into the history
+ * array and fetches missing album names from iTunes.
+ * @async
+ */
 async function fetchMetadata() {
     try {
         const res = await fetch(METADATA_URL, { cache: 'no-store' });
@@ -605,6 +740,10 @@ async function fetchMetadata() {
     } catch (err) { console.warn('Metadata fetch failed:', err); }
 }
 
+/**
+ * Debounced wrapper around fetchMetadata. Ensures metadata is not fetched
+ * more frequently than METADATA_DEBOUNCE_MS (3 seconds).
+ */
 function triggerMetadataFetch() {
     const now = Date.now();
     if (now - lastMetadataFetch < METADATA_DEBOUNCE_MS) return;
@@ -618,7 +757,14 @@ const drawer        = document.getElementById('drawer');
 const drawerOverlay = document.getElementById('drawer-overlay');
 const drawerClose   = document.getElementById('drawer-close');
 
+/**
+ * Opens the side drawer (hamburger menu) and its overlay.
+ */
 function openDrawer()  { drawer.classList.add('open'); drawerOverlay.classList.add('open'); }
+
+/**
+ * Closes the side drawer and its overlay.
+ */
 function closeDrawer() { drawer.classList.remove('open'); drawerOverlay.classList.remove('open'); }
 
 menuBtn.addEventListener('click', openDrawer);
@@ -639,6 +785,10 @@ const profileWelcome = document.getElementById('profile-welcome');
 
 const drawerFeedback = document.getElementById('drawer-feedback');
 
+/**
+ * Switches the drawer to the authentication (login/register) view,
+ * hiding the profile and feedback sections.
+ */
 function showAuthView() {
     drawerAuth.style.display     = '';
     drawerProfile.style.display  = 'none';
@@ -646,6 +796,10 @@ function showAuthView() {
     authFeedback.textContent     = '';
 }
 
+/**
+ * Switches the drawer to the profile view (with feedback section visible),
+ * displays the logged-in username, and loads the user's profile data.
+ */
 function showProfileView() {
     drawerAuth.style.display     = 'none';
     drawerProfile.style.display  = '';
@@ -718,6 +872,12 @@ document.getElementById('btn-logout').addEventListener('click', () => {
 });
 
 // Load profile
+/**
+ * Fetches the authenticated user's profile from the API and populates
+ * the profile form fields (nickname, email, about, genre checkboxes).
+ * Reverts to auth view on 401 (expired/invalid token).
+ * @async
+ */
 async function loadProfile() {
     if (!authToken) return;
     try {
@@ -841,6 +1001,11 @@ document.addEventListener('click', (e) => {
     }
 });
 
+/**
+ * Applies the given theme by setting the data-theme attribute on the document
+ * element, persisting the choice to localStorage, and checking the matching radio button.
+ * @param {string} theme - The theme to apply: 'light' or 'dark'.
+ */
 function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('rc-theme', theme);
@@ -857,11 +1022,20 @@ const savedTheme = localStorage.getItem('rc-theme') || 'dark';
 applyTheme(savedTheme);
 
 // ── Stream quality toggle ─────────────────────────────────────
+/**
+ * Updates the stream quality label in the UI to reflect the current selection.
+ */
 function updateStreamQualityDisplay() {
     const el = document.getElementById('stream-quality');
     if (el) el.textContent = `Stream quality: ${STREAM_LABELS[currentStreamQuality]}`;
 }
 
+/**
+ * Switches the stream to the specified audio quality. Persists the choice,
+ * reinitializes the HLS player with the new level, and resumes playback
+ * if the stream was already playing.
+ * @param {string} quality - The quality key: 'flac' or 'aac'.
+ */
 function applyStreamQuality(quality) {
     if (quality === currentStreamQuality) return;
     currentStreamQuality = quality;
@@ -900,4 +1074,33 @@ if (Hls.isSupported()) {
 } else {
     playBtn.disabled = true;
     barTime.textContent = 'HLS not supported';
+}
+
+// ── Test exports (Node.js only) ──────────────────────────────
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        escHtml, formatTime, parseID3Frames, getFilteredHistory,
+        getShareText, getRecentlyPlayedText, getArtworkUrl,
+        showPlayIcon, updateTrack, pushHistory, renderHistory,
+        fetchArtwork, handleMetadataFields, togglePlay,
+        fetchTrackRatings, checkIfRated, updateRatingUI, submitRating,
+        fetchMetadata, triggerMetadataFetch, applyTheme,
+        updateStreamQualityDisplay, applyStreamQuality,
+        openDrawer, closeDrawer, showAuthView, showProfileView, loadProfile,
+        // Expose state for testing
+        get history() { return history; },
+        get currentTrack() { return currentTrack; },
+        set currentTrack(v) { currentTrack = v; },
+        get playing() { return playing; },
+        set playing(v) { playing = v; },
+        get lastSummary() { return lastSummary; },
+        set lastSummary(v) { lastSummary = v; },
+        get prevFilter() { return prevFilter; },
+        set prevFilter(v) { prevFilter = v; },
+        get historyLimit() { return historyLimit; },
+        set historyLimit(v) { historyLimit = v; },
+        get currentStreamQuality() { return currentStreamQuality; },
+        set currentStreamQuality(v) { currentStreamQuality = v; },
+        STREAM_LABELS, METADATA_DEBOUNCE_MS, MAX_HISTORY,
+    };
 }
