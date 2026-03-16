@@ -382,7 +382,14 @@ make docker-test
 | `make docker-build` | Build images without starting |
 | `make docker-test` | Run all tests inside the dev container |
 
-Docker uses the same `.env` variables as local development (see [Environment Variables](#3-configure-environment-variables)). The MySQL database is auto-initialized with the schema from `db/init.sql` on first startup.
+**IMPORTANT**: Docker requires a `.env` file in the project root with real passwords. No defaults are provided — the containers will fail without it:
+
+```bash
+cp .env.example .env
+# Edit .env — change MYSQL_ROOT_PASSWORD and DB_PASSWORD to secure values
+```
+
+The MySQL database is auto-initialized with the schema from `db/init.sql` on first startup.
 
 ---
 
