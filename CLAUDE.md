@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Radio Calico is a live audio streaming web player with a Flask backend for ratings, user accounts, and feedback. It streams lossless audio via HLS from AWS CloudFront, displays track metadata from a CloudFront JSON endpoint, fetches album artwork and duration from iTunes, and lets users rate tracks, manage profiles, and submit feedback (all stored locally in MySQL).
+Radio Calico is a live audio streaming web player with a Flask backend for ratings, user accounts, and feedback. It streams audio via HLS from AWS CloudFront (48kHz FLAC lossless or AAC Hi-Fi 211 kbps, user-selectable), displays track metadata from a CloudFront JSON endpoint, fetches album artwork and duration from iTunes, and lets users rate tracks, manage profiles, and submit feedback (all stored locally in MySQL).
 
 ## Architecture
 
@@ -116,6 +116,7 @@ radiocalico/
 - **Backend**: Pure Flask with PyMySQL. No ORM. Parameterized queries for SQL.
 - **Auth**: Token-based. `localStorage` keys `rc-token` and `rc-user`. `Authorization: Bearer <token>` header.
 - **Theme persistence**: `localStorage` key `rc-theme` stores `"light"` or `"dark"`. Default: dark.
+- **Stream quality**: `localStorage` key `rc-stream-quality` stores `"flac"` or `"aac"`. Default: flac. Switching forces the HLS level to the matching codec.
 - **Share buttons**: Use platform URL schemes (wa.me, x.com/intent, t.me/share/url, open.spotify.com/search, music.youtube.com/search, amazon.com/s with digital-music filter). Facebook removed (sharer doesn't support plain text sharing).
 - **Testing**: All new API routes must have corresponding tests in `test_app.py`. Run `make ci` before merging.
 
@@ -198,7 +199,7 @@ make ci        # Full pipeline: coverage + security
 
 ### Dark/Light Theme
 
-- Settings gear icon in navbar top-right opens a dropdown with Light / Dark (default) radio buttons
+- Settings gear icon in navbar top-right opens a dropdown with Light / Dark (default) theme radio buttons and Stream Quality (FLAC / AAC) radio buttons
 - Theme applied via `data-theme="dark"` attribute on `<html>`
 - Dark mode overrides CSS custom properties (`--mint`, `--forest`, `--teal`, etc.) and adds `[data-theme="dark"]` selectors
 - Navbar and footer text forced to white (`#FFFFFF`) in dark mode (not affected by token overrides)
