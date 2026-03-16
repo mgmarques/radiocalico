@@ -39,7 +39,7 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 ### Light Mode
 
 <p align="center">
-  <img src="docs/!_LightMode.png" alt="Radio Calico Light Mode" width="700">
+  <img src="docs/!_LightMode.png" alt="Radio Calico Light Mode" width="525">
 </p>
 
 *Light theme — Now Playing with album artwork, metadata, ratings, share buttons (WhatsApp, X, Telegram, Spotify, YouTube Music, Amazon), player bar, Recently Played with filters, and sticky footer.*
@@ -47,7 +47,7 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 ### Settings / Configurations
 
 <p align="center">
-  <img src="docs/2_Configurations.png" alt="Radio Calico Settings" width="700">
+  <img src="docs/2_Configurations.png" alt="Radio Calico Settings" width="525">
 </p>
 
 *Settings dropdown — Light/Dark theme toggle and Stream Quality selection (FLAC Hi-Res lossless or AAC Hi-Fi).*
@@ -55,7 +55,7 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 ### Dark Mode (Default)
 
 <p align="center">
-  <img src="docs/3_DarkMode.png" alt="Radio Calico Dark Mode" width="700">
+  <img src="docs/3_DarkMode.png" alt="Radio Calico Dark Mode" width="525">
 </p>
 
 *Dark theme — all colors adapt via CSS custom property overrides. Default theme on first visit.*
@@ -63,7 +63,7 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 ### Login / Register
 
 <p align="center">
-  <img src="docs/4_Loggin.png" alt="Radio Calico Login Drawer" width="700">
+  <img src="docs/4_Loggin.png" alt="Radio Calico Login Drawer" width="525">
 </p>
 
 *Hamburger menu opens a slide-out drawer with Login/Register form.*
@@ -71,7 +71,7 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 ### User Profile
 
 <p align="center">
-  <img src="docs/5_Profile.png" alt="Radio Calico User Profile" width="700">
+  <img src="docs/5_Profile.png" alt="Radio Calico User Profile" width="525">
 </p>
 
 *Logged-in view — profile with nickname, email, music genre preferences (tag-style checkboxes), and "About You" text area.*
@@ -79,7 +79,7 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 ### Feedback
 
 <p align="center">
-  <img src="docs/6_Feedback.png" alt="Radio Calico Feedback" width="700">
+  <img src="docs/6_Feedback.png" alt="Radio Calico Feedback" width="350">
 </p>
 
 *Feedback form — submit via email (stored in DB), or post on X/Twitter or Telegram.*
