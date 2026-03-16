@@ -9,6 +9,9 @@ api/venv/
 api/.coverage
 api/.pytest_cache/
 
+# Node.js
+node_modules/
+
 # IDE
 .idea/
 .vscode/

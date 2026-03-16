@@ -217,7 +217,7 @@ Feedback ──> POST /api/feedback (Authorization: Bearer <token>)
 ### Prerequisites
 
 - **Python 3.9+** with `pip`
-- **MySQL 5.7** (Homebrew on macOS: `brew install mysql@5.7`)
+- **MySQL 5.7** (local via Homebrew: `brew install mysql@5.7`) — or use Docker (MySQL 8.0 included)
 - A modern web browser (Chrome, Firefox, Safari, Edge)
 
 ### 1. Clone the repository
@@ -240,6 +240,8 @@ For development (tests + security scanning):
 
 ```bash
 pip install -r requirements-dev.txt
+cd ..
+npm install   # Install Jest for JavaScript tests
 ```
 
 ### 3. Configure environment variables
@@ -338,9 +340,49 @@ source venv/bin/activate
 python app.py
 ```
 
-Open **http://127.0.0.1:5000** in your browser.
+Open **http://127.0.0.1:5000** in your browser. For Docker: open **http://127.0.0.1:5050** instead.
 
-> **Note**: Flask serves both the frontend and API from port 5000. Do not use any other port. Debug mode defaults to off; set `FLASK_DEBUG=true` in your `.env` to enable it.
+> **Note**: Flask serves both the frontend and API from port 5000. When running via Docker, the app is on port 5050 (configurable via `APP_PORT`). Debug mode defaults to off; set `FLASK_DEBUG=true` in your `.env` to enable it.
+
+### Alternative: Docker Deployment
+
+No local Python/MySQL/Node setup needed — everything runs in containers.
+
+**Development** (Flask debug mode + hot reload on code changes):
+
+```bash
+make docker-dev
+# or: docker compose --profile dev up --build
+```
+
+**Production** (nginx + gunicorn with 4 workers, detached):
+
+```bash
+make docker-prod
+# or: docker compose --profile prod up --build -d
+```
+
+**Stop and clean up:**
+
+```bash
+make docker-down
+```
+
+**Run tests inside the container:**
+
+```bash
+make docker-test
+```
+
+| Command | Description |
+|---------|-------------|
+| `make docker-dev` | Start dev environment (Flask debug + hot reload) |
+| `make docker-prod` | Start production (nginx + gunicorn, detached) |
+| `make docker-down` | Stop all containers, remove volumes |
+| `make docker-build` | Build images without starting |
+| `make docker-test` | Run all tests inside the dev container |
+
+Docker uses the same `.env` variables as local development (see [Environment Variables](#3-configure-environment-variables)). The MySQL database is auto-initialized with the schema from `db/init.sql` on first startup.
 
 ---
 
@@ -349,17 +391,26 @@ Open **http://127.0.0.1:5000** in your browser.
 ### Run tests
 
 ```bash
-make test          # Run all 61 unit tests
-make coverage      # Tests + coverage report (fails if <99%)
+make test          # Run all tests (Python + JavaScript)
+make test-py       # Run Python unit tests only (61 tests)
+make test-js       # Run JavaScript unit tests only (44 tests)
+make coverage      # Python tests + coverage report (fails if <99%)
 make security      # Bandit (SAST) + Safety (dependency scan)
-make ci            # Full pipeline: coverage + security
+make ci            # Full pipeline: Python coverage + JS tests + security
 ```
 
 ### Test results
 
-- **61 tests** covering all API endpoints, helpers, and edge cases
-- **99% code coverage** (only `app.run()` line uncovered)
-- Tests use an isolated `radiocalico_test` database (auto-created/destroyed)
+**105 total tests** across both stacks:
+
+| Stack | Tests | Tool | Coverage |
+|-------|-------|------|----------|
+| Python (backend) | 61 | pytest + pytest-cov | 99% (only `app.run()` uncovered) |
+| JavaScript (frontend) | 44 | Jest + jsdom | All functions tested |
+
+- **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
+- **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`
+- Tests cover: pure functions, DOM manipulation, API calls, ratings, auth, share text generation, history filtering, theme/quality switching, drawer navigation, ID3 parsing
 
 ### Security scanning
 
@@ -374,12 +425,21 @@ make ci            # Full pipeline: coverage + security
 radiocalico/
 ├── README.md                       # This file
 ├── CLAUDE.md                       # Claude Code AI assistant guidelines
-├── Makefile                        # CI/CD automation targets
-├── .gitignore                      # Git exclusions (.env, venv, cache, etc.)
+├── Makefile                        # CI/CD automation targets (local + Docker)
+├── Dockerfile                      # Multi-stage: dev (Flask) + prod (gunicorn)
+├── docker-compose.yml              # Dev/prod profiles with MySQL + nginx
+├── nginx/
+│   └── nginx.conf                  # Reverse proxy: static files + /api (prod)
+├── .dockerignore                   # Docker build exclusions
+├── package.json                    # Node.js config (Jest for JS tests)
+├── jest.config.js                  # Jest configuration
+├── .gitignore                      # Git exclusions (.env, venv, node_modules, etc.)
 ├── design.md                       # Detailed architecture & design document
 ├── RadioCalico_Style_Guide.txt     # Brand colors, typography, component specs
 ├── RadioCalicoLayout.png           # UI layout reference screenshot
 ├── RadioCalicoLogoTM.png           # Logo with trademark
+├── db/
+│   └── init.sql                    # Database schema (auto-run by Docker MySQL)
 ├── api/
 │   ├── app.py                      # Flask REST API (ratings, auth, profile, feedback)
 │   ├── requirements.txt            # Production dependencies
@@ -387,7 +447,7 @@ radiocalico/
 │   ├── .env.example                # Environment variables template
 │   ├── .env                        # Local credentials (git-ignored)
 │   ├── conftest.py                 # Pytest fixtures
-│   ├── test_app.py                 # 61 unit tests
+│   ├── test_app.py                 # 61 Python unit tests
 │   ├── pytest.ini                  # Pytest configuration
 │   ├── .bandit                     # Bandit security scan config
 │   └── venv/                       # Python virtual environment (git-ignored)
@@ -397,7 +457,8 @@ radiocalico/
 │   ├── css/
 │   │   └── player.css              # Styles, design tokens, dark/light themes
 │   └── js/
-│       └── player.js               # All client-side logic
+│       ├── player.js               # All client-side logic
+│       └── player.test.js          # 44 JavaScript unit tests (Jest)
 └── .claude/
     └── commands/                   # Claude Code slash commands
         ├── start.md                # /start — launch dev environment
@@ -428,8 +489,12 @@ radiocalico/
 | DB Driver | PyMySQL | Python-MySQL connector |
 | Rate Limiting | flask-limiter | Request rate limiting for auth endpoints |
 | Config | python-dotenv | Environment variable management |
-| Testing | pytest + pytest-cov | Unit tests with 99% coverage |
+| Python Testing | pytest + pytest-cov | 61 backend unit tests (99% coverage) |
+| JS Testing | Jest + jsdom | 44 frontend unit tests |
 | Security | Bandit + Safety | SAST + dependency vulnerability scanning |
+| Containers | Docker + Docker Compose | Dev/prod deployment with MySQL |
+| Reverse Proxy | nginx (alpine) | Static file serving + /api proxy (prod) |
+| Prod Server | gunicorn | WSGI server (4 workers) behind nginx |
 
 ---
 

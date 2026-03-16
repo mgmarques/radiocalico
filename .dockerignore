@@ -1,0 +1,28 @@
+.git
+.github
+.claude
+node_modules
+api/venv
+api/.pytest_cache
+api/.coverage
+api/__pycache__
+__pycache__
+*.pyc
+*.pyo
+.DS_Store
+.env
+*.log
+
+# Documentation and assets (not needed in container)
+docs/
+*.md
+RadioCalicoLayout.png
+RadioCalicoLogoTM.png
+RadioCalico_Style_Guide.txt
+SomeLikesSogs.txt
+stream_URL.txt
+
+# Docker files (don't copy into themselves)
+Dockerfile
+docker-compose.yml
+db/

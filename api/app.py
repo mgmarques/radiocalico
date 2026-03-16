@@ -1,3 +1,13 @@
+"""Radio Calico Flask REST API.
+
+Provides endpoints for track ratings, user authentication, profile management,
+and feedback submission. Serves the static frontend and streams metadata
+alongside an HLS audio stream delivered via CloudFront.
+
+All API routes are prefixed with ``/api``. Data is stored in a local MySQL 5.7
+database accessed through PyMySQL with parameterized queries.
+"""
+
 import os
 import hashlib
 import hmac
@@ -32,10 +42,27 @@ DB_CONFIG = {
 }
 
 def get_db():
+    """Create and return a new PyMySQL database connection.
+
+    Returns:
+        pymysql.connections.Connection: An open connection configured with
+        ``DictCursor`` so rows are returned as dictionaries.
+    """
     return pymysql.connect(**DB_CONFIG)
 
 
 def hash_password(password, salt=None):
+    """Hash a password using PBKDF2-HMAC-SHA256 with 260 000 iterations.
+
+    Args:
+        password: The plaintext password to hash.
+        salt: Optional hex-encoded salt. If ``None``, a random 16-byte salt
+            is generated.
+
+    Returns:
+        tuple[str, str]: A ``(salt, hashed)`` pair where both values are
+        hex-encoded strings.
+    """
     if salt is None:
         salt = secrets.token_hex(16)
     hashed = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 260000).hex()
@@ -43,12 +70,33 @@ def hash_password(password, salt=None):
 
 
 def verify_password(password, salt, hashed):
+    """Verify a plaintext password against a stored salt and hash.
+
+    Uses constant-time comparison via ``hmac.compare_digest`` to prevent
+    timing attacks.
+
+    Args:
+        password: The plaintext password to verify.
+        salt: The hex-encoded salt originally used to hash the password.
+        hashed: The hex-encoded hash to compare against.
+
+    Returns:
+        bool: ``True`` if the password matches, ``False`` otherwise.
+    """
     _, check = hash_password(password, salt)
     return hmac.compare_digest(check, hashed)
 
 
 def get_user_from_token(token):
-    """Look up user by auth token. Returns user row or None."""
+    """Look up a user by their authentication token.
+
+    Args:
+        token: The bearer token string. May be ``None`` or empty.
+
+    Returns:
+        dict | None: A dictionary with ``id`` and ``username`` keys if a
+        matching user is found, or ``None`` otherwise.
+    """
     if not token:
         return None
     db = get_db()
@@ -62,7 +110,14 @@ def get_user_from_token(token):
 
 
 def require_auth():
-    """Extract token from Authorization header and return user or None."""
+    """Extract the bearer token from the Authorization header and resolve the user.
+
+    Expects the header format ``Authorization: Bearer <token>``.
+
+    Returns:
+        dict | None: The authenticated user dict (``id``, ``username``), or
+        ``None`` if the header is missing or the token is invalid.
+    """
     auth = request.headers.get('Authorization', '')
     token = auth.replace('Bearer ', '') if auth.startswith('Bearer ') else ''
     return get_user_from_token(token)
@@ -70,11 +125,26 @@ def require_auth():
 
 @app.route('/')
 def serve_index():
+    """Serve the main ``index.html`` page.
+
+    GET /
+
+    Returns:
+        Response: The static ``index.html`` file with a 200 status.
+    """
     return send_from_directory(STATIC_DIR, 'index.html')
 
 
 @app.route('/api/ratings', methods=['GET'])
 def get_ratings():
+    """Return all ratings ordered by most recent first.
+
+    GET /api/ratings
+
+    Returns:
+        Response: JSON array of rating objects, each containing ``id``,
+        ``station``, ``score``, and ``created_at``. Status 200.
+    """
     db = get_db()
     try:
         with db.cursor() as cursor:
@@ -87,6 +157,14 @@ def get_ratings():
 
 @app.route('/api/ratings/summary', methods=['GET'])
 def get_ratings_summary():
+    """Return aggregated likes and dislikes per station.
+
+    GET /api/ratings/summary
+
+    Returns:
+        Response: JSON object keyed by station name, each value containing
+        ``likes`` (int) and ``dislikes`` (int). Status 200.
+    """
     db = get_db()
     try:
         with db.cursor() as cursor:
@@ -111,6 +189,21 @@ def get_ratings_summary():
 
 @app.route('/api/ratings', methods=['POST'])
 def post_rating():
+    """Submit a rating (like or dislike) for a track.
+
+    POST /api/ratings
+
+    Request body (JSON):
+        station (str): Track identifier in ``"Artist - Title"`` format.
+        score (int): ``1`` for like, ``0`` for dislike.
+
+    Returns:
+        Response: ``{"status": "ok"}`` with status 201 on success.
+
+    Raises:
+        400: Missing or invalid JSON, missing fields, or invalid score.
+        409: The client IP has already rated this station.
+    """
     data = request.get_json(silent=True)
     if not data:
         return jsonify({'error': 'Invalid JSON'}), 400
@@ -139,6 +232,17 @@ def post_rating():
 
 @app.route('/api/ratings/check', methods=['GET'])
 def check_rating():
+    """Check whether the current client IP has already rated a station.
+
+    GET /api/ratings/check?station=<station>
+
+    Query params:
+        station (str): The track identifier to check.
+
+    Returns:
+        Response: JSON with ``rated`` (bool) and, if rated, ``score`` (int).
+        Status 200.
+    """
     station = request.args.get('station', '')
     ip = request.headers.get('X-Forwarded-For', request.remote_addr) or ''
     ip = ip.split(',')[0].strip()
@@ -159,6 +263,23 @@ def check_rating():
 
 @app.route('/api/feedback', methods=['POST'])
 def post_feedback():
+    """Submit user feedback. Requires authentication.
+
+    POST /api/feedback
+
+    Request body (JSON):
+        message (str): The feedback message text.
+
+    The feedback record is stored alongside a snapshot of the user's profile
+    data (email, nickname, genres, about) at the time of submission.
+
+    Returns:
+        Response: ``{"status": "ok"}`` with status 201 on success.
+
+    Raises:
+        400: Missing or invalid JSON, or empty message.
+        401: Authentication required (missing or invalid token).
+    """
     user = require_auth()
     if not user:
         return jsonify({'error': 'Login required to send feedback'}), 401
@@ -199,6 +320,23 @@ def post_feedback():
 @app.route('/api/register', methods=['POST'])
 @limiter.limit("5/minute")
 def register():
+    """Register a new user account. Rate-limited to 5 requests per minute.
+
+    POST /api/register
+
+    Request body (JSON):
+        username (str): Desired username (max 50 characters).
+        password (str): Password (8--128 characters).
+
+    Returns:
+        Response: ``{"status": "ok"}`` with status 201 on success.
+
+    Raises:
+        400: Missing or invalid JSON, missing fields, or password/username
+            length violations.
+        409: Username already taken.
+        429: Rate limit exceeded.
+    """
     data = request.get_json(silent=True)
     if not data:
         return jsonify({'error': 'Invalid JSON'}), 400
@@ -232,6 +370,22 @@ def register():
 @app.route('/api/login', methods=['POST'])
 @limiter.limit("5/minute")
 def login():
+    """Authenticate a user and return a bearer token. Rate-limited to 5 requests per minute.
+
+    POST /api/login
+
+    Request body (JSON):
+        username (str): The registered username.
+        password (str): The account password.
+
+    Returns:
+        Response: JSON with ``token`` (str) and ``username`` (str). Status 200.
+
+    Raises:
+        400: Missing or invalid JSON, or missing fields.
+        401: Invalid username or password.
+        429: Rate limit exceeded.
+    """
     data = request.get_json(silent=True)
     if not data:
         return jsonify({'error': 'Invalid JSON'}), 400
@@ -260,6 +414,18 @@ def login():
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
+    """Log out the authenticated user by clearing their stored token.
+
+    POST /api/logout
+
+    Requires ``Authorization: Bearer <token>`` header.
+
+    Returns:
+        Response: ``{"status": "ok"}`` with status 200 on success.
+
+    Raises:
+        401: Authentication required (missing or invalid token).
+    """
     user = require_auth()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -276,6 +442,20 @@ def logout():
 
 @app.route('/api/profile', methods=['GET'])
 def get_profile():
+    """Retrieve the authenticated user's profile.
+
+    GET /api/profile
+
+    Requires ``Authorization: Bearer <token>`` header.
+
+    Returns:
+        Response: JSON with ``nickname``, ``email``, ``genres``, and ``about``
+        fields. Returns empty strings for each field if no profile exists yet.
+        Status 200.
+
+    Raises:
+        401: Authentication required (missing or invalid token).
+    """
     user = require_auth()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -294,6 +474,27 @@ def get_profile():
 
 @app.route('/api/profile', methods=['PUT'])
 def update_profile():
+    """Create or update the authenticated user's profile.
+
+    PUT /api/profile
+
+    Requires ``Authorization: Bearer <token>`` header.
+
+    Request body (JSON):
+        nickname (str, optional): Display name (max 100 chars).
+        email (str, optional): Email address (max 255 chars).
+        genres (str, optional): Comma-separated genre tags (max 500 chars).
+        about (str, optional): Free-text bio (max 1000 chars).
+
+    If the user has no profile yet, one is created (upsert behaviour).
+
+    Returns:
+        Response: ``{"status": "ok"}`` with status 200 on success.
+
+    Raises:
+        400: Missing or invalid JSON.
+        401: Authentication required (missing or invalid token).
+    """
     user = require_auth()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -329,4 +530,5 @@ def update_profile():
 
 if __name__ == '__main__':
     debug = os.environ.get('FLASK_DEBUG', 'false').lower() in ('true', '1', 'yes')
-    app.run(port=5000, debug=debug)
+    host = os.environ.get('FLASK_HOST', '127.0.0.1')
+    app.run(host=host, port=5000, debug=debug)
