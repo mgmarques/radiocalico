@@ -1,6 +1,17 @@
 /* ── Reset ──────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── Focus ──────────────────────────────────────────── */
+:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+}
+button:focus-visible { outline-offset: 2px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 0;
+}
+
 /* ── Tokens ─────────────────────────────────────────── */
 :root {
     --mint:    #D8F2D5;
@@ -96,6 +107,7 @@ h1, h2, h3 {
     top: 0;
     left: -320px;
     width: 300px;
+    max-width: calc(100vw - 20px);
     height: 100%;
     background: #fff;
     z-index: 2000;
@@ -155,7 +167,6 @@ h1, h2, h3 {
     font-size: 0.85rem;
     border: 1px solid #ccc;
     border-radius: 6px;
-    outline: none;
     margin-bottom: 8px;
     transition: border-color 0.15s;
     background: #fff;
@@ -506,8 +517,8 @@ h1, h2, h3 {
 .share-whatsapp:hover { background: rgba(37, 211, 102, 0.1); }
 .share-twitter { color: #000; }
 .share-twitter:hover { background: rgba(0, 0, 0, 0.06); }
-.share-facebook { color: #1877F2; }
-.share-facebook:hover { background: rgba(24, 119, 242, 0.1); }
+.share-telegram { color: #0088cc; }
+.share-telegram:hover { background: rgba(0, 136, 204, 0.1); }
 
 .share-spotify { color: #1DB954; }
 .share-spotify:hover { background: rgba(29, 185, 84, 0.1); }
@@ -586,6 +597,7 @@ h1, h2, h3 {
 
 /* Volume slider */
 .bar-volume {
+    appearance: none;
     -webkit-appearance: none;
     width: 90px;
     height: 4px;
@@ -596,6 +608,7 @@ h1, h2, h3 {
 }
 
 .bar-volume::-webkit-slider-thumb {
+    appearance: none;
     -webkit-appearance: none;
     width: 14px;
     height: 14px;
@@ -687,9 +700,6 @@ h1, h2, h3 {
     display: flex;
     align-items: baseline;
     gap: 8px;
-}
-
-.prev-list li {
     flex-wrap: wrap;
 }
 .prev-list li:last-child { border-bottom: none; }
@@ -813,3 +823,11 @@ h1, h2, h3 {
 [data-theme="dark"] .genre-tag:hover { background: rgba(126, 207, 132, 0.1); }
 [data-theme="dark"] .genre-tag:has(input:checked) { background: var(--forest); color: #121212; }
 [data-theme="dark"] .genre-tag:has(input:checked):hover { background: var(--forest); }
+
+/* ── Reduced Motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

@@ -1,6 +1,14 @@
 const STREAM_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8';
 const METADATA_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/metadatav2.json';
 const METADATA_DEBOUNCE_MS = 3000; // min interval between metadata fetches
+const MAX_HISTORY = 20;
+const HLS_RETRY_BASE_MS = 4000;
+const HLS_RETRY_MAX_MS = 60000;
+const HLS_MAX_RETRIES = 10;
+const ARTWORK_SIZE = '600x600';
+const SHARE_ARTWORK_SIZE = '300x300';
+const LATENCY_FALLBACK_SEC = 6;
+const LATENCY_MAX_SEC = 15;
 
 // ── Elements ────────────────────────────────────────────────
 const audio      = document.getElementById('audio');
@@ -34,6 +42,7 @@ let trackDuration = null;
 let songStartTime = null; // wall-clock ms when current song was detected
 let pendingTrackUpdate = null; // timer for delayed track update
 let pendingTrackKey = null;    // key of the track waiting to be applied
+let hlsRetryCount = 0;
 const history  = [];
 
 // ── Icons ───────────────────────────────────────────────────
@@ -52,15 +61,16 @@ async function fetchArtwork(artist, title) {
         if (data.results && data.results.length > 0) {
             const result = data.results[0];
             // Replace 100x100 thumbnail with 600x600
-            const url = result.artworkUrl100.replace('100x100', '600x600');
-            artworkEl.innerHTML = `<img src="${url}" alt="${escHtml(title)}">`;
+            const url = result.artworkUrl100.replace('100x100', ARTWORK_SIZE);
+            artworkEl.innerHTML = `<img src="${escHtml(url)}" alt="${escHtml(title)}">`;
             // Store track duration from iTunes (milliseconds → seconds)
             trackDuration = result.trackTimeMillis ? result.trackTimeMillis / 1000 : null;
         } else {
             artworkEl.innerHTML = `<div class="artwork-placeholder">♪</div>`;
             trackDuration = null;
         }
-    } catch {
+    } catch (e) {
+        console.warn('Artwork fetch failed:', e);
         artworkEl.innerHTML = `<div class="artwork-placeholder">♪</div>`;
         trackDuration = null;
     }
@@ -73,7 +83,9 @@ function updateTrack(artist, title, album) {
 
     // Push previous to history (including album)
     if (currentTrack) {
-        const [a, t] = currentTrack.split('|');
+        const pipeIdx = currentTrack.indexOf('|');
+        const a = currentTrack.substring(0, pipeIdx);
+        const t = currentTrack.substring(pipeIdx + 1);
         pushHistory(a, t, albumEl.textContent || '');
     }
 
@@ -92,7 +104,7 @@ function updateTrack(artist, title, album) {
 function pushHistory(artist, title, album) {
     if (!artist && !title) return;
     history.unshift({ artist, title, album: album || '' });
-    while (history.length > 20) history.pop(); // keep up to max dropdown value
+    while (history.length > MAX_HISTORY) history.pop(); // keep up to max dropdown value
     renderHistory();
 }
 
@@ -110,17 +122,9 @@ async function renderHistory() {
     try {
         const res = await fetch('/api/ratings/summary');
         if (res.ok) lastSummary = await res.json();
-    } catch { /* use lastSummary */ }
+    } catch (e) { console.warn('Ratings summary fetch failed:', e); }
 
-    const filtered = history.slice(0, historyLimit).filter(h => {
-        if (prevFilter === 'all') return true;
-        const key = `${h.artist} - ${h.title}`;
-        const r = lastSummary[key];
-        if (!r) return false;
-        if (prevFilter === 'up')   return r.likes > 0;
-        if (prevFilter === 'down') return r.dislikes > 0;
-        return true;
-    });
+    const filtered = getFilteredHistory();
 
     if (!filtered.length) {
         prevList.innerHTML = '<li class="prev-empty">No matching tracks</li>';
@@ -141,7 +145,19 @@ async function renderHistory() {
 }
 
 function escHtml(str) {
-    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function getFilteredHistory() {
+    return history.slice(0, historyLimit).filter(h => {
+        if (prevFilter === 'all') return true;
+        const key = `${h.artist} - ${h.title}`;
+        const r = lastSummary[key];
+        if (!r) return false;
+        if (prevFilter === 'up') return r.likes > 0;
+        if (prevFilter === 'down') return r.dislikes > 0;
+        return true;
+    });
 }
 
 // ── ID3 parser (decodes text frames from raw ID3v2 bytes) ───
@@ -228,6 +244,7 @@ function initHls() {
     hls.attachMedia(audio);
 
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        hlsRetryCount = 0;
         playBtn.disabled = false;
         showPlayIcon('play');
     });
@@ -266,7 +283,11 @@ function initHls() {
         if (data.fatal) {
             showPlayIcon('play');
             playing = false;
-            setTimeout(initHls, 4000);
+            hlsRetryCount++;
+            const delay = Math.min(HLS_RETRY_BASE_MS * Math.pow(2, hlsRetryCount - 1), HLS_RETRY_MAX_MS);
+            if (hlsRetryCount <= HLS_MAX_RETRIES) {
+                setTimeout(initHls, delay);
+            }
         }
     });
 }
@@ -334,7 +355,7 @@ async function fetchTrackRatings(station) {
         const r = summary[station];
         rateUpCount.textContent   = r ? r.likes : 0;
         rateDownCount.textContent = r ? r.dislikes : 0;
-    } catch { /* ratings unavailable */ }
+    } catch (e) { console.warn('Track ratings fetch failed:', e); }
 }
 
 async function checkIfRated(station) {
@@ -343,7 +364,7 @@ async function checkIfRated(station) {
         if (!res.ok) return false;
         const data = await res.json();
         return data.rated;
-    } catch { return false; }
+    } catch (e) { console.warn('Rating check failed:', e); return false; }
 }
 
 async function updateRatingUI() {
@@ -373,7 +394,8 @@ async function submitRating(score) {
             rateDown.classList.add('rated');
             rateFb.textContent = 'Already rated this track';
         }
-    } catch {
+    } catch (e) {
+        console.warn('Rating submit failed:', e);
         rateFb.textContent = 'Could not send rating';
     }
 }
@@ -387,7 +409,7 @@ function getArtworkUrl() {
     const img = artworkEl.querySelector('img');
     if (!img) return '';
     // Use a smaller size (300x300) for better sharing previews
-    return img.src.replace('600x600', '300x300');
+    return img.src.replace(ARTWORK_SIZE, SHARE_ARTWORK_SIZE);
 }
 
 function getShareText() {
@@ -412,9 +434,9 @@ document.getElementById('share-twitter').addEventListener('click', () => {
     window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
 });
 
-document.getElementById('share-facebook').addEventListener('click', () => {
+document.getElementById('share-telegram').addEventListener('click', () => {
     const text = encodeURIComponent(getShareText());
-    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}`, '_blank', 'noopener');
+    window.open(`https://t.me/share/url?text=${text}`, '_blank', 'noopener');
 });
 
 document.getElementById('share-spotify').addEventListener('click', () => {
@@ -429,20 +451,12 @@ document.getElementById('share-ytmusic').addEventListener('click', () => {
 
 document.getElementById('share-amazon').addEventListener('click', () => {
     const query = encodeURIComponent(`${artistEl.textContent} ${trackEl.textContent}`);
-    window.open(`https://music.amazon.com/search/${query}`, '_blank', 'noopener');
+    window.open(`https://www.amazon.com/s?k=${query}&i=digital-music`, '_blank', 'noopener');
 });
 
 // ── Recently Played share buttons ────────────────────────────
 function getRecentlyPlayedText() {
-    const filtered = history.slice(0, historyLimit).filter(h => {
-        if (prevFilter === 'all') return true;
-        const key = `${h.artist} - ${h.title}`;
-        const r = lastSummary[key];
-        if (!r) return false;
-        if (prevFilter === 'up')   return r.likes > 0;
-        if (prevFilter === 'down') return r.dislikes > 0;
-        return true;
-    });
+    const filtered = getFilteredHistory();
     if (!filtered.length) return '';
     const lines = filtered.map((h, i) => {
         let line = `${i + 1}. ${h.title} by ${h.artist}`;
@@ -467,12 +481,6 @@ document.getElementById('prev-share-twitter').addEventListener('click', () => {
     const text = getRecentlyPlayedText();
     if (!text) return;
     window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
-});
-
-document.getElementById('prev-share-facebook').addEventListener('click', () => {
-    const text = getRecentlyPlayedText();
-    if (!text) return;
-    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(text)}`, '_blank', 'noopener');
 });
 
 // ── History filter buttons ───────────────────────────────────
@@ -519,9 +527,9 @@ async function fetchMetadata() {
                 pendingTrackKey = newKey;
 
                 // Estimate delay: use HLS latency if available, else fallback ~6s
-                let delaySec = 6;
+                let delaySec = LATENCY_FALLBACK_SEC;
                 if (hls && typeof hls.latency === 'number' && hls.latency > 0) {
-                    delaySec = Math.min(hls.latency, 15);
+                    delaySec = Math.min(hls.latency, LATENCY_MAX_SEC);
                 }
 
                 pendingTrackUpdate = setTimeout(() => {
@@ -551,7 +559,7 @@ async function fetchMetadata() {
             history.length = 0;
             freshTracks.forEach(t => history.push(t));
             kept.forEach(t => history.push(t));
-            while (history.length > 20) history.pop();
+            while (history.length > MAX_HISTORY) history.pop();
             renderHistory();
             // Fetch album names from iTunes for entries missing album
             history.forEach(async (t, idx) => {
@@ -564,7 +572,7 @@ async function fetchMetadata() {
                         history[idx].album = data.results[0].collectionName || '';
                         renderHistory();
                     }
-                } catch { /* skip */ }
+                } catch (e) { console.warn('Album fetch failed:', e); }
             });
         }
 
@@ -650,7 +658,7 @@ authForm.addEventListener('submit', async (e) => {
         } else {
             authFeedback.textContent = data.error || 'Login failed';
         }
-    } catch { authFeedback.textContent = 'Could not connect'; }
+    } catch (e) { console.warn('Login failed:', e); authFeedback.textContent = 'Could not connect'; }
 });
 
 // Register
@@ -711,7 +719,7 @@ async function loadProfile() {
         document.querySelectorAll('#genre-grid input[type="checkbox"]').forEach(cb => {
             cb.checked = genres.includes(cb.value);
         });
-    } catch { /* skip */ }
+    } catch (e) { console.warn('Profile load failed:', e); }
 }
 
 // Save profile
@@ -745,7 +753,7 @@ profileForm.addEventListener('submit', async (e) => {
             profileFb.textContent = data.error || 'Could not save';
             profileFb.style.color = '#c0392b';
         }
-    } catch { profileFb.textContent = 'Could not connect'; }
+    } catch (e) { console.warn('Profile save failed:', e); profileFb.textContent = 'Could not connect'; }
 });
 
 // Feedback form (requires login)
@@ -773,7 +781,7 @@ document.getElementById('feedback-form').addEventListener('submit', async (e) =>
             feedbackFb.textContent = data.error || 'Could not send feedback';
             feedbackFb.style.color = '#c0392b';
         }
-    } catch { feedbackFb.textContent = 'Could not connect'; feedbackFb.style.color = '#c0392b'; }
+    } catch (e) { console.warn('Feedback submit failed:', e); feedbackFb.textContent = 'Could not connect'; feedbackFb.style.color = '#c0392b'; }
 });
 
 // Feedback on Twitter
@@ -783,11 +791,10 @@ document.getElementById('feedback-twitter').addEventListener('click', () => {
     window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
 });
 
-// Feedback on Facebook
-document.getElementById('feedback-facebook').addEventListener('click', () => {
+document.getElementById('feedback-telegram').addEventListener('click', () => {
     const msg = document.getElementById('feedback-message').value.trim();
     const text = encodeURIComponent(msg ? `Radio Calico feedback: ${msg}` : 'Radio Calico feedback: ');
-    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}`, '_blank', 'noopener');
+    window.open(`https://t.me/share/url?text=${text}`, '_blank', 'noopener');
 });
 
 // Restore session on load

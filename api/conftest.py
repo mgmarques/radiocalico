@@ -95,8 +95,10 @@ def test_db():
 def client():
     """Flask test client."""
     app_module.app.config['TESTING'] = True
+    app_module.limiter.enabled = False  # disable rate limiter in tests
     with app_module.app.test_client() as c:
         yield c
+    app_module.limiter.enabled = True
 
 
 @pytest.fixture

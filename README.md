@@ -26,7 +26,7 @@ Radio Calico is a web-based live audio streaming player that delivers lossless a
 - **Track Ratings** — thumbs up/down with IP-based deduplication
 - **User Accounts** — register, login, profile with music genre preferences
 - **Recently Played** — history with filters (All/Liked/Disliked), configurable limit (5–20 tracks)
-- **Social Sharing** — share current track or recently played list via WhatsApp, X/Twitter, Facebook
+- **Social Sharing** — share current track or recently played list via WhatsApp, X/Twitter, Telegram
 - **Music Search** — find tracks on Spotify, YouTube Music, Amazon Music
 - **Feedback System** — logged-in users can submit feedback (stored with profile data)
 - **Dark/Light Theme** — toggle via settings gear, persisted in localStorage
@@ -66,7 +66,7 @@ Radio Calico is a web-based live audio streaming player that delivers lossless a
   <img src="docs/3_loged.png" alt="Radio Calico Profile & Feedback" width="700">
 </p>
 
-*Logged-in view — profile with nickname, email, music genre preferences (tag-style checkboxes), "About You" text area, and feedback form with email/X/Facebook buttons.*
+*Logged-in view — profile with nickname, email, music genre preferences (tag-style checkboxes), "About You" text area, and feedback form with email/X buttons.*
 
 ---
 
@@ -151,7 +151,7 @@ User clicks Play ──> HLS.js loads stream ──> audio plays
 Register ──> POST /api/register { username, password }
                   │
                   v
-            Hash password (SHA-256 + random salt)
+            Hash password (PBKDF2 (260k iterations) + random salt with timing-safe comparison)
             Store in users table
             201 Created
 
@@ -183,14 +183,15 @@ Feedback ──> POST /api/feedback (Authorization: Bearer <token>)
 
 | Method | Endpoint | Auth | Description |
 | ------ | -------- | ---- | ----------- |
-| `GET` | `/api/ratings` | No | All ratings |
+| `GET` | `/api/ratings` | No | All ratings (IP addresses are not exposed) |
 | `GET` | `/api/ratings/summary` | No | Likes/dislikes grouped by station |
 | `GET` | `/api/ratings/check?station=...` | No | Check if current IP already rated |
-| `POST` | `/api/ratings` | No | Submit rating `{ station, score }` |
-| `POST` | `/api/register` | No | Create account `{ username, password }` |
-| `POST` | `/api/login` | No | Authenticate `{ username, password }` |
+| `POST` | `/api/ratings` | No | Submit rating `{ station, score }` (score must be 0 or 1) |
+| `POST` | `/api/register` | No | Create account `{ username, password }` (rate limited: 5 req/min). Password: min 8, max 128 chars |
+| `POST` | `/api/login` | No | Authenticate `{ username, password }` (rate limited: 5 req/min) |
 | `GET` | `/api/profile` | Bearer | Get user profile |
 | `PUT` | `/api/profile` | Bearer | Update profile `{ nickname, email, genres, about }` |
+| `POST` | `/api/logout` | Bearer | Invalidate auth token |
 | `POST` | `/api/feedback` | Bearer | Submit feedback `{ message }` |
 
 ---
@@ -206,7 +207,7 @@ Feedback ──> POST /api/feedback (Authorization: Bearer <token>)
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/radiocalico.git
+git clone https://github.com/mgmarques/radiocalico.git
 cd radiocalico
 ```
 
@@ -241,6 +242,7 @@ DB_USER=root
 DB_PASSWORD=your_mysql_password
 DB_NAME=radiocalico
 FLASK_DEBUG=true
+CORS_ORIGIN=*
 ```
 
 #### Environment Variables Reference
@@ -252,6 +254,7 @@ FLASK_DEBUG=true
 | `DB_PASSWORD` | MySQL password | `""` (empty) | **Yes** |
 | `DB_NAME` | MySQL database name | `radiocalico` | No |
 | `FLASK_DEBUG` | Enable Flask debug mode | `false` | No |
+| `CORS_ORIGIN` | Allowed CORS origin | `*` | No |
 
 > **Important**: The `.env` file contains credentials and is excluded from git via `.gitignore`. Never commit it. The `.env.example` file is safe to commit and shows the required variables.
 
@@ -321,7 +324,7 @@ python app.py
 
 Open **http://127.0.0.1:5000** in your browser.
 
-> **Note**: Flask serves both the frontend and API from port 5000. Do not use any other port.
+> **Note**: Flask serves both the frontend and API from port 5000. Do not use any other port. Debug mode defaults to off; set `FLASK_DEBUG=true` in your `.env` to enable it.
 
 ---
 
@@ -330,7 +333,7 @@ Open **http://127.0.0.1:5000** in your browser.
 ### Run tests
 
 ```bash
-make test          # Run all 50 unit tests
+make test          # Run all 61 unit tests
 make coverage      # Tests + coverage report (fails if <99%)
 make security      # Bandit (SAST) + Safety (dependency scan)
 make ci            # Full pipeline: coverage + security
@@ -338,13 +341,13 @@ make ci            # Full pipeline: coverage + security
 
 ### Test results
 
-- **50 tests** covering all API endpoints, helpers, and edge cases
-- **99.47% code coverage** (only `app.run()` line uncovered)
+- **61 tests** covering all API endpoints, helpers, and edge cases
+- **99% code coverage** (only `app.run()` line uncovered)
 - Tests use an isolated `radiocalico_test` database (auto-created/destroyed)
 
 ### Security scanning
 
-- **Bandit** — static analysis for Python security issues
+- **Bandit** — static analysis for Python security issues (0 issues found)
 - **Safety** — checks dependencies for known vulnerabilities
 
 ---
@@ -368,7 +371,7 @@ radiocalico/
 │   ├── .env.example                # Environment variables template
 │   ├── .env                        # Local credentials (git-ignored)
 │   ├── conftest.py                 # Pytest fixtures
-│   ├── test_app.py                 # 50 unit tests
+│   ├── test_app.py                 # 61 unit tests
 │   ├── pytest.ini                  # Pytest configuration
 │   ├── .bandit                     # Bandit security scan config
 │   └── venv/                       # Python virtual environment (git-ignored)
@@ -407,6 +410,7 @@ radiocalico/
 | Backend | Python Flask | REST API for all endpoints |
 | Database | MySQL 5.7 | Ratings, users, profiles, feedback |
 | DB Driver | PyMySQL | Python-MySQL connector |
+| Rate Limiting | flask-limiter | Request rate limiting for auth endpoints |
 | Config | python-dotenv | Environment variable management |
 | Testing | pytest + pytest-cov | Unit tests with 99% coverage |
 | Security | Bandit + Safety | SAST + dependency vulnerability scanning |

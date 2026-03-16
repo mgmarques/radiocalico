@@ -13,8 +13,8 @@
 
     <nav class="navbar">
         <div class="nav-menu">
-            <button class="menu-btn" id="menu-btn" title="Menu">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+            <button class="menu-btn" id="menu-btn" title="Menu" aria-label="Open menu">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
             </button>
         </div>
         <div class="navbar-inner">
@@ -22,8 +22,8 @@
             <span class="nav-wordmark">Radio <span>Calico</span></span>
         </div>
         <div class="nav-settings">
-            <button class="settings-btn" id="settings-btn" title="Settings">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19.14 12.94a7.07 7.07 0 0 0 .06-.94c0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.04 7.04 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.3.59.22l2.39-.96c.5.37 1.03.7 1.62.94l.36 2.54c.05.24.26.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
+            <button class="settings-btn" id="settings-btn" title="Settings" aria-label="Settings">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19.14 12.94a7.07 7.07 0 0 0 .06-.94c0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.04 7.04 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.3.59.22l2.39-.96c.5.37 1.03.7 1.62.94l.36 2.54c.05.24.26.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
             </button>
             <div class="settings-dropdown" id="settings-dropdown">
                 <div class="settings-heading">Theme</div>
@@ -41,7 +41,7 @@
 
         <!-- ── Now Playing widget ────────────────────────── -->
         <section class="widget now-playing-widget">
-            <h3 class="widget-heading">Now Playing</h3>
+            <div class="widget-heading">Now Playing</div>
             <div class="now-playing">
 
                 <div class="artwork-col">
@@ -62,48 +62,48 @@
 
                     <div class="rating-row">
                         <span class="rating-label">Rate this track:</span>
-                        <button class="rate-btn" id="rate-up" title="Thumbs up">👍 <span class="rate-count" id="rate-up-count">0</span></button>
-                        <button class="rate-btn" id="rate-down" title="Thumbs down">👎 <span class="rate-count" id="rate-down-count">0</span></button>
+                        <button class="rate-btn" id="rate-up" title="Thumbs up" aria-label="Thumbs up">👍 <span class="rate-count" id="rate-up-count">0</span></button>
+                        <button class="rate-btn" id="rate-down" title="Thumbs down" aria-label="Thumbs down">👎 <span class="rate-count" id="rate-down-count">0</span></button>
                         <span class="rating-feedback" id="rating-feedback"></span>
                     </div>
 
                     <div class="share-row">
                         <span class="share-label">Share:</span>
-                        <button class="share-btn share-whatsapp" id="share-whatsapp" title="Share on WhatsApp">
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        <button class="share-btn share-whatsapp" id="share-whatsapp" title="Share on WhatsApp" aria-label="Share on WhatsApp">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                         </button>
-                        <button class="share-btn share-twitter" id="share-twitter" title="Share on X (Twitter)">
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        <button class="share-btn share-twitter" id="share-twitter" title="Share on X (Twitter)" aria-label="Share on X">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                         </button>
-                        <button class="share-btn share-facebook" id="share-facebook" title="Share on Facebook">
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        <button class="share-btn share-telegram" id="share-telegram" title="Share on Telegram" aria-label="Share on Telegram">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.492-1.302.48-.428-.013-1.252-.242-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
                         </button>
-                        <button class="share-btn share-spotify" id="share-spotify" title="Find on Spotify">
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                        <button class="share-btn share-spotify" id="share-spotify" title="Find on Spotify" aria-label="Find on Spotify">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
                         </button>
-                        <button class="share-btn share-ytmusic" id="share-ytmusic" title="Find on YouTube Music">
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 19.104c-3.924 0-7.104-3.18-7.104-7.104S8.076 4.896 12 4.896s7.104 3.18 7.104 7.104-3.18 7.104-7.104 7.104zm0-13.332c-3.432 0-6.228 2.796-6.228 6.228S8.568 18.228 12 18.228 18.228 15.432 18.228 12 15.432 5.772 12 5.772zM9.684 15.54V8.46L15.816 12l-6.132 3.54z"/></svg>
+                        <button class="share-btn share-ytmusic" id="share-ytmusic" title="Find on YouTube Music" aria-label="Find on YouTube Music">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 19.104c-3.924 0-7.104-3.18-7.104-7.104S8.076 4.896 12 4.896s7.104 3.18 7.104 7.104-3.18 7.104-7.104 7.104zm0-13.332c-3.432 0-6.228 2.796-6.228 6.228S8.568 18.228 12 18.228 18.228 15.432 18.228 12 15.432 5.772 12 5.772zM9.684 15.54V8.46L15.816 12l-6.132 3.54z"/></svg>
                         </button>
-                        <button class="share-btn share-amazon" id="share-amazon" title="Find on Amazon Music">
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.958 10.09c0 1.232.029 2.256-.591 3.351-.502.891-1.301 1.438-2.186 1.438-1.214 0-1.922-.924-1.922-2.292 0-2.692 2.415-3.182 4.7-3.182v.685zm3.186 7.705a.66.66 0 01-.753.069c-1.06-.881-1.25-1.289-1.834-2.126-1.752 1.787-2.99 2.321-5.263 2.321-2.687 0-4.786-1.658-4.786-4.974 0-2.592 1.405-4.354 3.409-5.217 1.735-.753 4.161-.891 6.013-1.098v-.411c0-.753.058-1.642-.383-2.292-.383-.578-1.117-.821-1.772-.821-1.205 0-2.275.618-2.538 1.897-.054.285-.261.566-.546.58l-3.063-.33c-.258-.058-.543-.266-.47-.66C5.846 1.882 9.144.588 12.117.588c1.522 0 3.513.405 4.714 1.56 1.522 1.42 1.376 3.318 1.376 5.383v4.875c0 1.466.607 2.108 1.178 2.9.199.285.242.622-.011.832-.636.531-1.767 1.517-2.387 2.07l.157-.413zM21.398 19.77c-1.296 1.022-3.174 1.533-4.762 1.533-2.254 0-4.285-.835-5.818-2.222-.12-.11-.013-.259.132-.174 1.658.966 3.708 1.545 5.826 1.545 1.429 0 3.001-.296 4.449-.907.218-.093.401.145.173.225zm.499-1.291c-.176-.225-1.161-.107-1.604-.054-.134.016-.155-.101-.034-.186.786-.552 2.075-.393 2.224-.208.149.187-.039 1.486-.777 2.106-.113.095-.221.045-.171-.08.166-.414.538-1.343.362-1.578z"/></svg>
+                        <button class="share-btn share-amazon" id="share-amazon" title="Find on Amazon Music" aria-label="Find on Amazon Music">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M13.958 10.09c0 1.232.029 2.256-.591 3.351-.502.891-1.301 1.438-2.186 1.438-1.214 0-1.922-.924-1.922-2.292 0-2.692 2.415-3.182 4.7-3.182v.685zm3.186 7.705a.66.66 0 01-.753.069c-1.06-.881-1.25-1.289-1.834-2.126-1.752 1.787-2.99 2.321-5.263 2.321-2.687 0-4.786-1.658-4.786-4.974 0-2.592 1.405-4.354 3.409-5.217 1.735-.753 4.161-.891 6.013-1.098v-.411c0-.753.058-1.642-.383-2.292-.383-.578-1.117-.821-1.772-.821-1.205 0-2.275.618-2.538 1.897-.054.285-.261.566-.546.58l-3.063-.33c-.258-.058-.543-.266-.47-.66C5.846 1.882 9.144.588 12.117.588c1.522 0 3.513.405 4.714 1.56 1.522 1.42 1.376 3.318 1.376 5.383v4.875c0 1.466.607 2.108 1.178 2.9.199.285.242.622-.011.832-.636.531-1.767 1.517-2.387 2.07l.157-.413zM21.398 19.77c-1.296 1.022-3.174 1.533-4.762 1.533-2.254 0-4.285-.835-5.818-2.222-.12-.11-.013-.259.132-.174 1.658.966 3.708 1.545 5.826 1.545 1.429 0 3.001-.296 4.449-.907.218-.093.401.145.173.225zm.499-1.291c-.176-.225-1.161-.107-1.604-.054-.134.016-.155-.101-.034-.186.786-.552 2.075-.393 2.224-.208.149.187-.039 1.486-.777 2.106-.113.095-.221.045-.171-.08.166-.414.538-1.343.362-1.578z"/></svg>
                         </button>
                     </div>
 
                     <div class="player-bar">
-                        <button class="bar-play" id="play-btn" disabled>
-                            <svg id="icon-play" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
-                            <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="5" y="4" width="4" height="16"/><rect x="15" y="4" width="4" height="16"/></svg>
-                            <svg id="icon-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:none" class="spin"><circle cx="12" cy="12" r="8" stroke-dasharray="36 16"/></svg>
+                        <button class="bar-play" id="play-btn" disabled aria-label="Play">
+                            <svg aria-hidden="true" id="icon-play" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
+                            <svg aria-hidden="true" id="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="5" y="4" width="4" height="16"/><rect x="15" y="4" width="4" height="16"/></svg>
+                            <svg aria-hidden="true" id="icon-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:none" class="spin"><circle cx="12" cy="12" r="8" stroke-dasharray="36 16"/></svg>
                         </button>
 
                         <span class="bar-time" id="bar-time">— / Live</span>
 
                         <div class="bar-vol">
-                            <button class="bar-mute" id="mute-btn" title="Mute">
-                                <svg id="icon-vol" viewBox="0 0 24 24" fill="currentColor"><polygon points="3,9 3,15 7,15 13,20 13,4 7,9"/><path d="M16 8.5a5.5 5.5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19.5 5.5a9.5 9.5 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                                <svg id="icon-mute" viewBox="0 0 24 24" fill="currentColor" style="display:none"><polygon points="3,9 3,15 7,15 13,20 13,4 7,9"/><line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                            <button class="bar-mute" id="mute-btn" title="Mute" aria-label="Mute">
+                                <svg aria-hidden="true" id="icon-vol" viewBox="0 0 24 24" fill="currentColor"><polygon points="3,9 3,15 7,15 13,20 13,4 7,9"/><path d="M16 8.5a5.5 5.5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19.5 5.5a9.5 9.5 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                <svg aria-hidden="true" id="icon-mute" viewBox="0 0 24 24" fill="currentColor" style="display:none"><polygon points="3,9 3,15 7,15 13,20 13,4 7,9"/><line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                             </button>
-                            <input type="range" id="volume" class="bar-volume" min="0" max="1" step="0.02" value="0.8">
+                            <input type="range" id="volume" class="bar-volume" min="0" max="1" step="0.02" value="0.8" aria-label="Volume">
                         </div>
                     </div>
 
@@ -113,12 +113,12 @@
 
         <!-- ── Recently Played widget ────────────────────── -->
         <section class="widget recently-played-widget">
-            <h3 class="widget-heading">Recently Played</h3>
+            <div class="widget-heading">Recently Played</div>
             <div class="prev-filters">
-                <button class="prev-filter active" data-filter="all">All</button>
-                <button class="prev-filter" data-filter="up">Liked</button>
-                <button class="prev-filter" data-filter="down">Disliked</button>
-                <select class="prev-limit-select" id="prev-limit">
+                <button class="prev-filter active" data-filter="all" aria-pressed="true">All</button>
+                <button class="prev-filter" data-filter="up" aria-pressed="false">Liked</button>
+                <button class="prev-filter" data-filter="down" aria-pressed="false">Disliked</button>
+                <select class="prev-limit-select" id="prev-limit" aria-label="Number of tracks to show">
                     <option value="5">5 tracks</option>
                     <option value="10">10 tracks</option>
                     <option value="15">15 tracks</option>
@@ -130,14 +130,11 @@
             </ul>
             <div class="prev-share-row" id="prev-share-row">
                 <span class="share-label">Share list:</span>
-                <button class="share-btn share-whatsapp" id="prev-share-whatsapp" title="Share list on WhatsApp">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                <button class="share-btn share-whatsapp" id="prev-share-whatsapp" title="Share list on WhatsApp" aria-label="Share list on WhatsApp">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                 </button>
-                <button class="share-btn share-twitter" id="prev-share-twitter" title="Share list on X (Twitter)">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                </button>
-                <button class="share-btn share-facebook" id="prev-share-facebook" title="Share list on Facebook">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                <button class="share-btn share-twitter" id="prev-share-twitter" title="Share list on X (Twitter)" aria-label="Share list on X">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                 </button>
             </div>
         </section>
@@ -149,15 +146,17 @@
     </footer>
 
     <!-- ── Side Drawer ─────────────────────────────────── -->
-    <div class="drawer-overlay" id="drawer-overlay"></div>
-    <aside class="drawer" id="drawer">
-        <button class="drawer-close" id="drawer-close" title="Close">&times;</button>
+    <div class="drawer-overlay" id="drawer-overlay" aria-hidden="true"></div>
+    <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+        <button class="drawer-close" id="drawer-close" title="Close" aria-label="Close menu">&times;</button>
 
         <!-- Login / Register -->
         <section class="drawer-section" id="drawer-auth">
             <h3 class="drawer-heading">Login / Register</h3>
             <form id="auth-form" autocomplete="off">
+                <label for="auth-username" class="drawer-label">Username</label>
                 <input type="text" class="drawer-input" id="auth-username" placeholder="Username" required>
+                <label for="auth-password" class="drawer-label">Password</label>
                 <input type="password" class="drawer-input" id="auth-password" placeholder="Password" required>
                 <div class="drawer-btn-row">
                     <button type="submit" class="drawer-btn drawer-btn-primary" id="btn-login">Login</button>
@@ -211,14 +210,14 @@
                 <label class="drawer-label">Message</label>
                 <textarea class="drawer-input drawer-textarea" id="feedback-message" placeholder="Write your feedback here..." rows="4" required></textarea>
                 <div class="drawer-btn-row">
-                    <button type="submit" class="drawer-btn drawer-btn-primary" title="Send feedback by e-mail">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                    <button type="submit" class="drawer-btn drawer-btn-primary" title="Send feedback by e-mail" aria-label="Send feedback">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
                     </button>
-                    <button type="button" class="drawer-btn drawer-btn-feedback" id="feedback-twitter" title="Post on X (Twitter)">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    <button type="button" class="drawer-btn drawer-btn-feedback" id="feedback-twitter" title="Post on X (Twitter)" aria-label="Post on X">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                     </button>
-                    <button type="button" class="drawer-btn drawer-btn-feedback" id="feedback-facebook" title="Post on Facebook">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    <button type="button" class="drawer-btn drawer-btn-feedback" id="feedback-telegram" title="Post on Telegram" aria-label="Post on Telegram">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.492-1.302.48-.428-.013-1.252-.242-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
                     </button>
                 </div>
                 <p class="drawer-feedback" id="feedback-feedback"></p>
@@ -226,8 +225,8 @@
         </section>
     </aside>
 
-    <audio id="audio" preload="none"></audio>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+    <audio id="audio" preload="none">Your browser does not support audio playback.</audio>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" crossorigin="anonymous"></script>
     <script src="/js/player.js"></script>
 </body>
 </html>

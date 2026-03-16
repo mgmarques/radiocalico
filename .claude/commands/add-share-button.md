@@ -12,18 +12,18 @@ For music search platforms, use `encodeURIComponent(artist + " " + title)` as th
 Existing platforms for reference:
 - WhatsApp: `https://wa.me/?text={text}`
 - X/Twitter: `https://x.com/intent/tweet?text={text}`
-- Facebook: `https://www.facebook.com/sharer/sharer.php?quote={text}`
+- Telegram: `https://t.me/share/url?text={text}`
 - Spotify: `https://open.spotify.com/search/{query}`
 - YouTube Music: `https://music.youtube.com/search?q={query}`
-- Amazon Music: `https://music.amazon.com/search/{query}`
+- Amazon Music: `https://www.amazon.com/s?k={query}&i=digital-music`
 
-NOTE: Shazam search URLs do NOT work (SPA). Avoid platforms without direct URL-based search.
+NOTE: Shazam and Amazon Music web app search URLs do NOT work (SPAs). Facebook sharer doesn't support plain text sharing. Avoid these platforms.
 
 IMPORTANT: Emoji characters get corrupted in URL-encoded share text (especially WhatsApp). Use plain text labels for ratings/badges in shared messages.
 
 There are TWO share rows:
 
 - **Now Playing** (`.share-row` in `.info-col`): shares current track (social + music search)
-- **Recently Played** (`.prev-share-row` in `.recently-played-widget`): shares filtered track list (social only: WhatsApp, X, Facebook)
+- **Recently Played** (`.prev-share-row` in `.recently-played-widget`): shares filtered track list (social only: WhatsApp, X)
 
 Remind the user to Cmd+Shift+R after changes.

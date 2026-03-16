@@ -12,7 +12,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Metadata**: Fetched from CloudFront `metadatav2.json` (not ID3 tags). Provides current track + 5 previous tracks.
 - **Artwork & Duration**: iTunes Search API (client-side). `trackTimeMillis` used for duration display.
 - **Ratings**: Stored in local MySQL only. CloudFront host does NOT accept ratings.
-- **Auth**: Token-based authentication. Passwords hashed with SHA-256 + random salt. Tokens stored in `localStorage`.
+- **Auth**: Token-based authentication. Passwords hashed with PBKDF2 (260k iterations) + random salt. Timing-safe comparison via hmac.compare_digest. Tokens stored in `localStorage`.
 - **Testing**: pytest + pytest-cov (99% coverage). Security: bandit (SAST) + safety (dependency scan).
 
 ## File Tree
@@ -29,10 +29,11 @@ radiocalico/
 ├── stream_URL.txt                  # Stream URL reference
 ├── api/
 │   ├── app.py                      # Flask REST API + static file serving
-│   ├── requirements.txt            # Python deps (flask, flask-cors, pymysql)
+│   ├── .env.example                # Environment variable template
+│   ├── requirements.txt            # Python deps (flask, flask-cors, pymysql, python-dotenv, flask-limiter)
 │   ├── requirements-dev.txt        # Dev deps (pytest, pytest-cov, bandit, safety)
 │   ├── conftest.py                 # Pytest fixtures (test DB, client, auth)
-│   ├── test_app.py                 # 50 unit tests (99% coverage)
+│   ├── test_app.py                 # 61 unit tests (99% coverage)
 │   ├── pytest.ini                  # Pytest configuration
 │   ├── .bandit                     # Bandit security scan config
 │   └── venv/                       # Python virtual environment
@@ -63,9 +64,10 @@ radiocalico/
 | `static/js/player.js` | Playback, metadata, artwork, ratings, auth, profile, sharing, feedback |
 | `static/css/player.css` | All styles, responsive layout, design tokens, dark/light themes |
 | `api/app.py` | Flask REST API: ratings, auth, profile, feedback + static file serving |
-| `api/test_app.py` | 50 unit tests covering all endpoints (99% coverage) |
+| `api/test_app.py` | 61 unit tests covering all endpoints (99% coverage) |
 | `api/conftest.py` | Pytest fixtures: test DB setup/teardown, client, auth helpers |
-| `api/requirements.txt` | Python dependencies (flask, flask-cors, pymysql) |
+| `api/.env.example` | Environment variable template (DB creds, Flask config, CORS) |
+| `api/requirements.txt` | Python dependencies (flask, flask-cors, pymysql, python-dotenv, flask-limiter) |
 | `api/requirements-dev.txt` | Dev dependencies (pytest, pytest-cov, bandit, safety) |
 | `Makefile` | CI/CD targets: test, coverage, security, ci |
 | `design.md` | Full architecture and design document |
@@ -83,15 +85,16 @@ radiocalico/
 
 #### Ratings (no auth required)
 
-- `GET /api/ratings` — all ratings
+- `GET /api/ratings` — all ratings (IP addresses are not exposed in response)
 - `GET /api/ratings/summary` — likes/dislikes grouped by station
 - `GET /api/ratings/check?station=...` — check if current IP already rated
-- `POST /api/ratings` — submit rating `{ station, score }` (409 on duplicate)
+- `POST /api/ratings` — submit rating `{ station, score }` where score must be 0 or 1 (409 on duplicate)
 
 #### Authentication
 
-- `POST /api/register` — create account `{ username, password }` (409 on duplicate)
-- `POST /api/login` — authenticate `{ username, password }` → `{ token, username }`
+- `POST /api/register` — create account `{ username, password }` (409 on duplicate). Password: min 8 chars, max 128 chars. Rate-limited to 5 requests/minute.
+- `POST /api/login` — authenticate `{ username, password }` → `{ token, username }`. Rate-limited to 5 requests/minute.
+- `POST /api/logout` — invalidate token (requires `Authorization: Bearer <token>`)
 
 #### Profile (requires `Authorization: Bearer <token>`)
 
@@ -113,7 +116,7 @@ radiocalico/
 - **Backend**: Pure Flask with PyMySQL. No ORM. Parameterized queries for SQL.
 - **Auth**: Token-based. `localStorage` keys `rc-token` and `rc-user`. `Authorization: Bearer <token>` header.
 - **Theme persistence**: `localStorage` key `rc-theme` stores `"light"` or `"dark"`. Default: dark.
-- **Share buttons**: Use platform URL schemes (wa.me, x.com/intent, facebook sharer, open.spotify.com/search, music.youtube.com/search, music.amazon.com/search).
+- **Share buttons**: Use platform URL schemes (wa.me, x.com/intent, t.me/share/url, open.spotify.com/search, music.youtube.com/search, amazon.com/s with digital-music filter). Facebook removed (sharer doesn't support plain text sharing).
 - **Testing**: All new API routes must have corresponding tests in `test_app.py`. Run `make ci` before merging.
 
 ## Common Tasks
@@ -144,7 +147,7 @@ Always use `http://127.0.0.1:5000`. Do NOT use port 8080 or any other static ser
 ### Run tests
 
 ```bash
-make test      # Run all 50 unit tests
+make test      # Run all unit tests (61 tests)
 make coverage  # Tests + coverage report (fails if <99%)
 make security  # Bandit SAST + Safety dependency scan
 make ci        # Full pipeline: coverage + security
@@ -207,16 +210,16 @@ make ci        # Full pipeline: coverage + security
 - Drawer overlay dims the background; clicking overlay or X button closes drawer
 - **Login/Register section**: username + password form. Register creates account, Login returns token.
 - **Profile section** (shown when logged in): nickname, email, 16 music genre tags (checkboxes), "About You" textarea
-- **Feedback section** (shown when logged in): message textarea + envelope icon (saves to DB with full profile), X/Twitter button, Facebook button
+- **Feedback section** (shown when logged in): message textarea + envelope icon (saves to DB with full profile), X/Twitter button, Telegram button
 - Auth state stored in `localStorage`: `rc-token`, `rc-user`
 
 ### Social Share & Music Search Buttons
 
 - **Now Playing share row**: circular icon buttons below the rating row
-  - **Social sharing** (WhatsApp, X/Twitter, Facebook): opens share intent with track text via `getShareText()`
+  - **Social sharing** (WhatsApp, X/Twitter, Telegram): opens share intent with track text via `getShareText()`
   - Share text format: `Listening to "Title" by Artist (Album) on Radio Calico!` followed by `Album cover: {artwork_url}` (300x300 iTunes image)
   - **Music search** (Spotify, YouTube Music, Amazon Music): opens search with `artist + title` query
-- **Recently Played share row**: WhatsApp, X/Twitter, Facebook buttons at the bottom of the widget
+- **Recently Played share row**: WhatsApp, X/Twitter buttons at the bottom of the widget
   - `getRecentlyPlayedText()` builds a numbered list from the currently filtered/displayed tracks
   - Format: `"N. Title by Artist (Album) [N likes / N unlikes]"`
   - Respects the active filter (All/Liked/Disliked) and track limit dropdown
@@ -289,22 +292,20 @@ CREATE TABLE feedback (
 - Unique constraint on `(station, ip)` prevents duplicate votes
 - `users.token`: auth token set on login, used for Bearer auth
 - `feedback`: stores message + full user profile snapshot (minus password)
-- Credentials hardcoded in `api/app.py` (known security issue)
+- Credentials loaded from environment variables via python-dotenv (see `api/.env.example`)
 
 ## Testing & CI/CD
 
 ### Test Suite
 
-- **50 unit tests** in `api/test_app.py` covering all endpoints and helper functions
+- **61 unit tests** in `api/test_app.py` covering all endpoints and helper functions
 - **99.47% code coverage** (only `app.run()` uncovered — unreachable in tests)
 - Uses isolated `radiocalico_test` database (created/destroyed per test via `conftest.py`)
 - Fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
 
 ### Security Scanning
 
-- **Bandit** (SAST): scans `app.py` for security issues. Known findings:
-  - `B105`: hardcoded DB password (known, documented)
-  - `B201`: Flask `debug=True` (dev-only, do not deploy as-is)
+- **Bandit** (SAST): scans `app.py` for security issues. Reports 0 issues (B105 and B201 previously found are now fixed).
 - **Safety**: checks `requirements.txt` for known vulnerabilities
 
 ### Makefile Targets
@@ -320,9 +321,9 @@ CREATE TABLE feedback (
 ## Important Notes
 
 - **Metadata comes from CloudFront JSON**, not ID3 tags. The ID3 parser is implemented as fallback but the stream does not currently embed ID3 tags.
-- **Database credentials are hardcoded** in `api/app.py` — known security issue (see `design.md` section 9).
-- **Debug mode is on** in Flask — do not deploy as-is to production.
-- **Tests exist** — 50 tests with 99% coverage. Run `make ci` before merging changes. Add tests for new endpoints.
+- **Database credentials are loaded from environment variables** via python-dotenv (`api/.env.example` provides the template). `CORS_ORIGIN` env var controls allowed CORS origins.
+- **Debug mode is off by default**, controlled by `FLASK_DEBUG` env var.
+- **Tests exist** — 61 tests with 99% coverage. Run `make ci` before merging changes. Add tests for new endpoints.
 - **iTunes API** is called client-side for artwork — no proxy or caching layer yet.
 - **Ratings are local only** — not sent to the CloudFront/stream host.
 - **Cache issues** — after editing static files, users must hard refresh (`Cmd+Shift+R`) to see changes.

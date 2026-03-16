@@ -1,2 +1,4 @@
-[bandit]
-exclude = venv,test_app.py,conftest.py
+exclude_dirs:
+  - venv
+  - test_app.py
+  - conftest.py

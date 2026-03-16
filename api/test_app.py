@@ -119,6 +119,15 @@ class TestPostRating:
         res = client.post('/api/ratings', json={'station': '', 'score': 1})
         assert res.status_code == 400
 
+    def test_invalid_score(self, client):
+        res = client.post('/api/ratings', json={'station': 'X - Y', 'score': 5})
+        assert res.status_code == 400
+        assert 'score must be 0 or 1' in res.get_json()['error']
+
+    def test_invalid_json(self, client):
+        res = client.post('/api/ratings', data='not json', content_type='application/json')
+        assert res.status_code == 400
+
 
 class TestCheckRating:
     def test_not_rated(self, client):
@@ -158,17 +167,22 @@ class TestRegister:
         assert res.status_code == 400
 
     def test_short_password(self, client):
-        res = client.post('/api/register', json={'username': 'new', 'password': 'ab'})
+        res = client.post('/api/register', json={'username': 'new', 'password': 'short'})
         assert res.status_code == 400
-        assert 'at least 4' in res.get_json()['error']
+        assert 'at least 8' in res.get_json()['error']
 
     def test_long_username(self, client):
         res = client.post('/api/register', json={'username': 'a' * 51, 'password': 'pass1234'})
         assert res.status_code == 400
         assert 'too long' in res.get_json()['error']
 
+    def test_long_password(self, client):
+        res = client.post('/api/register', json={'username': 'new', 'password': 'x' * 129})
+        assert res.status_code == 400
+        assert 'at most 128' in res.get_json()['error']
+
     def test_duplicate_username(self, client, registered_user):
-        res = client.post('/api/register', json={'username': 'testuser', 'password': 'other123'})
+        res = client.post('/api/register', json={'username': 'testuser', 'password': 'otherpw1234'})
         assert res.status_code == 409
 
     def test_none_fields(self, client):
@@ -315,3 +329,57 @@ class TestFeedback:
         res = client.post('/api/feedback', json={'message': 'hi'},
                           headers={'Authorization': 'Basic abc'})
         assert res.status_code == 401
+
+
+# ── Logout ────────────────────────────────────────────────────
+
+
+class TestLogout:
+    def test_unauthorized(self, client):
+        res = client.post('/api/logout')
+        assert res.status_code == 401
+
+    def test_success(self, client, auth_headers):
+        res = client.post('/api/logout', headers=auth_headers)
+        assert res.status_code == 200
+        assert res.get_json()['status'] == 'ok'
+
+    def test_token_invalidated_after_logout(self, client, auth_headers):
+        client.post('/api/logout', headers=auth_headers)
+        # Token should no longer work
+        res = client.get('/api/profile', headers=auth_headers)
+        assert res.status_code == 401
+
+
+# ── Invalid JSON ──────────────────────────────────────────────
+
+
+class TestInvalidJson:
+    def test_register_invalid_json(self, client):
+        res = client.post('/api/register', data='bad', content_type='application/json')
+        assert res.status_code == 400
+
+    def test_login_invalid_json(self, client):
+        res = client.post('/api/login', data='bad', content_type='application/json')
+        assert res.status_code == 400
+
+    def test_feedback_invalid_json(self, client, auth_headers):
+        res = client.post('/api/feedback', data='bad',
+                          content_type='application/json', headers=auth_headers)
+        assert res.status_code == 400
+
+    def test_profile_put_invalid_json(self, client, auth_headers):
+        res = client.put('/api/profile', data='bad',
+                         content_type='application/json', headers=auth_headers)
+        assert res.status_code == 400
+
+
+# ── Ratings no IP exposure ────────────────────────────────────
+
+
+class TestRatingsNoIpExposure:
+    def test_no_ip_in_response(self, client):
+        client.post('/api/ratings', json={'station': 'A - B', 'score': 1})
+        res = client.get('/api/ratings')
+        data = res.get_json()
+        assert 'ip' not in data[0]
