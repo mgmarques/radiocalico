@@ -478,7 +478,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**261 total tests** across 4 suites:
+**401 total tests** across 5 suites:
 
 | Suite | Tests | Tool | Coverage |
 |-------|-------|------|----------|
@@ -486,6 +486,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 | Python integration | 19 | pytest | Multi-step API workflows |
 | JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
 | E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
+| Skills validation | 140 | pytest | All 17 slash commands |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
 - **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`

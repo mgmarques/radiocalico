@@ -14,7 +14,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Ratings**: Stored in local MySQL only. CloudFront host does NOT accept ratings.
 - **Auth**: Token-based authentication. Passwords hashed with PBKDF2 (260k iterations) + random salt. Timing-safe comparison via hmac.compare_digest. Tokens stored in `localStorage`.
 - **Logging**: Structured JSON logs across all layers. Python: `python-json-logger` with request_id, method, path, status, duration_ms. nginx: JSON access log format with upstream timing. JS: `log.info/warn/error()` outputs JSON to browser console. X-Request-ID header for cross-layer correlation.
-- **Testing**: Python: pytest + pytest-cov (98% coverage). JS: Jest + jsdom (162 tests, 90% line threshold, ~96% actual). Integration: 19 multi-step API workflow tests. E2E: 19 tests against Docker prod stack. Security: bandit (SAST) + safety (deps) + npm audit + hadolint (Dockerfile) + trivy (image scan) + OWASP ZAP (DAST). CI: GitHub Actions (11 jobs) on push/PR.
+- **Testing**: Python: pytest + pytest-cov (98% coverage). JS: Jest + jsdom (162 tests, 90% line threshold, ~96% actual). Integration: 19 multi-step API workflow tests. E2E: 19 tests against Docker prod stack. Skills: 140 tests validating all 17 slash commands. Security: bandit (SAST) + safety (deps) + npm audit + hadolint (Dockerfile) + trivy (image scan) + OWASP ZAP (DAST). CI: GitHub Actions (12 jobs) on push/PR.
 - **Linting**: Ruff (Python lint + format), ESLint (JS), Stylelint (CSS), HTMLHint (HTML). Run `make lint` before committing.
 - **Performance**: WebP images (logo 50% smaller), dns-prefetch for CDN/API domains, iTunes API cached in localStorage (24h TTL), API pagination on ratings endpoint.
 
@@ -107,7 +107,7 @@ radiocalico/
 | `api/requirements-dev.txt` | Dev deps (pytest, pytest-cov, bandit, safety, ruff) |
 | `pyproject.toml` | Ruff linter configuration (Python lint + format) |
 | `eslint.config.js` | ESLint configuration (JS lint with browser/HLS.js globals) |
-| `.github/workflows/ci.yml` | GitHub Actions CI: 11 jobs (lint, tests, security, E2E, ZAP) |
+| `.github/workflows/ci.yml` | GitHub Actions CI: 12 jobs (lint, tests, security, E2E, ZAP) |
 | `Makefile` | CI/CD targets: test, coverage, security, ci, Docker |
 | `Dockerfile` | Multi-stage build: dev (Flask debug) + prod (gunicorn 4 workers) |
 | `docker-compose.yml` | Dev/prod profiles with MySQL 8.0 + nginx (prod) |
@@ -365,7 +365,7 @@ CREATE TABLE feedback (
 
 ### Test Suite
 
-**261 total tests** across 4 test suites:
+**401 total tests** across 5 test suites:
 
 | Suite | File | Tests | Tool |
 |-------|------|-------|------|
@@ -373,7 +373,7 @@ CREATE TABLE feedback (
 | Python integration | `api/test_integration.py` | 19 | pytest |
 | JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom (90% line threshold, ~96% actual) |
 | E2E | `tests/test_e2e.py` | 19 | pytest + requests (Docker prod stack) |
-| Skills | `tests/test_skills.py` | 138 | pytest (validates all 17 slash commands) |
+| Skills | `tests/test_skills.py` | 140 | pytest (validates all 17 slash commands) |
 
 - Python unit tests use isolated `radiocalico_test` database (created/destroyed per test)
 - Python fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
@@ -412,7 +412,7 @@ CREATE TABLE feedback (
 | `make zap` | OWASP ZAP DAST baseline scan (requires running app) |
 | `make docker-security` | Docker-specific scans: hadolint + trivy |
 | `make test-integration` | API integration tests (requires MySQL) |
-| `make test-skills` | Validate all 12 slash commands (structure, versions, refs) |
+| `make test-skills` | Validate all 17 slash commands (structure, versions, refs) |
 | `make test-e2e` | E2E tests against running Docker prod stack |
 | `make docker-e2e` | Start prod, run E2E tests, stop prod |
 | `make ci` | Full pipeline: lint + coverage + security |
@@ -422,7 +422,7 @@ CREATE TABLE feedback (
 - **Metadata comes from CloudFront JSON**, not ID3 tags. The ID3 parser is implemented as fallback but the stream does not currently embed ID3 tags.
 - **Database credentials are loaded from environment variables** via python-dotenv (`api/.env.example` provides the template). `CORS_ORIGIN` env var controls allowed CORS origins.
 - **Debug mode is off by default**, controlled by `FLASK_DEBUG` env var.
-- **Tests exist** — 399 tests: 61 Python unit + 19 integration + 162 JS unit + 19 E2E + 138 skills. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions (11 jobs).
+- **Tests exist** — 401 tests: 61 Python unit + 19 integration + 162 JS unit + 19 E2E + 140 skills. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions (12 jobs).
 - **iTunes API** is cached client-side in localStorage (24h TTL) via `fetchItunesCached()`. No server-side proxy.
 - **Ratings are local only** — not sent to the CloudFront/stream host.
 - **Cache issues** — after editing static files, users must hard refresh (`Cmd+Shift+R`) to see changes.
