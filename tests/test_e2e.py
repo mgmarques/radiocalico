@@ -63,6 +63,12 @@ class TestSecurityHeaders:
         server = res.headers.get('Server', '')
         assert 'nginx/' not in server  # version should be hidden
 
+    def test_request_id_header(self, base_url):
+        """API responses include X-Request-ID for log correlation."""
+        res = requests.get(f'{base_url}/api/ratings/summary', timeout=10)
+        assert 'X-Request-ID' in res.headers
+        assert len(res.headers['X-Request-ID']) > 0
+
 
 class TestHealthEndpoint:
     """Nginx health check endpoint."""

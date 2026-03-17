@@ -12,6 +12,29 @@
  * @module player
  */
 
+// ── Structured logger ────────────────────────────────────────
+/**
+ * Lightweight structured logger for client-side events. Outputs JSON to
+ * the browser console with timestamp, level, message, and context.
+ */
+const log = {
+    _emit(level, message, context) {
+        const entry = {
+            timestamp: new Date().toISOString(),
+            level,
+            logger: 'player',
+            message,
+            ...context,
+        };
+        if (level === 'error') console.error(JSON.stringify(entry));
+        else if (level === 'warn') console.warn(JSON.stringify(entry));
+        else console.log(JSON.stringify(entry));
+    },
+    info(message, context = {}) { this._emit('info', message, context); },
+    warn(message, context = {}) { this._emit('warn', message, context); },
+    error(message, context = {}) { this._emit('error', message, context); },
+};
+
 const STREAM_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8';
 const STREAM_LABELS = {
     flac: 'FLAC Hi-Res (Lossless)',
@@ -101,7 +124,7 @@ async function fetchArtwork(artist, title) {
             trackDuration = null;
         }
     } catch (e) {
-        console.warn('Artwork fetch failed:', e);
+        log.warn('artwork_fetch_failed', { error: e.message });
         artworkEl.innerHTML = `<div class="artwork-placeholder">♪</div>`;
         trackDuration = null;
     }
@@ -174,7 +197,7 @@ async function renderHistory() {
     try {
         const res = await fetch('/api/ratings/summary');
         if (res.ok) lastSummary = await res.json();
-    } catch (e) { console.warn('Ratings summary fetch failed:', e); }
+    } catch (e) { log.warn('ratings_summary_failed', { error: e.message }); }
 
     const filtered = getFilteredHistory();
 
@@ -466,7 +489,7 @@ async function fetchTrackRatings(station) {
         const r = summary[station];
         rateUpCount.textContent   = r ? r.likes : 0;
         rateDownCount.textContent = r ? r.dislikes : 0;
-    } catch (e) { console.warn('Track ratings fetch failed:', e); }
+    } catch (e) { log.warn('track_ratings_failed', { error: e.message }); }
 }
 
 /**
@@ -481,7 +504,7 @@ async function checkIfRated(station) {
         if (!res.ok) return false;
         const data = await res.json();
         return data.rated;
-    } catch (e) { console.warn('Rating check failed:', e); return false; }
+    } catch (e) { log.warn('rating_check_failed', { error: e.message }); return false; }
 }
 
 /**
@@ -523,7 +546,7 @@ async function submitRating(score) {
             rateFb.textContent = 'Already rated this track';
         }
     } catch (e) {
-        console.warn('Rating submit failed:', e);
+        log.warn('rating_submit_failed', { error: e.message });
         rateFb.textContent = 'Could not send rating';
     }
 }
@@ -722,7 +745,7 @@ async function fetchMetadata() {
                         history[idx].album = data.results[0].collectionName || '';
                         renderHistory();
                     }
-                } catch (e) { console.warn('Album fetch failed:', e); }
+                } catch (e) { log.warn('album_fetch_failed', { error: e.message }); }
             });
         }
 
@@ -734,7 +757,7 @@ async function fetchMetadata() {
             const srcQual = document.getElementById('source-quality');
             if (srcQual) srcQual.textContent = `Source: ${parts.join(' / ')}`;
         }
-    } catch (err) { console.warn('Metadata fetch failed:', err); }
+    } catch (err) { log.warn('metadata_fetch_failed', { error: err.message }); }
 }
 
 /**
@@ -827,7 +850,7 @@ authForm.addEventListener('submit', async (e) => {
         } else {
             authFeedback.textContent = data.error || 'Login failed';
         }
-    } catch (e) { console.warn('Login failed:', e); authFeedback.textContent = 'Could not connect'; }
+    } catch (e) { log.warn('login_failed', { error: e.message }); authFeedback.textContent = 'Could not connect'; }
 });
 
 // Register
@@ -852,7 +875,7 @@ document.getElementById('btn-register').addEventListener('click', async (e) => {
             authFeedback.style.color = '#c0392b';
         }
     } catch (err) {
-        console.error('Register error:', err);
+        log.error('register_failed', { error: err.message });
         authFeedback.textContent = 'Could not connect to server';
     }
 });
@@ -894,7 +917,7 @@ async function loadProfile() {
         document.querySelectorAll('#genre-grid input[type="checkbox"]').forEach(cb => {
             cb.checked = genres.includes(cb.value);
         });
-    } catch (e) { console.warn('Profile load failed:', e); }
+    } catch (e) { log.warn('profile_load_failed', { error: e.message }); }
 }
 
 // Save profile
@@ -928,7 +951,7 @@ profileForm.addEventListener('submit', async (e) => {
             profileFb.textContent = data.error || 'Could not save';
             profileFb.style.color = '#c0392b';
         }
-    } catch (e) { console.warn('Profile save failed:', e); profileFb.textContent = 'Could not connect'; }
+    } catch (e) { log.warn('profile_save_failed', { error: e.message }); profileFb.textContent = 'Could not connect'; }
 });
 
 // Feedback form (requires login)
@@ -956,7 +979,7 @@ document.getElementById('feedback-form').addEventListener('submit', async (e) =>
             feedbackFb.textContent = data.error || 'Could not send feedback';
             feedbackFb.style.color = '#c0392b';
         }
-    } catch (e) { console.warn('Feedback submit failed:', e); feedbackFb.textContent = 'Could not connect'; feedbackFb.style.color = '#c0392b'; }
+    } catch (e) { log.warn('feedback_submit_failed', { error: e.message }); feedbackFb.textContent = 'Could not connect'; feedbackFb.style.color = '#c0392b'; }
 });
 
 // Feedback on Twitter
@@ -1076,7 +1099,7 @@ if (Hls.isSupported()) {
 // ── Test exports (Node.js only) ──────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        escHtml, formatTime, parseID3Frames, getFilteredHistory,
+        log, escHtml, formatTime, parseID3Frames, getFilteredHistory,
         getShareText, getRecentlyPlayedText, getArtworkUrl,
         showPlayIcon, updateTrack, pushHistory, renderHistory,
         fetchArtwork, handleMetadataFields, togglePlay,

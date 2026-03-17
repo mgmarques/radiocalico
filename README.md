@@ -414,12 +414,12 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**217 total tests** across both stacks:
+**220 total unit tests** across both stacks:
 
 | Stack | Tests | Tool | Coverage |
 |-------|-------|------|----------|
 | Python (backend) | 61 | pytest + pytest-cov | 99% (only `app.run()` uncovered) |
-| JavaScript (frontend) | 156 | Jest + jsdom | 96% lines (94% statements) |
+| JavaScript (frontend) | 159 | Jest + jsdom | 96% lines (94% statements) |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
 - **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`

@@ -10,17 +10,35 @@ database accessed through PyMySQL with parameterized queries.
 
 import hashlib
 import hmac
+import logging
 import os
 import secrets
+import time
+import uuid
 
 import pymysql
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from pythonjsonlogger import json as jsonlogger
 
 load_dotenv()
+
+# ── Structured JSON logging ──────────────────────────────────
+log_handler = logging.StreamHandler()
+log_handler.setFormatter(
+    jsonlogger.JsonFormatter(
+        fmt="%(asctime)s %(levelname)s %(name)s %(message)s",
+        rename_fields={"asctime": "timestamp", "levelname": "level", "name": "logger"},
+    )
+)
+logger = logging.getLogger("radiocalico")
+logger.handlers = [log_handler]
+logger.setLevel(logging.INFO)
+# Suppress default Flask/werkzeug request logs (we log our own)
+logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "static")
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="")
@@ -32,6 +50,39 @@ limiter = Limiter(
     default_limits=[],
     storage_uri="memory://",
 )
+
+
+@app.before_request
+def before_request_logging():
+    """Attach request_id and start time to every request."""
+    g.request_id = request.headers.get("X-Request-ID", uuid.uuid4().hex[:12])
+    g.start_time = time.time()
+
+
+@app.after_request
+def after_request_logging(response):
+    """Log every request in structured JSON format."""
+    duration_ms = round((time.time() - getattr(g, "start_time", time.time())) * 1000, 1)
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr) or ""
+    ip = ip.split(",")[0].strip()
+    log_data = {
+        "request_id": getattr(g, "request_id", "-"),
+        "method": request.method,
+        "path": request.path,
+        "status": response.status_code,
+        "duration_ms": duration_ms,
+        "ip": ip,
+        "user_agent": request.headers.get("User-Agent", ""),
+    }
+    if response.status_code >= 500:
+        logger.error("request", extra=log_data)
+    elif response.status_code >= 400:
+        logger.warning("request", extra=log_data)
+    else:
+        logger.info("request", extra=log_data)
+    response.headers["X-Request-ID"] = getattr(g, "request_id", "-")
+    return response
+
 
 DB_CONFIG = {
     "host": os.environ.get("DB_HOST", "127.0.0.1"),
@@ -216,9 +267,11 @@ def post_rating():
             cursor.execute("INSERT INTO ratings (station, score, ip) VALUES (%s, %s, %s)", (station, score, ip))
         db.commit()
     except pymysql.err.IntegrityError:
+        logger.info("rating_duplicate", extra={"station": station, "ip": ip})
         return jsonify({"error": "already rated"}), 409
     finally:
         db.close()
+    logger.info("rating_created", extra={"station": station, "score": score, "ip": ip})
     return jsonify({"status": "ok"}), 201
 
 
@@ -303,6 +356,7 @@ def post_feedback():
         db.commit()
     finally:
         db.close()
+    logger.info("feedback_submitted", extra={"username": user["username"]})
     return jsonify({"status": "ok"}), 201
 
 
@@ -349,9 +403,11 @@ def register():
             )
         db.commit()
     except pymysql.err.IntegrityError:
+        logger.info("register_duplicate", extra={"username": username})
         return jsonify({"error": "Username already taken"}), 409
     finally:
         db.close()
+    logger.info("user_registered", extra={"username": username})
     return jsonify({"status": "ok"}), 201
 
 
@@ -389,6 +445,7 @@ def login():
             user = cursor.fetchone()
 
         if not user or not verify_password(password, user["salt"], user["password_hash"]):
+            logger.warning("login_failed", extra={"username": username})
             return jsonify({"error": "Invalid username or password"}), 401
 
         token = secrets.token_hex(32)
@@ -397,6 +454,7 @@ def login():
         db.commit()
     finally:
         db.close()
+    logger.info("user_logged_in", extra={"username": username})
     return jsonify({"token": token, "username": username})
 
 
@@ -425,6 +483,7 @@ def logout():
         db.commit()
     finally:
         db.close()
+    logger.info("user_logged_out", extra={"username": user["username"]})
     return jsonify({"status": "ok"})
 
 
@@ -519,4 +578,5 @@ def update_profile():
 if __name__ == "__main__":
     debug = os.environ.get("FLASK_DEBUG", "false").lower() in ("true", "1", "yes")
     host = os.environ.get("FLASK_HOST", "127.0.0.1")
+    logger.info("server_starting", extra={"host": host, "port": 5000, "debug": debug})
     app.run(host=host, port=5000, debug=debug)
