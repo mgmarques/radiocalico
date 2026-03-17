@@ -755,6 +755,20 @@ erDiagram
 
 ---
 
+## Documentation
+
+Detailed project documentation is available in the [`docs/`](docs/) directory:
+
+| Document | Description |
+|----------|-------------|
+| [Architecture Diagrams](docs/architecture.md) | 5 Mermaid diagrams: system architecture, request flow, CI/CD pipeline, database schema, and authentication flow. Visual reference for how all components connect across the Docker production stack. |
+| [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (399 tests across 5 suites), security measures, and performance optimizations. |
+| [Requirements](docs/requirements.md) | 91 requirements: 53 functional (FR-1xx to FR-8xx covering streaming, metadata, ratings, auth, profiles, feedback, sharing, and theme) and 38 non-functional (NFR-1xx to NFR-6xx covering performance, security, reliability, observability, maintainability, and compatibility). Includes traceability matrix linking each requirement to its implementation and tests. |
+| [V&V Test Plan](docs/vv-test-plan.md) | 52 user-perspective test cases (TC-1xx to TC-9xx) with step-by-step procedures, expected results, and automated test mapping. Includes manual test procedures for audio playback, automated coverage matrix across all 5 test suites, and an execution summary template. |
+| [Design Document](design.md) | Original architecture and design document from the initial prototype phase. |
+
+---
+
 ## License
 
 This project is a study case for demonstrating AI-assisted software development with [Claude Code](https://claude.ai/claude-code).
