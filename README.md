@@ -39,7 +39,7 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 ### Light Mode
 
 <p align="center">
-  <img src="docs/!_LightMode.png" alt="Radio Calico Light Mode" width="525">
+  <img src="docs/1_LightMode.png" alt="Radio Calico Light Mode" width="525">
 </p>
 
 *Light theme — Now Playing with album artwork, metadata, ratings, share buttons (WhatsApp, X, Telegram, Spotify, YouTube Music, Amazon), player bar, Recently Played with filters, and sticky footer.*
@@ -400,29 +400,61 @@ The MySQL database is auto-initialized with the schema from `db/init.sql` on fir
 ```bash
 make test          # Run all tests (Python + JavaScript)
 make test-py       # Run Python unit tests only (61 tests)
-make test-js       # Run JavaScript unit tests only (44 tests)
+make test-js       # Run JavaScript unit tests only (156 tests)
 make coverage      # Python tests + coverage report (fails if <99%)
-make security      # Bandit (SAST) + Safety (dependency scan)
-make ci            # Full pipeline: Python coverage + JS tests + security
+make coverage-js   # JavaScript tests + coverage report (fails if <96% lines)
+make security      # Bandit (SAST) + Safety (deps) + npm audit
+make security-all  # All scans: security + hadolint + trivy + zap
+make hadolint      # Dockerfile best practices linting
+make trivy         # Docker image vulnerability scan
+make zap           # OWASP ZAP dynamic security scan (requires running app)
+make docker-security  # Docker-specific: hadolint + trivy
+make ci            # Full pipeline: Python + JS coverage + security
 ```
 
 ### Test results
 
-**105 total tests** across both stacks:
+**217 total tests** across both stacks:
 
 | Stack | Tests | Tool | Coverage |
 |-------|-------|------|----------|
 | Python (backend) | 61 | pytest + pytest-cov | 99% (only `app.run()` uncovered) |
-| JavaScript (frontend) | 44 | Jest + jsdom | All functions tested |
+| JavaScript (frontend) | 156 | Jest + jsdom | 96% lines (94% statements) |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
 - **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`
-- Tests cover: pure functions, DOM manipulation, API calls, ratings, auth, share text generation, history filtering, theme/quality switching, drawer navigation, ID3 parsing
+- Tests cover: pure functions, DOM manipulation, API calls, ratings, auth, share text generation, history filtering, theme/quality switching, drawer navigation, ID3 parsing, HLS event handlers, metadata fetching, profile management, feedback, social sharing buttons
+
+### CI/CD
+
+All tests and security scans run automatically on every push and pull request via **GitHub Actions** (`.github/workflows/ci.yml`).
+
+| Job | What it does |
+|-----|-------------|
+| `python-tests` | pytest + coverage (99% threshold) with MySQL service |
+| `js-tests` | Jest + coverage (96% lines threshold) |
+| `bandit` | Python SAST |
+| `safety` | Python dependency scan |
+| `npm-audit` | JS dependency scan |
+| `hadolint` | Dockerfile linting |
+| `trivy` | Docker image vulnerability scan (HIGH+CRITICAL) |
+| `zap` | OWASP ZAP DAST baseline scan against Docker prod stack |
 
 ### Security scanning
 
-- **Bandit** — static analysis for Python security issues (0 issues found)
-- **Safety** — checks dependencies for known vulnerabilities
+| Tool | Type | What it scans | Makefile target |
+|------|------|---------------|-----------------|
+| **Bandit** | SAST | Python code (`app.py`) for security issues | `make bandit` |
+| **Safety** | Dependency | Python `requirements.txt` for known CVEs | `make safety` |
+| **npm audit** | Dependency | Node.js `package.json` for known CVEs | `make audit-npm` |
+| **Hadolint** | Linting | `Dockerfile` for best practices | `make hadolint` |
+| **Trivy** | Image scan | Docker image for OS/library vulnerabilities (HIGH+CRITICAL) | `make trivy` |
+| **OWASP ZAP** | DAST | Running app for web vulnerabilities (baseline scan) | `make zap` |
+
+Quick commands:
+- `make security` — core scans (Bandit + Safety + npm audit)
+- `make security-all` — all scans including Docker and DAST
+- `make docker-security` — Docker-specific (Hadolint + Trivy)
 
 ---
 
@@ -498,7 +530,7 @@ radiocalico/
 | Config | python-dotenv | Environment variable management |
 | Python Testing | pytest + pytest-cov | 61 backend unit tests (99% coverage) |
 | JS Testing | Jest + jsdom | 44 frontend unit tests |
-| Security | Bandit + Safety | SAST + dependency vulnerability scanning |
+| Security | Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP | SAST, dependency, Dockerfile, image, and DAST scanning |
 | Containers | Docker + Docker Compose | Dev/prod deployment with MySQL |
 | Reverse Proxy | nginx (alpine) | Static file serving + /api proxy (prod) |
 | Prod Server | gunicorn | WSGI server (4 workers) behind nginx |

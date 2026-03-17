@@ -13,7 +13,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Artwork & Duration**: iTunes Search API (client-side). `trackTimeMillis` used for duration display.
 - **Ratings**: Stored in local MySQL only. CloudFront host does NOT accept ratings.
 - **Auth**: Token-based authentication. Passwords hashed with PBKDF2 (260k iterations) + random salt. Timing-safe comparison via hmac.compare_digest. Tokens stored in `localStorage`.
-- **Testing**: Python: pytest + pytest-cov (99% coverage). JS: Jest + jsdom (44 tests). Security: bandit (SAST) + safety (dependency scan).
+- **Testing**: Python: pytest + pytest-cov (99% coverage). JS: Jest + jsdom (156 tests, 96% line coverage). Security: bandit (SAST) + safety (dependency scan) + npm audit + hadolint (Dockerfile) + trivy (image scan) + OWASP ZAP (DAST). CI: GitHub Actions on push/PR.
 
 ## File Tree
 
@@ -53,7 +53,7 @@ radiocalico/
 │   │   └── player.css              # All styles, responsive layout, design tokens
 │   └── js/
 │       ├── player.js               # Playback, metadata, artwork, ratings, auth, sharing
-│       └── player.test.js          # 44 JavaScript unit tests (Jest + jsdom)
+│       └── player.test.js          # 156 JavaScript unit tests (Jest + jsdom, 96% line coverage)
 └── .claude/
     └── commands/
         ├── start.md                # /start — launch dev environment
@@ -75,7 +75,7 @@ radiocalico/
 | `static/css/player.css` | All styles, responsive layout, design tokens, dark/light themes |
 | `api/app.py` | Flask REST API: ratings, auth, profile, feedback + static file serving |
 | `api/test_app.py` | 61 Python unit tests covering all endpoints (99% coverage) |
-| `static/js/player.test.js` | 44 JavaScript unit tests (Jest + jsdom) |
+| `static/js/player.test.js` | 156 JavaScript unit tests (Jest + jsdom, 96% line coverage) |
 | `api/conftest.py` | Pytest fixtures: test DB setup/teardown, client, auth helpers |
 | `api/.env.example` | Environment variable template (DB creds, Flask config, CORS) |
 | `api/requirements.txt` | Python dependencies (flask, flask-cors, pymysql, python-dotenv, flask-limiter) |
@@ -169,7 +169,7 @@ make test      # Run all tests: Python (61) + JavaScript (44)
 make test-py   # Run Python unit tests only
 make test-js   # Run JavaScript unit tests only
 make coverage  # Python tests + coverage report (fails if <99%)
-make security  # Bandit SAST + Safety dependency scan
+make security  # Bandit SAST + Safety + npm audit
 make ci        # Full pipeline: Python coverage + JS tests + security
 ```
 
@@ -327,18 +327,22 @@ CREATE TABLE feedback (
 
 ### Test Suite
 
-**105 total tests** across Python and JavaScript:
+**217 total tests** across Python and JavaScript:
 
 - **61 Python tests** in `api/test_app.py` — all endpoints and helper functions (99% coverage)
-- **44 JavaScript tests** in `static/js/player.test.js` — pure functions, DOM, ratings, auth, sharing, history, theme, quality
+- **156 JavaScript tests** in `static/js/player.test.js` — pure functions, DOM, ratings, auth, sharing, history, theme, quality, HLS, metadata, profile, feedback (96% line coverage)
 - Python uses isolated `radiocalico_test` database (created/destroyed per test via `conftest.py`)
 - Python fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
 - JS uses Jest + jsdom with mocked `fetch`, `Hls.js`, `localStorage`, `window.open`
 
 ### Security Scanning
 
-- **Bandit** (SAST): scans `app.py` for security issues. Reports 0 issues (B105 and B201 previously found are now fixed).
+- **Bandit** (SAST): scans `app.py` for security issues. Reports 0 issues.
 - **Safety**: checks `requirements.txt` for known vulnerabilities
+- **npm audit**: checks `package.json` for known JS dependency vulnerabilities
+- **Hadolint**: lints `Dockerfile` for best practices and security
+- **Trivy**: scans Docker image for HIGH/CRITICAL OS and library vulnerabilities
+- **OWASP ZAP**: dynamic application security testing (baseline scan against running app)
 
 ### Makefile Targets
 
@@ -349,7 +353,12 @@ CREATE TABLE feedback (
 | `make test-py` | Run Python unit tests only |
 | `make test-js` | Run JavaScript unit tests only |
 | `make coverage` | Python tests + coverage (fails if <99%) |
-| `make security` | Bandit + Safety scans |
+| `make security` | Bandit + Safety + npm audit |
+| `make security-all` | All scans: security + hadolint + trivy + zap |
+| `make hadolint` | Dockerfile best practices linting |
+| `make trivy` | Docker image vulnerability scan (requires built image) |
+| `make zap` | OWASP ZAP DAST baseline scan (requires running app) |
+| `make docker-security` | Docker-specific scans: hadolint + trivy |
 | `make ci` | Full pipeline: Python coverage + JS tests + security |
 
 ## Important Notes
@@ -357,7 +366,7 @@ CREATE TABLE feedback (
 - **Metadata comes from CloudFront JSON**, not ID3 tags. The ID3 parser is implemented as fallback but the stream does not currently embed ID3 tags.
 - **Database credentials are loaded from environment variables** via python-dotenv (`api/.env.example` provides the template). `CORS_ORIGIN` env var controls allowed CORS origins.
 - **Debug mode is off by default**, controlled by `FLASK_DEBUG` env var.
-- **Tests exist** — 105 tests (61 Python + 44 JS). Run `make ci` before merging changes. Add tests for new endpoints and JS functions.
+- **Tests exist** — 217 tests (61 Python + 156 JS). Run `make ci` before merging changes. Add tests for new endpoints and JS functions. CI runs automatically on push/PR via GitHub Actions.
 - **iTunes API** is called client-side for artwork — no proxy or caching layer yet.
 - **Ratings are local only** — not sent to the CloudFront/stream host.
 - **Cache issues** — after editing static files, users must hard refresh (`Cmd+Shift+R`) to see changes.
