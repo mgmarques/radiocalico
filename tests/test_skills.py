@@ -16,8 +16,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 COMMANDS_DIR = ROOT / ".claude" / "commands"
+SKILLS_DIR = ROOT / ".claude" / "skills"
 
-# ── All 12 expected commands ──────────────────────────────────
+# ── All 17 expected commands ──────────────────────────────────
 
 EXPECTED_COMMANDS = [
     "start.md",
@@ -57,6 +58,16 @@ class TestCommandFilesExist:
 
     def test_commands_directory_exists(self):
         assert COMMANDS_DIR.is_dir()
+
+    def test_skills_directory_exists(self):
+        assert SKILLS_DIR.is_dir()
+
+    @pytest.mark.parametrize("filename", EXPECTED_COMMANDS)
+    def test_skill_directory_has_skill_md(self, filename):
+        """Each command should also have a .claude/skills/<name>/SKILL.md mirror."""
+        name = filename.replace(".md", "")
+        skill_file = SKILLS_DIR / name / "SKILL.md"
+        assert skill_file.exists(), f"Missing skill: {skill_file}"
 
 
 class TestVersionHeaders:
