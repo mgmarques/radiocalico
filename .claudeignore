@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+api/venv/
+.venv/
+
+# Build artifacts & caches
+__pycache__/
+*.pyc
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Docker
+volumes/
+
+# IDE & OS
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Lock files (large, rarely needed)
+package-lock.json

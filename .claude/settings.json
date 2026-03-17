@@ -1,0 +1,67 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make test*)",
+      "Bash(make lint*)",
+      "Bash(make coverage*)",
+      "Bash(make ci)",
+      "Bash(make security*)",
+      "Bash(make docker*)",
+      "Bash(make install)",
+      "Bash(make fix-py)",
+      "Bash(npx jest*)",
+      "Bash(npx eslint*)",
+      "Bash(npx stylelint*)",
+      "Bash(npx htmlhint*)",
+      "Bash(source api/venv/bin/activate*)",
+      "Bash(ruff *)",
+      "Bash(pytest *)",
+      "Bash(docker compose*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git checkout*)",
+      "Bash(git branch*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(gh pr*)",
+      "Bash(gh run*)",
+      "Bash(curl *)",
+      "Bash(wc *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git reset --hard*)",
+      "Bash(git push --force*)",
+      "Bash(DROP DATABASE*)",
+      "Bash(DROP TABLE*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\"; if [ -n \"$file\" ]; then case \"$file\" in *.py) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && source api/venv/bin/activate && ruff check \"$file\" --quiet 2>&1 || true ;; *.js) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && npx eslint \"$file\" --quiet 2>&1 || true ;; esac; fi"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Context was compacted. Reminders: (1) Run make ci before committing. (2) Run make lint after editing code. (3) Do NOT start the web server in foreground — it blocks. (4) Hard refresh (Cmd+Shift+R) after static file edits. (5) All API routes use /api prefix. (6) Detailed rules in .claude/rules/'"
+          }
+        ]
+      }
+    ]
+  }
+}

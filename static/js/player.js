@@ -117,7 +117,7 @@ async function fetchItunesCached(query) {
     } catch (_) { /* ignore parse errors */ }
     const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`);
     const data = await res.json();
-    try { localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() })); } catch (_) { /* quota */ }
+    try { localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() })); } catch (e) { log.warn('localstorage_quota', { error: e.message }); }
     return data;
 }
 
@@ -256,7 +256,7 @@ function escHtml(str) {
  * @returns {Array<{artist: string, title: string, album: string}>} Filtered track entries.
  */
 function getFilteredHistory() {
-    return history.slice(0, historyLimit).filter(h => {
+    return history.filter(h => {
         if (prevFilter === 'all') return true;
         const key = `${h.artist} - ${h.title}`;
         const r = lastSummary[key];
@@ -264,7 +264,7 @@ function getFilteredHistory() {
         if (prevFilter === 'up') return r.likes > 0;
         if (prevFilter === 'down') return r.dislikes > 0;
         return true;
-    });
+    }).slice(0, historyLimit);
 }
 
 // ── ID3 parser (decodes text frames from raw ID3v2 bytes) ───
@@ -535,6 +535,12 @@ async function checkIfRated(station) {
  * @async
  */
 async function updateRatingUI() {
+    // Immediately clear previous song's rated state so buttons are clickable.
+    // Keep counts visible until new ones arrive (avoids 0-flash).
+    rateUp.classList.remove('rated');
+    rateDown.classList.remove('rated');
+    rateFb.textContent = '';
+
     const station = `${artistEl.textContent} - ${trackEl.textContent}`;
     const alreadyRated = await checkIfRated(station);
     rateUp.classList.toggle('rated', alreadyRated);
@@ -902,6 +908,10 @@ document.getElementById('btn-register').addEventListener('click', async (e) => {
 
 // Logout
 document.getElementById('btn-logout').addEventListener('click', () => {
+    if (authToken) {
+        fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${authToken}` } })
+            .catch(e => log.warn('logout_failed', { error: e.message }));
+    }
     authToken = null;
     authUser  = null;
     localStorage.removeItem('rc-token');

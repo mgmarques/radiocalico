@@ -1,4 +1,4 @@
-"""Unit tests for Radio Calico API — targeting 100% coverage of app.py."""
+"""Unit tests for Radio Calico API — 61 tests targeting 98% coverage of app.py."""
 
 import app as app_module
 
@@ -6,6 +6,8 @@ import app as app_module
 
 
 class TestHashPassword:
+    """PBKDF2 password hashing: salt generation, determinism, uniqueness."""
+
     def test_generates_salt_when_none(self):
         salt, hashed = app_module.hash_password("secret")
         assert len(salt) == 32  # 16 bytes hex
@@ -23,6 +25,8 @@ class TestHashPassword:
 
 
 class TestVerifyPassword:
+    """Timing-safe password verification via hmac.compare_digest."""
+
     def test_correct_password(self):
         salt, hashed = app_module.hash_password("mypass")
         assert app_module.verify_password("mypass", salt, hashed) is True
@@ -33,6 +37,8 @@ class TestVerifyPassword:
 
 
 class TestGetUserFromToken:
+    """Token-to-user lookup: empty, invalid, and valid tokens."""
+
     def test_returns_none_for_empty_token(self):
         assert app_module.get_user_from_token("") is None
         assert app_module.get_user_from_token(None) is None
@@ -50,6 +56,8 @@ class TestGetUserFromToken:
 
 
 class TestServeIndex:
+    """GET / serves the static index.html page."""
+
     def test_serves_html(self, client):
         res = client.get("/")
         assert res.status_code == 200
@@ -60,6 +68,8 @@ class TestServeIndex:
 
 
 class TestGetRatings:
+    """GET /api/ratings — paginated list, no IP exposure."""
+
     def test_empty(self, client):
         res = client.get("/api/ratings")
         assert res.status_code == 200
@@ -74,6 +84,8 @@ class TestGetRatings:
 
 
 class TestGetRatingsSummary:
+    """GET /api/ratings/summary — aggregated likes/dislikes per station."""
+
     def test_empty(self, client):
         res = client.get("/api/ratings/summary")
         assert res.status_code == 200
@@ -89,6 +101,8 @@ class TestGetRatingsSummary:
 
 
 class TestPostRating:
+    """POST /api/ratings — submit rating, validation, IP dedup, X-Forwarded-For."""
+
     def test_success(self, client):
         res = client.post("/api/ratings", json={"station": "X - Y", "score": 1})
         assert res.status_code == 201
@@ -128,6 +142,8 @@ class TestPostRating:
 
 
 class TestCheckRating:
+    """GET /api/ratings/check — IP-based duplicate check per station."""
+
     def test_not_rated(self, client):
         res = client.get("/api/ratings/check?station=X")
         assert res.status_code == 200
@@ -150,6 +166,8 @@ class TestCheckRating:
 
 
 class TestRegister:
+    """POST /api/register — account creation, password rules, duplicate prevention."""
+
     def test_success(self, client):
         res = client.post("/api/register", json={"username": "new", "password": "pass1234"})
         assert res.status_code == 201
@@ -190,6 +208,8 @@ class TestRegister:
 
 
 class TestLogin:
+    """POST /api/login — authentication, token generation, error cases."""
+
     def test_success(self, client, registered_user):
         username, password = registered_user
         res = client.post("/api/login", json={"username": username, "password": password})
@@ -220,6 +240,8 @@ class TestLogin:
 
 
 class TestGetProfile:
+    """GET /api/profile — auth required, empty default, token validation."""
+
     def test_unauthorized(self, client):
         res = client.get("/api/profile")
         assert res.status_code == 401
@@ -243,6 +265,8 @@ class TestGetProfile:
 
 
 class TestUpdateProfile:
+    """PUT /api/profile — create, update, upsert, field truncation."""
+
     def test_unauthorized(self, client):
         res = client.put("/api/profile", json={"nickname": "x"})
         assert res.status_code == 401
@@ -293,6 +317,8 @@ class TestUpdateProfile:
 
 
 class TestFeedback:
+    """POST /api/feedback — auth, validation, profile snapshot, IP handling."""
+
     def test_unauthorized(self, client):
         res = client.post("/api/feedback", json={"message": "hi"})
         assert res.status_code == 401
@@ -334,6 +360,8 @@ class TestFeedback:
 
 
 class TestLogout:
+    """POST /api/logout — token invalidation, auth requirement."""
+
     def test_unauthorized(self, client):
         res = client.post("/api/logout")
         assert res.status_code == 401
@@ -354,6 +382,8 @@ class TestLogout:
 
 
 class TestInvalidJson:
+    """All POST/PUT endpoints reject malformed JSON with 400."""
+
     def test_register_invalid_json(self, client):
         res = client.post("/api/register", data="bad", content_type="application/json")
         assert res.status_code == 400
@@ -375,6 +405,8 @@ class TestInvalidJson:
 
 
 class TestRatingsNoIpExposure:
+    """GET /api/ratings response must not expose IP addresses."""
+
     def test_no_ip_in_response(self, client):
         client.post("/api/ratings", json={"station": "A - B", "score": 1})
         res = client.get("/api/ratings")

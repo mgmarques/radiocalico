@@ -84,113 +84,133 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 
 *Feedback form — submit via email (stored in DB), or post on X/Twitter or Telegram.*
 
+### Docker Production Stack
+
+<p align="center">
+  <img src="docs/7_Docker_contanier.png" alt="Radio Calico Docker Containers" width="525">
+</p>
+
+*Docker production deployment — nginx reverse proxy, gunicorn (4 workers), and MySQL 8.0 running as healthy containers.*
+
+### CI/CD Pipeline (GitHub Actions)
+
+<p align="center">
+  <img src="docs/8_CiCD.png" alt="Radio Calico CI/CD Pipeline" width="525">
+</p>
+
+*GitHub Actions workflow — 12 parallel jobs: lint, unit tests (Python + JS), integration tests, E2E tests, skills validation, and 6 security scans (Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP).*
+
 ---
 
 ## Architecture
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                          CONTENT LAYER                                 │
-│                                                                        │
-│   ┌───────────────┐     ┌──────────────────┐     ┌──────────────────┐  │
-│   │ Audio Source  │────>│ HLS Encoder      │────>│ AWS CloudFront   │  │
-│   │ (Radio Feed)  │     │ (+ metadata)     │     │ CDN              │  │
-│   └───────────────┘     └──────────────────┘     └────────┬─────────┘  │
-│                                                           │            │
-│                                                  ┌───────────────┐     │
-│                                                  │metadatav2.json│     │
-│                                                  └────────┬──────┘     │
-└───────────────────────────────────────────────────────────┼────────────┘
-                                                            │
-                           HTTPS (HLS + JSON metadata)      │
-                                                            │
-┌───────────────────────────────────────────────────────────┼────────────┐
-│                      PRESENTATION LAYER                   │            │
-│                                                           v            │
-│   ┌──────────────────────────────────────────────────────────────┐     │
-│   │                    Web Browser                               │     │
-│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐   │     │
-│   │  │ HLS.js      │  │ player.js   │  │ index.html +        │   │     │
-│   │  │ (streaming) │─>│ (logic)     │─>│ player.css (UI)     │   │     │
-│   │  └─────────────┘  └──────┬──────┘  └─────────────────────┘   │     │
-│   │                          │                                   │     │
-│   │              artwork     │    ratings / auth / profile       │     │
-│   │              query       │    feedback                       │     │
-│   │                v         v                                   │     │
-│   │         ┌────────────┐  ┌──────────────────┐                 │     │
-│   │         │ iTunes API │  │ Flask API :5000  │                 │     │
-│   │         │ (artwork)  │  │ /api/*           │                 │     │
-│   │         └────────────┘  └────────┬─────────┘                 │     │
-│   └──────────────────────────────────┼───────────────────────────┘     │
-└──────────────────────────────────────┼────────────────────────────────-┘
-                                       │
-┌──────────────────────────────────────┼────────────────────────────────┐
-│                        SERVICE LAYER │                                │
-│                                      v                                │
-│   ┌──────────────────────┐      ┌──────────────────────┐              │
-│   │  Flask API           │      │  MySQL 5.7           │              │
-│   │  (api/app.py)        │─────>│  ratings, users,     │              │
-│   │  Port 5000           │      │  profiles, feedback  │              │
-│   └──────────────────────┘      └──────────────────────┘              │
-└───────────────────────────────────────────────────────────────────────┘
+High-level overview of all components and how they connect in the Docker production stack.
+
+```mermaid
+graph TD
+    Browser["Browser<br/>(HLS.js + player.js)"]
+
+    subgraph CloudFront["AWS CloudFront CDN"]
+        HLS["HLS Stream<br/>live.m3u8<br/>(FLAC + AAC)"]
+        Meta["Metadata JSON<br/>metadatav2.json"]
+    end
+
+    subgraph Docker["Docker Production Stack"]
+        nginx["nginx:alpine<br/>:80"]
+        gunicorn["gunicorn + Flask<br/>:5000 (internal)"]
+        MySQL["MySQL 8.0<br/>:3306 (internal)"]
+    end
+
+    iTunes["iTunes Search API<br/>Artwork + Duration"]
+    GoogleFonts["Google Fonts<br/>Montserrat + Open Sans"]
+
+    Browser -- "HLS stream (FLAC/AAC)" --> HLS
+    Browser -- "GET metadatav2.json" --> Meta
+    Browser -- "Static files (HTML/CSS/JS)" --> nginx
+    Browser -- "/api/* requests" --> nginx
+    Browser -- "Song search (artwork, duration)" --> iTunes
+    Browser -- "Font loading" --> GoogleFonts
+
+    nginx -- "Serves static files" --> nginx
+    nginx -- "proxy_pass /api/" --> gunicorn
+    gunicorn -- "PyMySQL queries" --> MySQL
+
+    style Browser fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style nginx fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style gunicorn fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style MySQL fill:#EFA63C,stroke:#231F20,color:#231F20
+    style HLS fill:#f5f5f5,stroke:#38A29D,color:#231F20
+    style Meta fill:#f5f5f5,stroke:#38A29D,color:#231F20
+    style iTunes fill:#f5f5f5,stroke:#999,color:#231F20
+    style GoogleFonts fill:#f5f5f5,stroke:#999,color:#231F20
 ```
 
 ### Data Flow — Playback & Metadata
 
-```text
-Page Load ──> fetchMetadata() ──> CloudFront /metadatav2.json
-                                        │
-                                        v
-                                 updateTrack(artist, title, album)
-                                   │         │            │
-                                   v         v            v
-                             DOM updated  songStartTime  fetchArtwork()
-                                          = Date.now()       │
-                                                             v
-                                                      iTunes Search API
-                                                      (artwork + duration)
+```mermaid
+graph TD
+    Load["Page Load"] --> FM["fetchMetadata()"]
+    FM --> CF["CloudFront<br/>metadatav2.json"]
+    CF --> Delay["Latency delay<br/>(hls.latency or 6s)"]
+    Delay --> UT["updateTrack(artist, title, album)"]
 
-User clicks Play ──> HLS.js loads stream ──> audio plays
-                          │
-                          ├── FRAG_CHANGED ──> triggerMetadataFetch() (3s debounce)
-                          │                         │
-                          │                         v
-                          │                  fetchMetadata() ──> delayed updateTrack()
-                          │                  (waits hls.latency to sync audio/UI)
-                          │
-                          └── audio decoded ──> speakers
+    UT --> DOM["Update DOM<br/>(artist, title, album)"]
+    UT --> Timer["songStartTime<br/>= Date.now()"]
+    UT --> FA["fetchArtwork()"]
+    UT --> RUI["updateRatingUI()"]
+    UT --> PH["pushHistory()"]
+
+    FA --> Cache["fetchItunesCached()<br/>(localStorage 24h TTL)"]
+    Cache --> iTunes["iTunes Search API<br/>(artwork + duration)"]
+
+    Play["User clicks Play"] --> HLS["HLS.js loads stream"]
+    HLS --> Audio["Audio plays"]
+    HLS --> FC["FRAG_CHANGED event"]
+    FC --> TMF["triggerMetadataFetch()<br/>(3s debounce)"]
+    TMF --> FM
+
+    style Load fill:#D8F2D5,stroke:#1F4E23
+    style Play fill:#D8F2D5,stroke:#1F4E23
+    style UT fill:#38A29D,stroke:#1F4E23,color:#FFF
+    style Cache fill:#EFA63C,stroke:#231F20
 ```
 
 ### Data Flow — Authentication & Profile
 
-```text
-Register ──> POST /api/register { username, password }
-                  │
-                  v
-            Hash password (PBKDF2 (260k iterations) + random salt with timing-safe comparison)
-            Store in users table
-            201 Created
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant JS as player.js
+    participant API as Flask API
+    participant DB as MySQL
 
-Login ──> POST /api/login { username, password }
-               │
-               v
-         Verify password against stored hash
-         Generate token (secrets.token_hex)
-         Store token in users table
-         Return { token, username }
-               │
-               v
-         Frontend stores in localStorage (rc-token, rc-user)
+    Note over U,DB: Register
+    U->>JS: Fill username + password, click Register
+    JS->>API: POST /api/register {username, password}
+    API->>API: PBKDF2 hash (260k iterations + random salt)
+    API->>DB: INSERT INTO users
+    DB-->>API: OK
+    API-->>JS: 201 Created
 
-Profile ──> GET/PUT /api/profile (Authorization: Bearer <token>)
-                 │
-                 v
-          Read/write profiles table (nickname, email, genres, about)
+    Note over U,DB: Login
+    U->>JS: Fill credentials, submit form
+    JS->>API: POST /api/login {username, password}
+    API->>DB: SELECT password_hash, salt
+    API->>API: Verify (timing-safe hmac.compare_digest)
+    API->>DB: UPDATE users SET token = random_hex
+    API-->>JS: {token, username}
+    JS->>JS: localStorage.setItem(rc-token, rc-user)
 
-Feedback ──> POST /api/feedback (Authorization: Bearer <token>)
-                  │
-                  v
-           Store message + full profile snapshot in feedback table
+    Note over U,DB: Profile & Feedback
+    U->>JS: Update profile fields
+    JS->>API: PUT /api/profile (Bearer token)
+    API->>DB: UPSERT profiles
+    API-->>JS: 200 OK
+
+    U->>JS: Submit feedback message
+    JS->>API: POST /api/feedback (Bearer token)
+    API->>DB: INSERT feedback (message + profile snapshot)
+    API-->>JS: 201 Created
 ```
 
 ---
@@ -391,6 +411,50 @@ cp .env.example .env
 
 The MySQL database is auto-initialized with the schema from `db/init.sql` on first startup.
 
+### Request Flow
+
+Sequence diagram showing the four main request types: static file serving, API calls through the nginx reverse proxy, HLS streaming from CloudFront, and artwork lookups from iTunes.
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant N as nginx
+    participant G as gunicorn/Flask
+    participant DB as MySQL
+    participant CF as CloudFront
+    participant IT as iTunes API
+
+    Note over B,N: Static File Request
+    B->>N: GET /index.html
+    N-->>B: 200 index.html (from /usr/share/nginx/html)
+
+    Note over B,N: Cached Static Asset
+    B->>N: GET /css/player.css
+    N-->>B: 200 player.css (Cache-Control: 7d, immutable)
+
+    Note over B,DB: API Request (e.g., submit rating)
+    B->>N: POST /api/ratings {station, score}
+    N->>G: proxy_pass + X-Forwarded-For + X-Request-ID
+    G->>DB: INSERT INTO ratings (station, score, ip)
+    DB-->>G: OK / IntegrityError (duplicate)
+    G-->>N: 201 {"status":"ok"} / 409 {"error":"already rated"}
+    N-->>B: Response + X-Request-ID header
+
+    Note over B,CF: HLS Audio Streaming
+    B->>CF: GET /hls/live.m3u8
+    CF-->>B: HLS master playlist (FLAC level 0, AAC level 1)
+    B->>CF: GET /hls/segment_NNN.ts
+    CF-->>B: Audio segment (decoded by HLS.js or native)
+
+    Note over B,CF: Metadata Fetch (on FRAG_CHANGED)
+    B->>CF: GET /metadatav2.json
+    CF-->>B: {current_artist, current_title, prev_artist_1..5, ...}
+
+    Note over B,IT: Artwork + Duration Lookup
+    B->>IT: GET /search?term=Artist+Title&entity=song&limit=1
+    IT-->>B: {artworkUrl100, trackTimeMillis, collectionName}
+```
+
 ---
 
 ## Testing & CI
@@ -400,9 +464,9 @@ The MySQL database is auto-initialized with the schema from `db/init.sql` on fir
 ```bash
 make test          # Run all tests (Python + JavaScript)
 make test-py       # Run Python unit tests only (61 tests)
-make test-js       # Run JavaScript unit tests only (156 tests)
-make coverage      # Python tests + coverage report (fails if <98%)
-make coverage-js   # JavaScript tests + coverage report (fails if <96% lines)
+make test-js       # Run JavaScript unit tests only (162 tests)
+make coverage      # Python tests + coverage report (fails if <95%)
+make coverage-js   # JavaScript tests + coverage report (fails if <90% lines)
 make security      # Bandit (SAST) + Safety (deps) + npm audit
 make security-all  # All scans: security + hadolint + trivy + zap
 make hadolint      # Dockerfile best practices linting
@@ -414,12 +478,16 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**220 total unit tests** across both stacks:
+**467 total tests** across 6 suites:
 
-| Stack | Tests | Tool | Coverage |
+| Suite | Tests | Tool | Coverage |
 |-------|-------|------|----------|
-| Python (backend) | 61 | pytest + pytest-cov | 98% |
-| JavaScript (frontend) | 159 | Jest + jsdom | 96% lines (94% statements) |
+| Python unit | 61 | pytest + pytest-cov | 95% |
+| Python integration | 19 | pytest | Multi-step API workflows |
+| JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
+| E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
+| Browser (Selenium) | 37 | Selenium + headless Chrome | UI, themes, auth, playback |
+| Skills validation | 169 | pytest | All 18 slash commands |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
 - **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`
@@ -429,10 +497,66 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 All tests and security scans run automatically on every push and pull request via **GitHub Actions** (`.github/workflows/ci.yml`).
 
+GitHub Actions workflow: lint runs first, then test jobs in parallel, with security scans running independently.
+
+```mermaid
+graph LR
+    Push["Push / PR<br/>to main"] --> lint
+
+    subgraph Linting
+        lint["lint<br/>ruff + ESLint<br/>+ Stylelint + HTMLHint"]
+    end
+
+    lint --> python-tests["python-tests<br/>pytest + coverage<br/>(95% threshold)"]
+    lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
+    lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
+    lint --> skills-tests["skills-tests<br/>pytest<br/>18 slash commands"]
+
+    python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]
+    js-tests --> e2e-tests
+    integration-tests --> e2e-tests
+
+    python-tests --> browser-tests["browser-tests<br/>Selenium<br/>headless Chrome"]
+    js-tests --> browser-tests
+    integration-tests --> browser-tests
+
+    python-tests --> zap["zap<br/>OWASP ZAP<br/>DAST baseline"]
+    js-tests --> zap
+
+    subgraph "Security Scans (no dependencies)"
+        bandit["bandit<br/>Python SAST"]
+        safety["safety<br/>Python deps"]
+        npm-audit["npm-audit<br/>JS deps"]
+        hadolint["hadolint<br/>Dockerfile lint"]
+        trivy["trivy<br/>Docker image<br/>vuln scan"]
+    end
+
+    Push --> bandit
+    Push --> safety
+    Push --> npm-audit
+    Push --> hadolint
+    Push --> trivy
+
+    style lint fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style python-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style integration-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style js-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style skills-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style e2e-tests fill:#EFA63C,stroke:#231F20,color:#231F20
+    style browser-tests fill:#EFA63C,stroke:#231F20,color:#231F20
+    style zap fill:#EFA63C,stroke:#231F20,color:#231F20
+    style bandit fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style safety fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style npm-audit fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style hadolint fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style trivy fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+```
+
 | Job | What it does |
 |-----|-------------|
-| `python-tests` | pytest + coverage (98% threshold) with MySQL service |
-| `js-tests` | Jest + coverage (96% lines threshold) |
+| `python-tests` | pytest + coverage (95% threshold) with MySQL service |
+| `js-tests` | Jest + coverage (90% lines threshold) |
+| `browser-tests` | Selenium + headless Chrome against Docker prod stack |
 | `bandit` | Python SAST |
 | `safety` | Python dependency scan |
 | `npm-audit` | JS dependency scan |
@@ -497,7 +621,7 @@ radiocalico/
 │   │   └── player.css              # Styles, design tokens, dark/light themes
 │   └── js/
 │       ├── player.js               # All client-side logic
-│       └── player.test.js          # 44 JavaScript unit tests (Jest)
+│       └── player.test.js          # 162 JavaScript unit tests (Jest + jsdom)
 └── .claude/
     └── commands/                   # Claude Code slash commands
         ├── start.md                # /start — launch dev environment
@@ -525,11 +649,61 @@ radiocalico/
 | Fonts | Google Fonts | Montserrat (headings), Open Sans (body) |
 | Backend | Python Flask | REST API for all endpoints |
 | Database | MySQL 5.7 | Ratings, users, profiles, feedback |
+
+### Database Schema
+
+Entity-relationship diagram of the four MySQL tables showing relationships between users, profiles, feedback, and ratings.
+
+```mermaid
+erDiagram
+    users {
+        INT id PK "AUTO_INCREMENT"
+        VARCHAR(50) username UK "NOT NULL, UNIQUE"
+        VARCHAR(64) password_hash "NOT NULL"
+        VARCHAR(32) salt "NOT NULL"
+        VARCHAR(64) token "NULL (set on login)"
+        TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    profiles {
+        INT id PK "AUTO_INCREMENT"
+        INT user_id FK "NOT NULL, UNIQUE"
+        VARCHAR(100) nickname "DEFAULT ''"
+        VARCHAR(255) email "DEFAULT ''"
+        VARCHAR(500) genres "DEFAULT ''"
+        TEXT about "NULL"
+        TIMESTAMP updated_at "ON UPDATE CURRENT_TIMESTAMP"
+    }
+
+    feedback {
+        INT id PK "AUTO_INCREMENT"
+        VARCHAR(255) email "DEFAULT ''"
+        TEXT message "NOT NULL"
+        VARCHAR(45) ip "DEFAULT ''"
+        VARCHAR(50) username "DEFAULT ''"
+        VARCHAR(100) nickname "DEFAULT ''"
+        VARCHAR(500) genres "DEFAULT ''"
+        TEXT about "NULL"
+        TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    ratings {
+        INT id PK "AUTO_INCREMENT"
+        VARCHAR(255) station "NOT NULL"
+        TINYINT score "NOT NULL (0 or 1)"
+        VARCHAR(45) ip "NOT NULL"
+        TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    users ||--o| profiles : "has (ON DELETE CASCADE)"
+    users ||--o{ feedback : "submits (denormalized snapshot)"
+```
+
 | DB Driver | PyMySQL | Python-MySQL connector |
 | Rate Limiting | flask-limiter | Request rate limiting for auth endpoints |
 | Config | python-dotenv | Environment variable management |
-| Python Testing | pytest + pytest-cov | 61 backend unit tests (98% coverage) |
-| JS Testing | Jest + jsdom | 44 frontend unit tests |
+| Python Testing | pytest + pytest-cov | 61 backend unit tests (95% coverage) |
+| JS Testing | Jest + jsdom | 162 frontend unit tests (90% line threshold) |
 | Security | Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP | SAST, dependency, Dockerfile, image, and DAST scanning |
 | Containers | Docker + Docker Compose | Dev/prod deployment with MySQL |
 | Reverse Proxy | nginx (alpine) | Static file serving + /api proxy (prod) |
@@ -561,6 +735,109 @@ radiocalico/
 | Metadata shows wrong song | Wait for HLS latency delay (~6s) |
 | Register/Login fails | Check MySQL is running: `brew services list` |
 | Emoji broken in shares | Expected — plain text `[N likes]` used instead |
+
+---
+
+## Documentation
+
+Detailed project documentation is available in the [`docs/`](docs/) directory:
+
+| Document | Description |
+|----------|-------------|
+| [Architecture Diagrams](docs/architecture.md) | 8 Mermaid diagrams: system architecture, request flow, data flow (playback & user interactions), event-driven architecture, CI/CD pipeline, database schema, and authentication flow. Visual reference for how all components connect across the Docker production stack. |
+| [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (467 tests across 6 suites), security measures, and performance optimizations. |
+| [Requirements](docs/requirements.md) | 91 requirements: 53 functional (FR-1xx to FR-8xx covering streaming, metadata, ratings, auth, profiles, feedback, sharing, and theme) and 38 non-functional (NFR-1xx to NFR-6xx covering performance, security, reliability, observability, maintainability, and compatibility). Includes traceability matrix linking each requirement to its implementation and tests. |
+| [V&V Test Plan](docs/vv-test-plan.md) | 52 user-perspective test cases (TC-1xx to TC-9xx) with step-by-step procedures, expected results, and automated test mapping. Includes manual test procedures for audio playback, automated coverage matrix across all 6 test suites, and an execution summary template. |
+| [Design Document](design.md) | Original architecture and design document from the initial prototype phase. |
+
+---
+
+## Claude Code Integration
+
+This project is fully optimized for [Claude Code](https://claude.ai/claude-code) — Anthropic's AI coding assistant. Every aspect of the development workflow (testing, linting, deployment, documentation) can be driven through slash commands.
+
+### File Hierarchy
+
+```text
+.claude/
+├── settings.json          # Permissions, hooks, denied destructive ops
+├── TEMPLATE.md            # Reusable patterns for new projects
+├── rules/                 # Deep context loaded on relevant topics
+│   ├── architecture.md    # Player.js internals, metadata, events
+│   ├── testing.md         # 467 tests, 6 suites, CI/CD pipeline
+│   ├── database.md        # MySQL schema, 4 tables, constraints
+│   └── style-guide.md     # CSS tokens, code conventions, formats
+├── commands/              # Slash commands (18 total, all v1.0.0)
+│   ├── start.md           # /start — launch dev environment
+│   ├── run-ci.md          # /run-ci — lint + tests + security
+│   ├── create-pr.md       # /create-pr — branch, commit, push, PR
+│   ├── docker-verify.md   # /docker-verify — rebuild + E2E tests
+│   ├── add-endpoint.md    # /add-endpoint — scaffold API route
+│   ├── security-audit.md  # /security-audit — all 6 security tools
+│   ├── generate-diagrams.md       # 8 Mermaid architecture diagrams
+│   ├── generate-tech-spec.md      # 13-section technical spec
+│   ├── generate-requirements.md   # 91 FR/NFR requirements
+│   ├── generate-vv-plan.md        # 52 user-perspective test cases
+│   ├── update-readme-diagrams.md  # Sync Mermaid to README
+│   └── ...                # + troubleshoot, check-stream, etc.
+└── skills/                # Modern skill format (mirrors commands)
+    ├── README.md           # Skill catalog with categories
+    └── <skill-name>/
+        └── SKILL.md        # Same content as command
+```
+
+### Key Features
+
+| Feature | What it does |
+|---------|-------------|
+| **CLAUDE.md** (128 lines) | Project overview, endpoints, conventions — loaded every session |
+| **`.claude/rules/`** | Detailed domain knowledge — loaded only when relevant |
+| **`.claude/settings.json`** | Auto-approves safe commands (make, git, docker), blocks destructive ops |
+| **Auto-lint hook** | Runs Ruff/ESLint automatically after every file edit |
+| **Compaction reminder** | Re-injects critical rules when context gets compressed |
+| **`.claudeignore`** | Excludes node_modules, venv, coverage from context |
+| **169 skill tests** | Validates all 18 commands: structure, versions, references, consistency |
+
+### Command Examples
+
+```bash
+# In Claude Code, type:
+/start                  # Launch dev environment (local or Docker)
+/run-ci                 # Run full CI pipeline before committing
+/create-pr              # Create a PR with summary and test plan
+/add-endpoint POST /api/favorites  # Scaffold new route + tests
+/docker-verify          # Rebuild prod stack + run E2E tests
+/security-audit         # Run Bandit, Safety, npm audit, Hadolint, Trivy, ZAP
+/generate-diagrams      # Generate 8 Mermaid architecture diagrams
+/generate-tech-spec     # Generate full technical specification
+/generate-requirements  # Generate 91 FR/NFR requirements
+/generate-vv-plan       # Generate 52 user test cases
+/troubleshoot           # Diagnose common issues
+```
+
+### Workflow with Claude Code
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
+
+1. **Clone + setup**: `make install` (or `/start` in Claude Code)
+2. **Develop**: Claude reads CLAUDE.md automatically. Use `/add-endpoint` for new routes.
+3. **Test**: `/run-ci` runs lint + coverage + security. All 467 tests must pass.
+4. **PR**: `/create-pr` creates a branch, commits, pushes, and opens a PR with summary.
+5. **Add skills**: Create `.claude/commands/your-skill.md` + `.claude/skills/your-skill/SKILL.md`, add to `tests/test_skills.py`.
+
+### Apply to Other Projects
+
+Bootstrap Claude Code best practices in any project with one command:
+
+```bash
+# From this repo:
+./scripts/init-claude-code.sh /path/to/your-project
+
+# Or directly from GitHub:
+curl -sL https://raw.githubusercontent.com/mgmarques/radiocalico/main/scripts/init-claude-code.sh | bash -s /path/to/your-project
+```
+
+This creates 12 files (CLAUDE.md, settings, rules, skills, tests, .claudeignore, CONTRIBUTING.md, VERSION) — all safe to re-run, never overwrites existing files. Then edit CLAUDE.md to describe your project.
 
 ---
 

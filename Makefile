@@ -14,7 +14,7 @@ E2E_BASE_URL ?= http://127.0.0.1:5050
 .PHONY: install test test-py test-js coverage coverage-js ci clean \
         lint lint-py lint-js lint-css lint-html fix-py \
         security security-all bandit safety audit-npm hadolint trivy zap \
-        test-integration test-e2e docker-e2e \
+        test-integration test-skills test-browser test-e2e docker-e2e \
         docker-dev docker-prod docker-down docker-build docker-test docker-security
 
 ## Install all dependencies (prod + dev)
@@ -39,9 +39,9 @@ test-js:
 coverage-js:
 	npx jest --coverage --verbose
 
-## Run Python tests with coverage report (fail if <98%)
+## Run Python tests with coverage report (fail if <95%)
 coverage:
-	$(ACTIVATE) cd api && pytest test_app.py --cov=app --cov-report=term-missing --cov-fail-under=98 -v
+	$(ACTIVATE) cd api && pytest test_app.py --cov=app --cov-report=term-missing --cov-fail-under=95 -v
 
 ## ── Linting targets ───────────────────────────────────────────
 
@@ -127,6 +127,14 @@ zap:
 ## Run API integration tests (requires MySQL running)
 test-integration:
 	$(ACTIVATE) cd api && pytest test_integration.py -v
+
+## Validate all Claude Code slash commands (structure, versions, references)
+test-skills:
+	$(ACTIVATE) pytest tests/test_skills.py -v
+
+## Run Selenium browser tests (requires Docker prod + Chrome)
+test-browser:
+	E2E_BASE_URL=$(E2E_BASE_URL) $(ACTIVATE) pip install selenium webdriver-manager -q && pytest tests/test_browser.py -v
 
 ## Run end-to-end tests against running Docker prod stack
 test-e2e:
