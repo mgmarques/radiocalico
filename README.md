@@ -738,10 +738,99 @@ Detailed project documentation is available in the [`docs/`](docs/) directory:
 | Document | Description |
 |----------|-------------|
 | [Architecture Diagrams](docs/architecture.md) | 5 Mermaid diagrams: system architecture, request flow, CI/CD pipeline, database schema, and authentication flow. Visual reference for how all components connect across the Docker production stack. |
-| [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (399 tests across 5 suites), security measures, and performance optimizations. |
+| [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (401 tests across 5 suites), security measures, and performance optimizations. |
 | [Requirements](docs/requirements.md) | 91 requirements: 53 functional (FR-1xx to FR-8xx covering streaming, metadata, ratings, auth, profiles, feedback, sharing, and theme) and 38 non-functional (NFR-1xx to NFR-6xx covering performance, security, reliability, observability, maintainability, and compatibility). Includes traceability matrix linking each requirement to its implementation and tests. |
 | [V&V Test Plan](docs/vv-test-plan.md) | 52 user-perspective test cases (TC-1xx to TC-9xx) with step-by-step procedures, expected results, and automated test mapping. Includes manual test procedures for audio playback, automated coverage matrix across all 5 test suites, and an execution summary template. |
 | [Design Document](design.md) | Original architecture and design document from the initial prototype phase. |
+
+---
+
+## Claude Code Integration
+
+This project is fully optimized for [Claude Code](https://claude.ai/claude-code) — Anthropic's AI coding assistant. Every aspect of the development workflow (testing, linting, deployment, documentation) can be driven through slash commands.
+
+### File Hierarchy
+
+```text
+.claude/
+├── settings.json          # Permissions, hooks, denied destructive ops
+├── TEMPLATE.md            # Reusable patterns for new projects
+├── rules/                 # Deep context loaded on relevant topics
+│   ├── architecture.md    # Player.js internals, metadata, events
+│   ├── testing.md         # 401 tests, 5 suites, CI/CD pipeline
+│   ├── database.md        # MySQL schema, 4 tables, constraints
+│   └── style-guide.md     # CSS tokens, code conventions, formats
+├── commands/              # Slash commands (17 total, all v1.0.0)
+│   ├── start.md           # /start — launch dev environment
+│   ├── run-ci.md          # /run-ci — lint + tests + security
+│   ├── create-pr.md       # /create-pr — branch, commit, push, PR
+│   ├── docker-verify.md   # /docker-verify — rebuild + E2E tests
+│   ├── add-endpoint.md    # /add-endpoint — scaffold API route
+│   ├── security-audit.md  # /security-audit — all 6 security tools
+│   ├── generate-diagrams.md       # 8 Mermaid architecture diagrams
+│   ├── generate-tech-spec.md      # 13-section technical spec
+│   ├── generate-requirements.md   # 91 FR/NFR requirements
+│   ├── generate-vv-plan.md        # 52 user-perspective test cases
+│   ├── update-readme-diagrams.md  # Sync Mermaid to README
+│   └── ...                # + troubleshoot, check-stream, etc.
+└── skills/                # Modern skill format (mirrors commands)
+    ├── README.md           # Skill catalog with categories
+    └── <skill-name>/
+        └── SKILL.md        # Same content as command
+```
+
+### Key Features
+
+| Feature | What it does |
+|---------|-------------|
+| **CLAUDE.md** (128 lines) | Project overview, endpoints, conventions — loaded every session |
+| **`.claude/rules/`** | Detailed domain knowledge — loaded only when relevant |
+| **`.claude/settings.json`** | Auto-approves safe commands (make, git, docker), blocks destructive ops |
+| **Auto-lint hook** | Runs Ruff/ESLint automatically after every file edit |
+| **Compaction reminder** | Re-injects critical rules when context gets compressed |
+| **`.claudeignore`** | Excludes node_modules, venv, coverage from context |
+| **158 skill tests** | Validates all 17 commands: structure, versions, references, consistency |
+
+### Command Examples
+
+```bash
+# In Claude Code, type:
+/start                  # Launch dev environment (local or Docker)
+/run-ci                 # Run full CI pipeline before committing
+/create-pr              # Create a PR with summary and test plan
+/add-endpoint POST /api/favorites  # Scaffold new route + tests
+/docker-verify          # Rebuild prod stack + run E2E tests
+/security-audit         # Run Bandit, Safety, npm audit, Hadolint, Trivy, ZAP
+/generate-diagrams      # Generate 8 Mermaid architecture diagrams
+/generate-tech-spec     # Generate full technical specification
+/generate-requirements  # Generate 91 FR/NFR requirements
+/generate-vv-plan       # Generate 52 user test cases
+/troubleshoot           # Diagnose common issues
+```
+
+### Workflow with Claude Code
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
+
+1. **Clone + setup**: `make install` (or `/start` in Claude Code)
+2. **Develop**: Claude reads CLAUDE.md automatically. Use `/add-endpoint` for new routes.
+3. **Test**: `/run-ci` runs lint + coverage + security. All 401 tests must pass.
+4. **PR**: `/create-pr` creates a branch, commits, pushes, and opens a PR with summary.
+5. **Add skills**: Create `.claude/commands/your-skill.md` + `.claude/skills/your-skill/SKILL.md`, add to `tests/test_skills.py`.
+
+### Apply to Other Projects
+
+Bootstrap Claude Code best practices in any project with one command:
+
+```bash
+# From this repo:
+./scripts/init-claude-code.sh /path/to/your-project
+
+# Or directly from GitHub:
+curl -sL https://raw.githubusercontent.com/mgmarques/radiocalico/main/scripts/init-claude-code.sh | bash -s /path/to/your-project
+```
+
+This creates 12 files (CLAUDE.md, settings, rules, skills, tests, .claudeignore, CONTRIBUTING.md, VERSION) — all safe to re-run, never overwrites existing files. Then edit CLAUDE.md to describe your project.
 
 ---
 
