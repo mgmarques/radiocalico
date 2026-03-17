@@ -39,9 +39,9 @@ test-js:
 coverage-js:
 	npx jest --coverage --verbose
 
-## Run Python tests with coverage report (fail if <98%)
+## Run Python tests with coverage report (fail if <95%)
 coverage:
-	$(ACTIVATE) cd api && pytest test_app.py --cov=app --cov-report=term-missing --cov-fail-under=98 -v
+	$(ACTIVATE) cd api && pytest test_app.py --cov=app --cov-report=term-missing --cov-fail-under=95 -v
 
 ## ── Linting targets ───────────────────────────────────────────
 

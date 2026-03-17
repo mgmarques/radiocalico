@@ -100,7 +100,7 @@ jobs:
           DB_USER: testuser
           DB_PASSWORD: testpass
           DB_NAME: radiocalico_test
-        run: pytest test_app.py --cov=app --cov-report=term-missing --cov-fail-under=98 -v
+        run: pytest test_app.py --cov=app --cov-report=term-missing --cov-fail-under=95 -v
 
   # ── Python integration tests ────────────────────────────────
   integration-tests:

@@ -4,7 +4,7 @@
 
 | Suite | File | Tests | Tool |
 |-------|------|-------|------|
-| Python unit | `api/test_app.py` | 61 | pytest (98% coverage) |
+| Python unit | `api/test_app.py` | 61 | pytest (95% coverage) |
 | Python integration | `api/test_integration.py` | 19 | pytest |
 | JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom (90% line threshold) |
 | E2E | `tests/test_e2e.py` | 19 | pytest + requests (Docker prod stack) |
@@ -31,7 +31,7 @@ Parallel security: `bandit, safety, npm-audit, hadolint, trivy`
 | Target | Description |
 | ------ | ----------- |
 | `make test` | Run all tests (Python + JavaScript) |
-| `make coverage` | Python tests + coverage (fails if <98%) |
+| `make coverage` | Python tests + coverage (fails if <95%) |
 | `make coverage-js` | JS tests + coverage (fails if <90% lines) |
 | `make lint` | Run all linters (Ruff + ESLint + Stylelint + HTMLHint) |
 | `make fix-py` | Auto-fix Python lint + format issues |

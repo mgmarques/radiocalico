@@ -465,7 +465,7 @@ sequenceDiagram
 make test          # Run all tests (Python + JavaScript)
 make test-py       # Run Python unit tests only (61 tests)
 make test-js       # Run JavaScript unit tests only (162 tests)
-make coverage      # Python tests + coverage report (fails if <98%)
+make coverage      # Python tests + coverage report (fails if <95%)
 make coverage-js   # JavaScript tests + coverage report (fails if <90% lines)
 make security      # Bandit (SAST) + Safety (deps) + npm audit
 make security-all  # All scans: security + hadolint + trivy + zap
@@ -482,7 +482,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 | Suite | Tests | Tool | Coverage |
 |-------|-------|------|----------|
-| Python unit | 61 | pytest + pytest-cov | 98% |
+| Python unit | 61 | pytest + pytest-cov | 95% |
 | Python integration | 19 | pytest | Multi-step API workflows |
 | JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
 | E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
@@ -506,7 +506,7 @@ graph LR
         lint["lint<br/>ruff + ESLint<br/>+ Stylelint + HTMLHint"]
     end
 
-    lint --> python-tests["python-tests<br/>pytest + coverage<br/>(98% threshold)"]
+    lint --> python-tests["python-tests<br/>pytest + coverage<br/>(95% threshold)"]
     lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
     lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
     lint --> skills-tests["skills-tests<br/>pytest<br/>17 slash commands"]
@@ -548,7 +548,7 @@ graph LR
 
 | Job | What it does |
 |-----|-------------|
-| `python-tests` | pytest + coverage (98% threshold) with MySQL service |
+| `python-tests` | pytest + coverage (95% threshold) with MySQL service |
 | `js-tests` | Jest + coverage (90% lines threshold) |
 | `bandit` | Python SAST |
 | `safety` | Python dependency scan |
@@ -695,7 +695,7 @@ erDiagram
 | DB Driver | PyMySQL | Python-MySQL connector |
 | Rate Limiting | flask-limiter | Request rate limiting for auth endpoints |
 | Config | python-dotenv | Environment variable management |
-| Python Testing | pytest + pytest-cov | 61 backend unit tests (98% coverage) |
+| Python Testing | pytest + pytest-cov | 61 backend unit tests (95% coverage) |
 | JS Testing | Jest + jsdom | 162 frontend unit tests (90% line threshold) |
 | Security | Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP | SAST, dependency, Dockerfile, image, and DAST scanning |
 | Containers | Docker + Docker Compose | Dev/prod deployment with MySQL |
