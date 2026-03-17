@@ -32,6 +32,9 @@ EXPECTED_COMMANDS = [
     "add-share-button.md",
     "add-dark-style.md",
     "update-claude-md.md",
+    "generate-diagrams.md",
+    "generate-tech-spec.md",
+    "update-readme-diagrams.md",
 ]
 
 
@@ -200,6 +203,92 @@ class TestCoverageThresholdConsistency:
         # Should mention 61 Python tests and 162 JS tests
         assert "61" in content, "run-ci.md should mention 61 Python tests"
         assert "162" in content, "run-ci.md should mention 162 JS tests"
+
+
+class TestGenerateDiagramsCommand:
+    """Validate /generate-diagrams command content."""
+
+    def test_mentions_mermaid(self):
+        content = (COMMANDS_DIR / "generate-diagrams.md").read_text()
+        assert "mermaid" in content.lower() or "Mermaid" in content
+
+    def test_mentions_output_file(self):
+        content = (COMMANDS_DIR / "generate-diagrams.md").read_text()
+        assert "docs/architecture.md" in content
+
+    def test_mentions_all_diagram_types(self):
+        content = (COMMANDS_DIR / "generate-diagrams.md").read_text()
+        for diagram in ["System Architecture", "Request Flow", "CI/CD Pipeline", "Database Schema", "Authentication Flow"]:
+            assert diagram in content, f"Missing diagram type: {diagram}"
+
+    def test_references_source_files(self):
+        content = (COMMANDS_DIR / "generate-diagrams.md").read_text()
+        for ref in ["app.py", "nginx.conf", "docker-compose.yml", "ci.yml", "init.sql"]:
+            assert ref in content, f"Missing source file reference: {ref}"
+
+
+class TestGenerateTechSpecCommand:
+    """Validate /generate-tech-spec command content."""
+
+    def test_mentions_output_file(self):
+        content = (COMMANDS_DIR / "generate-tech-spec.md").read_text()
+        assert "docs/tech-spec.md" in content
+
+    def test_mentions_version_file(self):
+        content = (COMMANDS_DIR / "generate-tech-spec.md").read_text()
+        assert "VERSION" in content
+
+    def test_has_all_spec_sections(self):
+        content = (COMMANDS_DIR / "generate-tech-spec.md").read_text()
+        required_sections = [
+            "Executive Summary",
+            "System Architecture",
+            "Technology Stack",
+            "API Reference",
+            "Database Schema",
+            "Authentication",
+            "Deployment",
+            "Observability",
+            "Testing Strategy",
+            "Performance",
+            "Configuration",
+        ]
+        for section in required_sections:
+            assert section in content, f"Missing spec section: {section}"
+
+    def test_references_architecture_diagrams(self):
+        content = (COMMANDS_DIR / "generate-tech-spec.md").read_text()
+        assert "docs/architecture.md" in content
+
+    def test_references_source_files(self):
+        content = (COMMANDS_DIR / "generate-tech-spec.md").read_text()
+        for ref in ["app.py", "nginx.conf", "CLAUDE.md", "Makefile", ".env.example"]:
+            assert ref in content, f"Missing source file reference: {ref}"
+
+
+class TestUpdateReadmeDiagramsCommand:
+    """Validate /update-readme-diagrams command content."""
+
+    def test_mentions_source_file(self):
+        content = (COMMANDS_DIR / "update-readme-diagrams.md").read_text()
+        assert "docs/architecture.md" in content
+
+    def test_mentions_target_file(self):
+        content = (COMMANDS_DIR / "update-readme-diagrams.md").read_text()
+        assert "README.md" in content
+
+    def test_mentions_which_diagrams_to_include(self):
+        content = (COMMANDS_DIR / "update-readme-diagrams.md").read_text()
+        for diagram in ["System Architecture", "Request Flow", "CI/CD Pipeline", "Database Schema"]:
+            assert diagram in content, f"Missing diagram: {diagram}"
+
+    def test_mentions_prerequisite(self):
+        content = (COMMANDS_DIR / "update-readme-diagrams.md").read_text()
+        assert "generate-diagrams" in content, "Should reference /generate-diagrams as prerequisite"
+
+    def test_preserves_existing_content(self):
+        content = (COMMANDS_DIR / "update-readme-diagrams.md").read_text()
+        assert "NOT remove" in content or "not remove" in content.lower() or "Do NOT" in content
 
 
 class TestCLAUDEmdConsistency:

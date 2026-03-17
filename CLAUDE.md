@@ -79,6 +79,9 @@ radiocalico/
         ├── docker-verify.md        # /docker-verify — rebuild + verify Docker prod stack
         ├── add-endpoint.md         # /add-endpoint — scaffold new API route + tests
         ├── security-audit.md       # /security-audit — run all 6 security tools
+        ├── generate-diagrams.md     # /generate-diagrams — Mermaid architecture diagrams
+        ├── generate-tech-spec.md   # /generate-tech-spec — full technical specification
+        ├── update-readme-diagrams.md # /update-readme-diagrams — sync diagrams to README
         ├── add-share-button.md     # /add-share-button — add new share platform
         ├── add-dark-style.md       # /add-dark-style — add dark mode for new components
         └── update-claude-md.md     # /update-claude-md — refresh CLAUDE.md from codebase
@@ -368,7 +371,7 @@ CREATE TABLE feedback (
 | Python integration | `api/test_integration.py` | 19 | pytest |
 | JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom (96% line coverage) |
 | E2E | `tests/test_e2e.py` | 19 | pytest + requests (Docker prod stack) |
-| Skills | `tests/test_skills.py` | 83 | pytest (validates all 12 slash commands) |
+| Skills | `tests/test_skills.py` | 112 | pytest (validates all 15 slash commands) |
 
 - Python unit tests use isolated `radiocalico_test` database (created/destroyed per test)
 - Python fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
@@ -417,7 +420,7 @@ CREATE TABLE feedback (
 - **Metadata comes from CloudFront JSON**, not ID3 tags. The ID3 parser is implemented as fallback but the stream does not currently embed ID3 tags.
 - **Database credentials are loaded from environment variables** via python-dotenv (`api/.env.example` provides the template). `CORS_ORIGIN` env var controls allowed CORS origins.
 - **Debug mode is off by default**, controlled by `FLASK_DEBUG` env var.
-- **Tests exist** — 344 tests: 61 Python unit + 19 integration + 162 JS unit + 19 E2E + 83 skills. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions (11 jobs).
+- **Tests exist** — 373 tests: 61 Python unit + 19 integration + 162 JS unit + 19 E2E + 112 skills. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions (11 jobs).
 - **iTunes API** is cached client-side in localStorage (24h TTL) via `fetchItunesCached()`. No server-side proxy.
 - **Ratings are local only** — not sent to the CloudFront/stream host.
 - **Cache issues** — after editing static files, users must hard refresh (`Cmd+Shift+R`) to see changes.
