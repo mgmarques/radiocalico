@@ -5,9 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radio Calico</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://itunes.apple.com">
+    <link rel="dns-prefetch" href="https://d3d4yli4hf5bmh.cloudfront.net">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/player.css">
-    <link rel="icon" href="/logo.png" type="image/png">
+    <link rel="icon" href="/favicon.webp" type="image/webp">
 </head>
 <body>
 
@@ -18,7 +22,10 @@
             </button>
         </div>
         <div class="navbar-inner">
-            <img src="/logo.png" alt="Radio Calico logo" class="nav-logo">
+            <picture>
+                <source srcset="/logo.webp" type="image/webp">
+                <img src="/logo.png" alt="Radio Calico logo" class="nav-logo" width="40" height="40">
+            </picture>
             <span class="nav-wordmark">Radio <span>Calico</span></span>
         </div>
         <div class="nav-settings">
@@ -52,7 +59,7 @@
             <div class="now-playing">
 
                 <div class="artwork-col">
-                    <div class="artwork" id="artwork">
+                    <div class="artwork" id="artwork" style="aspect-ratio:1/1">
                         <div class="artwork-placeholder">♪</div>
                     </div>
                 </div>
@@ -233,7 +240,7 @@
     </aside>
 
     <audio id="audio" preload="none">Your browser does not support audio playback.</audio>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" integrity="sha384-iZBI1/lW9u8FcBjxuQ8nPTsU7TXhZNtzkV8H3gQHSTgz+VYQoKWqGlBHqhO84alJ" crossorigin="anonymous"></script>
-    <script src="/js/player.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" defer integrity="sha384-iZBI1/lW9u8FcBjxuQ8nPTsU7TXhZNtzkV8H3gQHSTgz+VYQoKWqGlBHqhO84alJ" crossorigin="anonymous"></script>
+    <script src="/js/player.js" defer></script>
 </body>
 </html>

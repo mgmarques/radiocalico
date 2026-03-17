@@ -98,9 +98,33 @@ function showPlayIcon(name) {
     iconSpin.style.display  = name === 'spinner' ? '' : 'none';
 }
 
+// ── iTunes API cache ─────────────────────────────────────────
+const ITUNES_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
+ * Fetches iTunes search results with localStorage caching (24h TTL).
+ * @param {string} query - The search query string.
+ * @returns {Promise<Object>} The iTunes API response data.
+ */
+async function fetchItunesCached(query) {
+    const cacheKey = `rc-itunes-${query}`;
+    try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            const { data, ts } = JSON.parse(cached);
+            if (Date.now() - ts < ITUNES_CACHE_TTL_MS) return data;
+        }
+    } catch (_) { /* ignore parse errors */ }
+    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`);
+    const data = await res.json();
+    try { localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() })); } catch (_) { /* quota */ }
+    return data;
+}
+
 // ── Artwork ──────────────────────────────────────────────────
 /**
  * Fetches album artwork and track duration from the iTunes Search API.
+ * Uses localStorage cache (24h TTL) to reduce duplicate API calls.
  * Updates the artwork element with the retrieved image (or a placeholder on failure)
  * and sets the global trackDuration from iTunes trackTimeMillis.
  * @async
@@ -109,14 +133,12 @@ function showPlayIcon(name) {
  */
 async function fetchArtwork(artist, title) {
     try {
-        const q = encodeURIComponent(`${artist} ${title}`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=1`);
-        const data = await res.json();
+        const data = await fetchItunesCached(`${artist} ${title}`);
         if (data.results && data.results.length > 0) {
             const result = data.results[0];
             // Replace 100x100 thumbnail with 600x600
             const url = result.artworkUrl100.replace('100x100', ARTWORK_SIZE);
-            artworkEl.innerHTML = `<img src="${escHtml(url)}" alt="${escHtml(title)}">`;
+            artworkEl.innerHTML = `<img src="${escHtml(url)}" alt="${escHtml(title)}" decoding="async">`;
             // Store track duration from iTunes (milliseconds → seconds)
             trackDuration = result.trackTimeMillis ? result.trackTimeMillis / 1000 : null;
         } else {
@@ -738,9 +760,7 @@ async function fetchMetadata() {
             history.forEach(async (t, idx) => {
                 if (t.album) return;
                 try {
-                    const q = encodeURIComponent(`${t.artist} ${t.title}`);
-                    const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=1`);
-                    const data = await res.json();
+                    const data = await fetchItunesCached(`${t.artist} ${t.title}`);
                     if (data.results && data.results.length > 0 && history[idx]) {
                         history[idx].album = data.results[0].collectionName || '';
                         renderHistory();
@@ -1099,7 +1119,7 @@ if (Hls.isSupported()) {
 // ── Test exports (Node.js only) ──────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        log, escHtml, formatTime, parseID3Frames, getFilteredHistory,
+        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory,
         getShareText, getRecentlyPlayedText, getArtworkUrl,
         showPlayIcon, updateTrack, pushHistory, renderHistory,
         fetchArtwork, handleMetadataFields, togglePlay,
