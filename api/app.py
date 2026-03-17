@@ -63,8 +63,7 @@ def before_request_logging():
 def after_request_logging(response):
     """Log every request in structured JSON format."""
     duration_ms = round((time.time() - getattr(g, "start_time", time.time())) * 1000, 1)
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr) or ""
-    ip = ip.split(",")[0].strip()
+    ip = get_client_ip()
     log_data = {
         "request_id": getattr(g, "request_id", "-"),
         "method": request.method,
@@ -101,6 +100,18 @@ def get_db():
         ``DictCursor`` so rows are returned as dictionaries.
     """
     return pymysql.connect(**DB_CONFIG)
+
+
+def get_client_ip():
+    """Extract the client IP from X-Forwarded-For header or remote_addr.
+
+    Takes the first IP if multiple are present (proxy chain).
+
+    Returns:
+        str: The client IP address.
+    """
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr) or ""
+    return ip.split(",")[0].strip()
 
 
 def hash_password(password, salt=None):
@@ -202,8 +213,11 @@ def get_ratings():
         Response: JSON array of rating objects, each containing ``id``,
         ``station``, ``score``, and ``created_at``. Status 200.
     """
-    limit = min(int(request.args.get("limit", 100)), 500)
-    offset = max(int(request.args.get("offset", 0)), 0)
+    try:
+        limit = min(int(request.args.get("limit", 100)), 500)
+        offset = max(int(request.args.get("offset", 0)), 0)
+    except (ValueError, TypeError):
+        return jsonify({"error": "limit and offset must be integers"}), 400
     db = get_db()
     try:
         with db.cursor() as cursor:
@@ -271,8 +285,7 @@ def post_rating():
         return jsonify({"error": "station and score required"}), 400
     if score not in (0, 1):
         return jsonify({"error": "score must be 0 or 1"}), 400
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr) or ""
-    ip = ip.split(",")[0].strip()  # first IP if behind proxy
+    ip = get_client_ip()
     db = get_db()
     try:
         with db.cursor() as cursor:
@@ -301,8 +314,7 @@ def check_rating():
         Status 200.
     """
     station = request.args.get("station", "")
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr) or ""
-    ip = ip.split(",")[0].strip()
+    ip = get_client_ip()
     db = get_db()
     try:
         with db.cursor() as cursor:
@@ -357,8 +369,7 @@ def post_feedback():
         genres = profile["genres"] if profile and profile.get("genres") else ""
         about = profile["about"] if profile and profile.get("about") else ""
 
-        ip = request.headers.get("X-Forwarded-For", request.remote_addr) or ""
-        ip = ip.split(",")[0].strip()
+        ip = get_client_ip()
         with db.cursor() as cursor:
             cursor.execute(
                 "INSERT INTO feedback (email, message, ip, username, nickname, genres, about) "

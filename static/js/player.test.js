@@ -1310,6 +1310,7 @@ describe('loadProfile', () => {
     });
 
     test('returns early when no authToken (after logout)', async () => {
+        global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
         document.getElementById('btn-logout').click();
         global.fetch = jest.fn();
         await player.loadProfile();
@@ -1490,6 +1491,7 @@ describe('feedback social buttons', () => {
 
 describe('logout', () => {
     test('clears auth state and shows auth view', () => {
+        global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
         document.getElementById('auth-username').value = 'user';
         document.getElementById('auth-password').value = 'pass';
         document.getElementById('btn-logout').click();
@@ -1742,6 +1744,7 @@ describe('profile save', () => {
 
     test('returns early when not authenticated', async () => {
         // Logout first
+        global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
         document.getElementById('btn-logout').click();
         global.fetch = jest.fn();
         const form = document.getElementById('profile-form');
