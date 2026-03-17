@@ -10,6 +10,7 @@
 6. [CI/CD Pipeline](#6-cicd-pipeline)
 7. [Database Schema](#7-database-schema)
 8. [Authentication Flow](#8-authentication-flow)
+9. [Claude Code Agents](#9-claude-code-agents)
 
 ---
 
@@ -394,4 +395,79 @@ sequenceDiagram
     DB-->>F: OK
     F-->>B: 200 {"status": "ok"}
     B->>B: localStorage.removeItem("rc-token")<br/>localStorage.removeItem("rc-user")
+```
+
+---
+
+## 9. Claude Code Agents
+
+Nine task-specific AI agents in `.claude/agents/`, each with specialized knowledge and workflows for Radio Calico development. Agents complement the 18 slash commands by providing persistent, context-aware personalities for recurring development concerns.
+
+```mermaid
+graph TD
+    Dev["Developer<br/>(Claude Code CLI)"]
+
+    subgraph Agents[".claude/agents/"]
+        QA["QA Engineer<br/>qa-engineer.md"]
+        DBA["DBA<br/>dba.md"]
+        FE["Frontend Reviewer<br/>frontend-reviewer.md"]
+        DO["DevOps<br/>devops.md"]
+        API["API Designer<br/>api-designer.md"]
+        RM["Release Manager<br/>release-manager.md"]
+        SA["Security Auditor<br/>security-auditor.md"]
+        PA["Performance Analyst<br/>performance-analyst.md"]
+        DW["Documentation Writer<br/>documentation-writer.md"]
+    end
+
+    subgraph Codebase["Project Files"]
+        Tests["Tests<br/>582 across 6 suites"]
+        Schema["Database<br/>db/init.sql (4 tables)"]
+        Static["Frontend<br/>static/ (JS + CSS + HTML)"]
+        Docker["Infrastructure<br/>Docker + nginx + CI"]
+        Flask["API<br/>api/app.py (Flask)"]
+        Git["Git + GitHub<br/>PRs, CI, Releases"]
+        Security["Security<br/>6 scanning tools"]
+        Perf["Caching + CDN<br/>Optimization"]
+        Docs["Documentation<br/>docs/ (5 documents)"]
+    end
+
+    Dev --> QA
+    Dev --> DBA
+    Dev --> FE
+    Dev --> DO
+    Dev --> API
+    Dev --> RM
+    Dev --> SA
+    Dev --> PA
+    Dev --> DW
+
+    QA --> Tests
+    DBA --> Schema
+    FE --> Static
+    DO --> Docker
+    API --> Flask
+    RM --> Git
+    SA --> Security
+    PA --> Perf
+    DW --> Docs
+
+    style Dev fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style QA fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style DBA fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style FE fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style DO fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style API fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style RM fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style SA fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style PA fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style DW fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style Tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style Schema fill:#EFA63C,stroke:#231F20,color:#231F20
+    style Static fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style Docker fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style Flask fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style Git fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style Security fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style Perf fill:#EFA63C,stroke:#231F20,color:#231F20
+    style Docs fill:#1F4E23,stroke:#231F20,color:#FFFFFF
 ```

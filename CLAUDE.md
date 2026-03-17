@@ -15,7 +15,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Artwork**: iTunes Search API (client-side, cached in localStorage 24h TTL).
 - **Auth**: Token-based. PBKDF2 (260k iterations). Tokens in `localStorage`.
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
-- **Testing**: 467 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 169 skills). See `.claude/rules/testing.md`.
+- **Testing**: 582 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 284 skills/agents). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
 - **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination.
 
@@ -69,7 +69,7 @@ make lint          # All linters (Ruff + ESLint + Stylelint + HTMLHint)
 make ci            # Full pipeline: lint + coverage + security
 make test-integration  # 19 API integration tests
 make test-e2e          # 19 E2E tests (Docker prod required)
-make test-skills       # 169 skill validation tests
+make test-skills       # 284 skill + agent validation tests
 make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 
 # Hard refresh after static file edits: Cmd+Shift+R
@@ -101,7 +101,7 @@ make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 ## Slash Commands (18 total, all v1.0.0)
 
 | Command | Purpose |
-|---------|---------|
+| ------- | ------- |
 | `/start` | Launch dev environment |
 | `/check-stream` | Check stream & server status |
 | `/troubleshoot` | Diagnose common issues |
@@ -121,10 +121,27 @@ make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 | `/add-dark-style` | Add dark mode for new components |
 | `/update-claude-md` | Refresh CLAUDE.md from codebase |
 
+## Custom Agents (9 total, all v1.0.0)
+
+Task-specific AI personalities in `.claude/agents/` with specialized knowledge and workflows.
+
+| Agent | File | Focus |
+| ----- | ---- | ----- |
+| QA Engineer | `qa-engineer.md` | Run tests, triage failures, check coverage thresholds |
+| DBA | `dba.md` | MySQL queries, indexes, schema validation, migrations |
+| Frontend Reviewer | `frontend-reviewer.md` | XSS prevention, theme consistency, responsiveness, a11y |
+| DevOps | `devops.md` | Docker, nginx, CI/CD pipeline, deployment |
+| API Designer | `api-designer.md` | REST conventions, auth patterns, endpoint consistency |
+| Release Manager | `release-manager.md` | PR readiness, CI status, changelogs, version management |
+| Security Auditor | `security-auditor.md` | 6 security tools, OWASP top 10, vulnerability triage |
+| Performance Analyst | `performance-analyst.md` | Caching, CDN, pagination, resource optimization |
+| Documentation Writer | `documentation-writer.md` | Docs generation, cross-document consistency, Mermaid diagrams |
+
 ## Claude Code Configuration
 
 - **Rules**: `.claude/rules/` — architecture, testing, database, style-guide (loaded on relevant topics)
 - **Settings**: `.claude/settings.json` — auto-approved commands, denied destructive ops, lint hooks
 - **Skills**: `.claude/skills/*/SKILL.md` — mirrored from commands for extended skill features
+- **Agents**: `.claude/agents/*.md` — 9 task-specific AI agents with specialized workflows
 - **Hooks**: auto-lint Python/JS on file edit, context reminder on compaction
 - **Ignore**: `.claudeignore` — excludes node_modules, venv, coverage, caches from context

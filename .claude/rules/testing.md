@@ -1,6 +1,6 @@
 # Testing & CI/CD
 
-## Test Suite — 467 total tests across 6 suites
+## Test Suite — 582 total tests across 6 suites
 
 | Suite | File | Tests | Tool |
 |-------|------|-------|------|
@@ -9,7 +9,7 @@
 | JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom (90% line threshold) |
 | E2E | `tests/test_e2e.py` | 19 | pytest + requests (Docker prod stack) |
 | Browser | `tests/test_browser.py` | 37 | Selenium + headless Chrome (Docker prod) |
-| Skills | `tests/test_skills.py` | 169 | pytest (validates all 18 slash commands) |
+| Skills + Agents | `tests/test_skills.py` | 284 | pytest (validates 18 commands + 9 agents) |
 
 - Python unit tests use isolated `radiocalico_test` database (created/destroyed per test)
 - Python fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
@@ -41,7 +41,7 @@ Parallel security: `bandit, safety, npm-audit, hadolint, trivy`
 | `make security-all` | All scans including Docker + DAST |
 | `make ci` | Full pipeline: lint + coverage + security |
 | `make test-integration` | API integration tests (requires MySQL) |
-| `make test-skills` | Validate all 18 slash commands |
+| `make test-skills` | Validate 18 slash commands + 9 agents |
 | `make test-browser` | 37 Selenium browser tests (Docker + Chrome) |
 | `make test-e2e` | E2E tests (requires Docker prod running) |
 | `make docker-e2e` | Start prod, run E2E, stop prod |

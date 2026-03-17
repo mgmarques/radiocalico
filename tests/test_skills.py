@@ -1,6 +1,6 @@
-"""Tests for Claude Code slash commands (skills).
+"""Tests for Claude Code slash commands (skills) and custom agents.
 
-Validates that all 17 command files:
+Validates that all 17 command files and 9 agent files:
 - Exist with correct structure and version headers
 - Reference valid files, paths, and make targets
 - Have consistent information with the actual codebase
@@ -17,6 +17,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 COMMANDS_DIR = ROOT / ".claude" / "commands"
 SKILLS_DIR = ROOT / ".claude" / "skills"
+AGENTS_DIR = ROOT / ".claude" / "agents"
 
 # ── All 17 expected commands ──────────────────────────────────
 
@@ -39,6 +40,20 @@ EXPECTED_COMMANDS = [
     "generate-requirements.md",
     "generate-vv-plan.md",
     "test-browser.md",
+]
+
+# ── All 9 expected agents ──────────────────────────────────────
+
+EXPECTED_AGENTS = [
+    "qa-engineer.md",
+    "dba.md",
+    "frontend-reviewer.md",
+    "devops.md",
+    "api-designer.md",
+    "release-manager.md",
+    "security-auditor.md",
+    "performance-analyst.md",
+    "documentation-writer.md",
 ]
 
 
@@ -445,8 +460,8 @@ class TestCLAUDEmdConsistency:
         version = (ROOT / "VERSION").read_text().strip()
         assert version in self.content or "v1.0.0" in self.content or "VERSION" in self.content
 
-    def test_test_count_is_467(self):
-        assert "467" in self.content, "CLAUDE.md should mention 467 total tests"
+    def test_test_count_is_582(self):
+        assert "582" in self.content, "CLAUDE.md should mention 582 total tests"
 
     def test_mentions_structured_logging(self):
         assert "structured" in self.content.lower() or "json log" in self.content.lower()
@@ -456,3 +471,325 @@ class TestCLAUDEmdConsistency:
 
     def test_mentions_health_endpoint(self):
         assert "/health" in self.content
+
+    def test_mentions_all_agents(self):
+        for agent in EXPECTED_AGENTS:
+            name = agent.replace(".md", "")
+            assert name in self.content, f"CLAUDE.md missing reference to agent {name}"
+
+
+# ── Agent Tests ────────────────────────────────────────────────
+
+
+class TestAgentFilesExist:
+    """All expected agent files must exist."""
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_agent_file_exists(self, filename):
+        path = AGENTS_DIR / filename
+        assert path.exists(), f"Missing agent file: {path}"
+
+    def test_no_unexpected_agents(self):
+        """No extra .md files beyond the expected set."""
+        actual = {f.name for f in AGENTS_DIR.glob("*.md")}
+        expected = set(EXPECTED_AGENTS)
+        extra = actual - expected
+        assert not extra, f"Unexpected agent files: {extra}"
+
+    def test_agents_directory_exists(self):
+        assert AGENTS_DIR.is_dir()
+
+
+class TestAgentVersionHeaders:
+    """All agents must have a version header comment."""
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_has_version_header(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        assert "<!-- Radio Calico Agent v" in content, f"{filename} missing version header"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_version_is_semver(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        match = re.search(r"v(\d+\.\d+\.\d+)", content)
+        assert match, f"{filename} has no semver version"
+
+    def test_all_agent_versions_consistent(self):
+        """All agents should be at the same version."""
+        versions = set()
+        for filename in EXPECTED_AGENTS:
+            content = (AGENTS_DIR / filename).read_text()
+            match = re.search(r"v(\d+\.\d+\.\d+)", content)
+            if match:
+                versions.add(match.group(1))
+        assert len(versions) == 1, f"Inconsistent agent versions: {versions}"
+
+    def test_agent_version_matches_project(self):
+        """Agent versions should match the project VERSION file."""
+        project_version = (ROOT / "VERSION").read_text().strip()
+        content = (AGENTS_DIR / "qa-engineer.md").read_text()
+        match = re.search(r"v(\d+\.\d+\.\d+)", content)
+        assert match and match.group(1) == project_version
+
+
+class TestAgentContent:
+    """Agents must have meaningful content."""
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_has_heading(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        assert "# " in content, f"{filename} missing heading"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_has_substantial_content(self, filename):
+        content = (AGENTS_DIR / filename).read_text().strip()
+        lines = [l for l in content.splitlines() if not l.startswith("<!--")]
+        assert len(lines) >= 10, f"{filename} has too little content ({len(lines)} lines)"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_has_workflow_or_rules(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        has_workflow = "## Workflow" in content or "## Rules" in content
+        assert has_workflow, f"{filename} missing Workflow or Rules section"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_has_key_files_section(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        assert "## Key Files" in content or "## Available" in content, (
+            f"{filename} missing Key Files or Available section"
+        )
+
+
+class TestQAEngineerAgent:
+    """Validate QA Engineer agent content."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self):
+        self.content = (AGENTS_DIR / "qa-engineer.md").read_text()
+
+    def test_mentions_test_suites(self):
+        for suite in ["Python unit", "integration", "JS", "E2E", "browser", "skills"]:
+            assert suite.lower() in self.content.lower(), f"Missing test suite: {suite}"
+
+    def test_mentions_coverage_thresholds(self):
+        assert "95%" in self.content, "Missing Python coverage threshold"
+        assert "90%" in self.content, "Missing JS coverage threshold"
+
+    def test_mentions_make_targets(self):
+        for target in ["make test", "make coverage", "make ci"]:
+            assert target in self.content, f"Missing make target: {target}"
+
+    def test_mentions_test_files(self):
+        for f in ["test_app.py", "player.test.js", "test_e2e.py", "test_browser.py"]:
+            assert f in self.content, f"Missing test file reference: {f}"
+
+
+class TestDBAAgent:
+    """Validate DBA agent content."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self):
+        self.content = (AGENTS_DIR / "dba.md").read_text()
+
+    def test_mentions_all_tables(self):
+        for table in ["ratings", "users", "profiles", "feedback"]:
+            assert table in self.content, f"Missing table: {table}"
+
+    def test_mentions_mysql_versions(self):
+        assert "5.7" in self.content, "Missing MySQL 5.7 reference"
+        assert "8.0" in self.content, "Missing MySQL 8.0 reference"
+
+    def test_mentions_parameterized_queries(self):
+        assert "%s" in self.content or "parameterized" in self.content
+
+    def test_mentions_schema_file(self):
+        assert "init.sql" in self.content
+
+    def test_mentions_pymysql(self):
+        assert "PyMySQL" in self.content
+
+
+class TestFrontendReviewerAgent:
+    """Validate Frontend Reviewer agent content."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self):
+        self.content = (AGENTS_DIR / "frontend-reviewer.md").read_text()
+
+    def test_mentions_xss_prevention(self):
+        assert "escHtml" in self.content, "Missing escHtml reference"
+
+    def test_mentions_theme_system(self):
+        assert "data-theme" in self.content, "Missing theme attribute reference"
+        assert "--mint" in self.content or "--forest" in self.content, "Missing CSS tokens"
+
+    def test_mentions_breakpoint(self):
+        assert "700px" in self.content, "Missing responsive breakpoint"
+
+    def test_mentions_no_frameworks(self):
+        assert "No frameworks" in self.content or "vanilla" in self.content.lower()
+
+    def test_mentions_key_files(self):
+        for f in ["player.js", "player.css", "index.html"]:
+            assert f in self.content, f"Missing file reference: {f}"
+
+
+class TestDevOpsAgent:
+    """Validate DevOps agent content."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self):
+        self.content = (AGENTS_DIR / "devops.md").read_text()
+
+    def test_mentions_docker_services(self):
+        for svc in ["nginx", "gunicorn", "MySQL"]:
+            assert svc in self.content, f"Missing Docker service: {svc}"
+
+    def test_mentions_ci_jobs(self):
+        assert "13" in self.content, "Missing CI job count"
+
+    def test_mentions_key_config_files(self):
+        for f in ["Dockerfile", "docker-compose", "nginx.conf", "ci.yml", "Makefile"]:
+            assert f in self.content, f"Missing config file: {f}"
+
+    def test_mentions_ports(self):
+        assert "5050" in self.content, "Missing Docker port"
+        assert "5000" in self.content, "Missing Flask port"
+
+    def test_mentions_health_endpoint(self):
+        assert "/health" in self.content
+
+
+class TestAPIDesignerAgent:
+    """Validate API Designer agent content."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self):
+        self.content = (AGENTS_DIR / "api-designer.md").read_text()
+
+    def test_mentions_all_endpoint_groups(self):
+        for group in ["Ratings", "Auth", "Profile", "Feedback", "Health"]:
+            assert group in self.content, f"Missing endpoint group: {group}"
+
+    def test_mentions_http_methods(self):
+        for method in ["GET", "POST", "PUT"]:
+            assert method in self.content, f"Missing HTTP method: {method}"
+
+    def test_mentions_auth_pattern(self):
+        assert "Bearer" in self.content, "Missing Bearer token reference"
+
+    def test_mentions_rate_limiting(self):
+        assert "rate limit" in self.content.lower() or "Rate limiting" in self.content
+
+    def test_mentions_api_prefix(self):
+        assert "/api/" in self.content
+
+    def test_mentions_status_codes(self):
+        for code in ["201", "400", "401", "409"]:
+            assert code in self.content, f"Missing status code: {code}"
+
+
+class TestReleaseManagerAgent:
+    """Validate Release Manager agent content."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self):
+        self.content = (AGENTS_DIR / "release-manager.md").read_text()
+
+    def test_mentions_ci_pipeline(self):
+        assert "13" in self.content, "Missing CI job count"
+
+    def test_mentions_semver(self):
+        assert "PATCH" in self.content and "MINOR" in self.content and "MAJOR" in self.content
+
+    def test_mentions_version_file(self):
+        assert "VERSION" in self.content
+
+    def test_mentions_pre_merge_checklist(self):
+        assert "Pre-Merge" in self.content or "checklist" in self.content.lower()
+
+    def test_mentions_changelog(self):
+        assert "changelog" in self.content.lower() or "Changelog" in self.content
+
+    def test_mentions_gh_cli(self):
+        assert "gh " in self.content, "Missing gh CLI reference"
+
+
+class TestSecurityAuditorAgent:
+    """Validate Security Auditor agent content."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self):
+        self.content = (AGENTS_DIR / "security-auditor.md").read_text()
+
+    def test_mentions_all_security_tools(self):
+        for tool in ["Bandit", "Safety", "npm audit", "Hadolint", "Trivy", "ZAP"]:
+            assert tool in self.content, f"Missing security tool: {tool}"
+
+    def test_mentions_make_targets(self):
+        for target in ["make security", "make security-all", "make docker-security"]:
+            assert target in self.content, f"Missing make target: {target}"
+
+    def test_mentions_owasp(self):
+        assert "OWASP" in self.content, "Missing OWASP reference"
+
+    def test_mentions_xss_prevention(self):
+        assert "escHtml" in self.content, "Missing escHtml XSS prevention"
+
+    def test_mentions_parameterized_queries(self):
+        assert "%s" in self.content or "parameterized" in self.content
+
+    def test_mentions_key_files(self):
+        for f in ["app.py", "Dockerfile", "nginx.conf", "player.js"]:
+            assert f in self.content, f"Missing file reference: {f}"
+
+
+class TestPerformanceAnalystAgent:
+    """Validate Performance Analyst agent content."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self):
+        self.content = (AGENTS_DIR / "performance-analyst.md").read_text()
+
+    def test_mentions_caching_strategies(self):
+        assert "fetchItunesCached" in self.content, "Missing iTunes cache reference"
+        assert "localStorage" in self.content, "Missing localStorage reference"
+
+    def test_mentions_cdn(self):
+        assert "CloudFront" in self.content, "Missing CDN reference"
+
+    def test_mentions_pagination(self):
+        assert "Pagination" in self.content or "pagination" in self.content
+
+    def test_mentions_debounce(self):
+        assert "METADATA_DEBOUNCE_MS" in self.content or "debounce" in self.content
+
+    def test_mentions_key_files(self):
+        for f in ["player.js", "player.css", "app.py", "nginx.conf"]:
+            assert f in self.content, f"Missing file reference: {f}"
+
+
+class TestDocumentationWriterAgent:
+    """Validate Documentation Writer agent content."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self):
+        self.content = (AGENTS_DIR / "documentation-writer.md").read_text()
+
+    def test_mentions_all_doc_files(self):
+        for doc in ["architecture.md", "tech-spec.md", "requirements.md", "vv-test-plan.md"]:
+            assert doc in self.content, f"Missing doc reference: {doc}"
+
+    def test_mentions_generator_commands(self):
+        for cmd in ["/generate-diagrams", "/generate-tech-spec", "/generate-requirements", "/generate-vv-plan"]:
+            assert cmd in self.content, f"Missing generator command: {cmd}"
+
+    def test_mentions_mermaid(self):
+        assert "Mermaid" in self.content or "mermaid" in self.content
+
+    def test_mentions_consistency(self):
+        assert "consistency" in self.content.lower() or "Consistency" in self.content
+
+    def test_mentions_key_files(self):
+        for f in ["README.md", "CLAUDE.md", "docs/architecture.md", "docs/tech-spec.md"]:
+            assert f in self.content, f"Missing file reference: {f}"

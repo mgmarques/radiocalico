@@ -98,7 +98,7 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
   <img src="docs/8_CiCD.png" alt="Radio Calico CI/CD Pipeline" width="525">
 </p>
 
-*GitHub Actions workflow — 12 parallel jobs: lint, unit tests (Python + JS), integration tests, E2E tests, skills validation, and 6 security scans (Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP).*
+*GitHub Actions workflow — 13 parallel jobs: lint, unit tests (Python + JS), integration tests, E2E tests, browser tests, skills validation, and 6 security scans (Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP).*
 
 ---
 
@@ -478,7 +478,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**467 total tests** across 6 suites:
+**582 total tests** across 6 suites:
 
 | Suite | Tests | Tool | Coverage |
 |-------|-------|------|----------|
@@ -487,7 +487,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 | JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
 | E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
 | Browser (Selenium) | 37 | Selenium + headless Chrome | UI, themes, auth, playback |
-| Skills validation | 169 | pytest | All 18 slash commands |
+| Skills + Agents | 284 | pytest | 18 slash commands + 9 agents |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
 - **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`
@@ -510,7 +510,7 @@ graph LR
     lint --> python-tests["python-tests<br/>pytest + coverage<br/>(95% threshold)"]
     lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
     lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
-    lint --> skills-tests["skills-tests<br/>pytest<br/>18 slash commands"]
+    lint --> skills-tests["skills-tests<br/>pytest<br/>18 commands + 9 agents"]
 
     python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]
     js-tests --> e2e-tests
@@ -745,7 +745,7 @@ Detailed project documentation is available in the [`docs/`](docs/) directory:
 | Document | Description |
 |----------|-------------|
 | [Architecture Diagrams](docs/architecture.md) | 8 Mermaid diagrams: system architecture, request flow, data flow (playback & user interactions), event-driven architecture, CI/CD pipeline, database schema, and authentication flow. Visual reference for how all components connect across the Docker production stack. |
-| [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (467 tests across 6 suites), security measures, and performance optimizations. |
+| [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (582 tests across 6 suites), security measures, and performance optimizations. |
 | [Requirements](docs/requirements.md) | 91 requirements: 53 functional (FR-1xx to FR-8xx covering streaming, metadata, ratings, auth, profiles, feedback, sharing, and theme) and 38 non-functional (NFR-1xx to NFR-6xx covering performance, security, reliability, observability, maintainability, and compatibility). Includes traceability matrix linking each requirement to its implementation and tests. |
 | [V&V Test Plan](docs/vv-test-plan.md) | 52 user-perspective test cases (TC-1xx to TC-9xx) with step-by-step procedures, expected results, and automated test mapping. Includes manual test procedures for audio playback, automated coverage matrix across all 6 test suites, and an execution summary template. |
 | [Design Document](design.md) | Original architecture and design document from the initial prototype phase. |
@@ -760,13 +760,23 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 
 ```text
 .claude/
-├── settings.json          # Permissions, hooks, denied destructive ops
+├���─ settings.json          # Permissions, hooks, denied destructive ops
 ├── TEMPLATE.md            # Reusable patterns for new projects
 ├── rules/                 # Deep context loaded on relevant topics
 │   ├── architecture.md    # Player.js internals, metadata, events
-│   ├── testing.md         # 467 tests, 6 suites, CI/CD pipeline
+│   ├── testing.md         # 582 tests, 6 suites, CI/CD pipeline
 │   ├── database.md        # MySQL schema, 4 tables, constraints
 │   └── style-guide.md     # CSS tokens, code conventions, formats
+├── agents/                # Custom agents (9 total, all v1.0.0)
+│   ├── qa-engineer.md     # QA — tests, coverage, triage
+│   ├── dba.md             # DBA — MySQL, queries, schema
+│   ├── frontend-reviewer.md  # Frontend — XSS, theme, a11y
+│   ├── devops.md          # DevOps — Docker, nginx, CI
+│   ├── api-designer.md    # API — REST, auth, endpoints
+│   ├── release-manager.md # Release — PRs, CI, versions
+│   ├── security-auditor.md   # Security — 6 tools, OWASP
+│   ├── performance-analyst.md # Perf — caching, CDN, optimization
+│   └── documentation-writer.md # Docs — generation, consistency
 ├── commands/              # Slash commands (18 total, all v1.0.0)
 │   ├── start.md           # /start — launch dev environment
 │   ├── run-ci.md          # /run-ci — lint + tests + security
@@ -774,7 +784,7 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 │   ├── docker-verify.md   # /docker-verify — rebuild + E2E tests
 │   ├── add-endpoint.md    # /add-endpoint — scaffold API route
 │   ├── security-audit.md  # /security-audit — all 6 security tools
-│   ├── generate-diagrams.md       # 8 Mermaid architecture diagrams
+│   ├── generate-diagrams.md       # 9 Mermaid architecture diagrams
 │   ├── generate-tech-spec.md      # 13-section technical spec
 │   ├── generate-requirements.md   # 91 FR/NFR requirements
 │   ├── generate-vv-plan.md        # 52 user-perspective test cases
@@ -796,7 +806,7 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 | **Auto-lint hook** | Runs Ruff/ESLint automatically after every file edit |
 | **Compaction reminder** | Re-injects critical rules when context gets compressed |
 | **`.claudeignore`** | Excludes node_modules, venv, coverage from context |
-| **169 skill tests** | Validates all 18 commands: structure, versions, references, consistency |
+| **284 skill + agent tests** | Validates 18 commands + 9 agents: structure, versions, references, consistency |
 
 ### Command Examples
 
@@ -821,7 +831,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
 
 1. **Clone + setup**: `make install` (or `/start` in Claude Code)
 2. **Develop**: Claude reads CLAUDE.md automatically. Use `/add-endpoint` for new routes.
-3. **Test**: `/run-ci` runs lint + coverage + security. All 467 tests must pass.
+3. **Test**: `/run-ci` runs lint + coverage + security. All 582 tests must pass.
 4. **PR**: `/create-pr` creates a branch, commits, pushes, and opens a PR with summary.
 5. **Add skills**: Create `.claude/commands/your-skill.md` + `.claude/skills/your-skill/SKILL.md`, add to `tests/test_skills.py`.
 
