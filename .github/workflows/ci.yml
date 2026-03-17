@@ -62,7 +62,7 @@ jobs:
       - name: Validate all 17 slash commands
         run: pytest tests/test_skills.py -v
 
-  # ── Python tests + coverage (98% threshold) ────────────────
+  # ── Python tests + coverage (95% threshold) ────────────────
   python-tests:
     runs-on: ubuntu-latest
     needs: [lint]
