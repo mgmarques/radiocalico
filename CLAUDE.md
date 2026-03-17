@@ -97,7 +97,7 @@ make test-skills       # 140 skill validation tests
 7. **Emoji in URL encoding**: Use plain text `[N likes / N unlikes]`.
 8. **mailto: in `window.open`**: Use `window.location.href` instead.
 
-## Slash Commands (17 total, all v1.0.0)
+## Slash Commands (18 total, all v1.0.0)
 
 | Command | Purpose |
 |---------|---------|
@@ -115,6 +115,7 @@ make test-skills       # 140 skill validation tests
 | `/generate-requirements` | Requirements documentation (FR/NFR) |
 | `/generate-vv-plan` | V&V test plan with user test cases |
 | `/update-readme-diagrams` | Sync diagrams to README |
+| `/test-browser` | Run 37 Selenium browser tests (headless Chrome) |
 | `/add-share-button` | Add new share platform |
 | `/add-dark-style` | Add dark mode for new components |
 | `/update-claude-md` | Refresh CLAUDE.md from codebase |

@@ -38,6 +38,7 @@ EXPECTED_COMMANDS = [
     "update-readme-diagrams.md",
     "generate-requirements.md",
     "generate-vv-plan.md",
+    "test-browser.md",
 ]
 
 
@@ -400,6 +401,32 @@ class TestGenerateVVPlanCommand:
         assert "TC-101" in content or "Play audio" in content.lower()
         assert "TC-301" in content or "Rate a track" in content.lower()
         assert "TC-401" in content or "Register" in content
+
+
+class TestBrowserCommand:
+    """Validate /test-browser command content."""
+
+    def test_mentions_selenium(self):
+        content = (COMMANDS_DIR / "test-browser.md").read_text()
+        assert "selenium" in content.lower() or "Selenium" in content
+
+    def test_mentions_make_target(self):
+        content = (COMMANDS_DIR / "test-browser.md").read_text()
+        assert "make test-browser" in content
+
+    def test_mentions_headless_option(self):
+        content = (COMMANDS_DIR / "test-browser.md").read_text()
+        assert "BROWSER_HEADLESS" in content
+
+    def test_lists_test_classes(self):
+        content = (COMMANDS_DIR / "test-browser.md").read_text()
+        for cls in ["TestPageLoad", "TestTheme", "TestRatings", "TestDrawer", "TestAuth",
+                     "TestShareButtons", "TestResponsive", "TestAudioPlayback", "TestStreamQuality"]:
+            assert cls in content, f"Missing test class: {cls}"
+
+    def test_mentions_docker_prerequisite(self):
+        content = (COMMANDS_DIR / "test-browser.md").read_text()
+        assert "docker" in content.lower() or "Docker" in content
 
 
 class TestCLAUDEmdConsistency:
