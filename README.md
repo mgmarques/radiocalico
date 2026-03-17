@@ -400,7 +400,7 @@ The MySQL database is auto-initialized with the schema from `db/init.sql` on fir
 ```bash
 make test          # Run all tests (Python + JavaScript)
 make test-py       # Run Python unit tests only (61 tests)
-make test-js       # Run JavaScript unit tests only (156 tests)
+make test-js       # Run JavaScript unit tests only (162 tests)
 make coverage      # Python tests + coverage report (fails if <98%)
 make coverage-js   # JavaScript tests + coverage report (fails if <96% lines)
 make security      # Bandit (SAST) + Safety (deps) + npm audit
@@ -414,12 +414,14 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**220 total unit tests** across both stacks:
+**261 total tests** across 4 suites:
 
-| Stack | Tests | Tool | Coverage |
+| Suite | Tests | Tool | Coverage |
 |-------|-------|------|----------|
-| Python (backend) | 61 | pytest + pytest-cov | 98% |
-| JavaScript (frontend) | 159 | Jest + jsdom | 96% lines (94% statements) |
+| Python unit | 61 | pytest + pytest-cov | 98% |
+| Python integration | 19 | pytest | Multi-step API workflows |
+| JavaScript unit | 162 | Jest + jsdom | 96% lines |
+| E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
 - **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`
@@ -497,7 +499,7 @@ radiocalico/
 │   │   └── player.css              # Styles, design tokens, dark/light themes
 │   └── js/
 │       ├── player.js               # All client-side logic
-│       └── player.test.js          # 44 JavaScript unit tests (Jest)
+│       └── player.test.js          # 162 JavaScript unit tests (Jest + jsdom)
 └── .claude/
     └── commands/                   # Claude Code slash commands
         ├── start.md                # /start — launch dev environment
@@ -529,7 +531,7 @@ radiocalico/
 | Rate Limiting | flask-limiter | Request rate limiting for auth endpoints |
 | Config | python-dotenv | Environment variable management |
 | Python Testing | pytest + pytest-cov | 61 backend unit tests (98% coverage) |
-| JS Testing | Jest + jsdom | 44 frontend unit tests |
+| JS Testing | Jest + jsdom | 162 frontend unit tests (96% line coverage) |
 | Security | Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP | SAST, dependency, Dockerfile, image, and DAST scanning |
 | Containers | Docker + Docker Compose | Dev/prod deployment with MySQL |
 | Reverse Proxy | nginx (alpine) | Static file serving + /api proxy (prod) |

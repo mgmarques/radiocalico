@@ -14,7 +14,9 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Ratings**: Stored in local MySQL only. CloudFront host does NOT accept ratings.
 - **Auth**: Token-based authentication. Passwords hashed with PBKDF2 (260k iterations) + random salt. Timing-safe comparison via hmac.compare_digest. Tokens stored in `localStorage`.
 - **Logging**: Structured JSON logs across all layers. Python: `python-json-logger` with request_id, method, path, status, duration_ms. nginx: JSON access log format with upstream timing. JS: `log.info/warn/error()` outputs JSON to browser console. X-Request-ID header for cross-layer correlation.
-- **Testing**: Python: pytest + pytest-cov (98% coverage). JS: Jest + jsdom (159 tests, 96% line coverage). Security: bandit (SAST) + safety (dependency scan) + npm audit + hadolint (Dockerfile) + trivy (image scan) + OWASP ZAP (DAST). CI: GitHub Actions on push/PR.
+- **Testing**: Python: pytest + pytest-cov (98% coverage). JS: Jest + jsdom (162 tests, 96% line coverage). Integration: 19 multi-step API workflow tests. E2E: 19 tests against Docker prod stack. Security: bandit (SAST) + safety (deps) + npm audit + hadolint (Dockerfile) + trivy (image scan) + OWASP ZAP (DAST). CI: GitHub Actions (11 jobs) on push/PR.
+- **Linting**: Ruff (Python lint + format), ESLint (JS), Stylelint (CSS), HTMLHint (HTML). Run `make lint` before committing.
+- **Performance**: WebP images (logo 50% smaller), dns-prefetch for CDN/API domains, iTunes API cached in localStorage (24h TTL), API pagination on ratings endpoint.
 
 ## File Tree
 
@@ -41,20 +43,30 @@ radiocalico/
 │   ├── app.py                      # Flask REST API + static file serving
 │   ├── .env.example                # Environment variable template
 │   ├── requirements.txt            # Python deps (flask, flask-cors, pymysql, python-dotenv, flask-limiter)
-│   ├── requirements-dev.txt        # Dev deps (pytest, pytest-cov, bandit, safety)
+│   ├── requirements-dev.txt        # Dev deps (pytest, pytest-cov, bandit, safety, ruff)
 │   ├── conftest.py                 # Pytest fixtures (test DB, client, auth)
 │   ├── test_app.py                 # 61 unit tests (98% coverage)
+│   ├── test_integration.py         # 19 integration tests (multi-step workflows)
 │   ├── pytest.ini                  # Pytest configuration
 │   ├── .bandit                     # Bandit security scan config
 │   └── venv/                       # Python virtual environment
 ├── static/
 │   ├── index.html                  # Main entry point, all UI markup
-│   ├── logo.png                    # Radio Calico logo (navbar + favicon)
+│   ├── logo.png                    # Radio Calico logo (PNG fallback)
+│   ├── logo.webp                   # Radio Calico logo (WebP, 50% smaller)
+│   ├── favicon.webp                # Favicon (1.1 KB WebP)
 │   ├── css/
 │   │   └── player.css              # All styles, responsive layout, design tokens
 │   └── js/
 │       ├── player.js               # Playback, metadata, artwork, ratings, auth, sharing
-│       └── player.test.js          # 159 JavaScript unit tests (Jest + jsdom, 96% line coverage)
+│       └── player.test.js          # 162 JavaScript unit tests (Jest + jsdom, 96% line coverage)
+├── tests/
+│   ├── conftest.py                 # E2E test fixtures (base_url)
+│   └── test_e2e.py                 # 19 E2E tests (nginx → gunicorn → MySQL)
+├── pyproject.toml                  # Ruff linter configuration
+├── eslint.config.js                # ESLint configuration
+├── .stylelintrc.json               # Stylelint configuration
+├── .htmlhintrc                     # HTMLHint configuration
 └── .claude/
     └── commands/
         ├── start.md                # /start — launch dev environment
@@ -76,11 +88,16 @@ radiocalico/
 | `static/css/player.css` | All styles, responsive layout, design tokens, dark/light themes |
 | `api/app.py` | Flask REST API: ratings, auth, profile, feedback + static file serving |
 | `api/test_app.py` | 61 Python unit tests covering all endpoints (98% coverage) |
-| `static/js/player.test.js` | 159 JavaScript unit tests (Jest + jsdom, 96% line coverage) |
+| `api/test_integration.py` | 19 integration tests: user lifecycle, ratings, sessions, auth edge cases |
+| `static/js/player.test.js` | 162 JavaScript unit tests (Jest + jsdom, 96% line coverage) |
+| `tests/test_e2e.py` | 19 E2E tests: static files, security headers, API proxy, error handling |
 | `api/conftest.py` | Pytest fixtures: test DB setup/teardown, client, auth helpers |
 | `api/.env.example` | Environment variable template (DB creds, Flask config, CORS) |
-| `api/requirements.txt` | Python dependencies (flask, flask-cors, pymysql, python-dotenv, flask-limiter) |
-| `api/requirements-dev.txt` | Dev dependencies (pytest, pytest-cov, bandit, safety) |
+| `api/requirements.txt` | Python deps (flask, flask-cors, pymysql, python-dotenv, flask-limiter, python-json-logger) |
+| `api/requirements-dev.txt` | Dev deps (pytest, pytest-cov, bandit, safety, ruff) |
+| `pyproject.toml` | Ruff linter configuration (Python lint + format) |
+| `eslint.config.js` | ESLint configuration (JS lint with browser/HLS.js globals) |
+| `.github/workflows/ci.yml` | GitHub Actions CI: 11 jobs (lint, tests, security, E2E, ZAP) |
 | `Makefile` | CI/CD targets: test, coverage, security, ci, Docker |
 | `Dockerfile` | Multi-stage build: dev (Flask debug) + prod (gunicorn 4 workers) |
 | `docker-compose.yml` | Dev/prod profiles with MySQL 8.0 + nginx (prod) |
@@ -103,7 +120,7 @@ When running via Docker, access the app at the port configured by `APP_PORT` (de
 
 #### Ratings (no auth required)
 
-- `GET /api/ratings` — all ratings (IP addresses are not exposed in response)
+- `GET /api/ratings` — ratings list with pagination (`?limit=100&offset=0`, max 500). IPs not exposed.
 - `GET /api/ratings/summary` — likes/dislikes grouped by station
 - `GET /api/ratings/check?station=...` — check if current IP already rated
 - `POST /api/ratings` — submit rating `{ station, score }` where score must be 0 or 1 (409 on duplicate)
@@ -123,6 +140,10 @@ When running via Docker, access the app at the port configured by `APP_PORT` (de
 
 - `POST /api/feedback` — submit feedback `{ message }` (stores with user's full profile data)
 
+#### Health (nginx only, not proxied)
+
+- `GET /health` — returns `200 "ok"` (used by Docker health checks and load balancers)
+
 **IMPORTANT**: All API routes use the `/api` prefix. The frontend fetches `/api/ratings/...` — never `/ratings/...` without the prefix.
 
 ## Code Conventions
@@ -136,6 +157,8 @@ When running via Docker, access the app at the port configured by `APP_PORT` (de
 - **Theme persistence**: `localStorage` key `rc-theme` stores `"light"` or `"dark"`. Default: dark.
 - **Stream quality**: `localStorage` key `rc-stream-quality` stores `"flac"` or `"aac"`. Default: flac. Switching forces the HLS level to the matching codec.
 - **Share buttons**: Use platform URL schemes (wa.me, x.com/intent, t.me/share/url, open.spotify.com/search, music.youtube.com/search, amazon.com/s with digital-music filter). Facebook removed (sharer doesn't support plain text sharing).
+- **Logging**: Python uses `logger.info/warning/error()` with structured JSON (not `print()`). JS uses `log.info/warn/error(message, context)` (not bare `console.warn/error`). Business events should have descriptive names like `user_registered`, `rating_created`.
+- **Linting**: `make lint` must pass before committing. Ruff for Python (lint + format), ESLint for JS, Stylelint for CSS, HTMLHint for HTML. `make fix-py` auto-fixes Python issues.
 - **Testing**: All new API routes must have corresponding tests in `test_app.py`. New JS functions must be tested in `player.test.js`. Run `make ci` before merging.
 
 ## Common Tasks
@@ -166,12 +189,16 @@ Local dev: `http://127.0.0.1:5000`. Docker: `http://127.0.0.1:5050` (configurabl
 ### Run tests
 
 ```bash
-make test      # Run all tests: Python (61) + JavaScript (44)
+make test      # Run all unit tests: Python (61) + JavaScript (162)
 make test-py   # Run Python unit tests only
 make test-js   # Run JavaScript unit tests only
-make coverage  # Python tests + coverage report (fails if <99%)
+make coverage  # Python tests + coverage (fails if <98%)
+make coverage-js  # JS tests + coverage (fails if <90% lines)
+make lint      # Run all linters (Ruff + ESLint + Stylelint + HTMLHint)
 make security  # Bandit SAST + Safety + npm audit
-make ci        # Full pipeline: Python coverage + JS tests + security
+make ci        # Full pipeline: lint + coverage + security
+make test-integration  # 19 API integration tests (requires MySQL)
+make test-e2e          # 19 E2E tests (requires Docker prod running)
 ```
 
 ### Docker
@@ -328,13 +355,20 @@ CREATE TABLE feedback (
 
 ### Test Suite
 
-**220 total unit tests** across Python and JavaScript:
+**261 total tests** across 4 test suites:
 
-- **61 Python tests** in `api/test_app.py` — all endpoints and helper functions (98% coverage)
-- **159 JavaScript tests** in `static/js/player.test.js` — pure functions, DOM, ratings, auth, sharing, history, theme, quality, HLS, metadata, profile, feedback, structured logger (96% line coverage)
-- Python uses isolated `radiocalico_test` database (created/destroyed per test via `conftest.py`)
+| Suite | File | Tests | Tool |
+|-------|------|-------|------|
+| Python unit | `api/test_app.py` | 61 | pytest (98% coverage) |
+| Python integration | `api/test_integration.py` | 19 | pytest |
+| JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom (96% line coverage) |
+| E2E | `tests/test_e2e.py` | 19 | pytest + requests (Docker prod stack) |
+
+- Python unit tests use isolated `radiocalico_test` database (created/destroyed per test)
 - Python fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
+- Integration tests chain multiple API calls per test (user lifecycle, ratings workflow, session handling)
 - JS uses Jest + jsdom with mocked `fetch`, `Hls.js`, `localStorage`, `window.open`
+- E2E tests make real HTTP requests to nginx → gunicorn → MySQL (requires `make docker-prod`)
 
 ### Security Scanning
 
@@ -376,9 +410,8 @@ CREATE TABLE feedback (
 - **Metadata comes from CloudFront JSON**, not ID3 tags. The ID3 parser is implemented as fallback but the stream does not currently embed ID3 tags.
 - **Database credentials are loaded from environment variables** via python-dotenv (`api/.env.example` provides the template). `CORS_ORIGIN` env var controls allowed CORS origins.
 - **Debug mode is off by default**, controlled by `FLASK_DEBUG` env var.
-- **Tests exist** — 220 unit tests (61 Python + 159 JS), 22 integration tests, 19 E2E tests. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions.
-- **Linting** — Ruff (Python), ESLint (JS), Stylelint (CSS), HTMLHint (HTML). Run `make lint` before committing. `make fix-py` auto-fixes Python issues.
-- **iTunes API** is called client-side for artwork — no proxy or caching layer yet.
+- **Tests exist** — 261 tests: 61 Python unit + 19 integration + 162 JS unit + 19 E2E. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions (11 jobs).
+- **iTunes API** is cached client-side in localStorage (24h TTL) via `fetchItunesCached()`. No server-side proxy.
 - **Ratings are local only** — not sent to the CloudFront/stream host.
 - **Cache issues** — after editing static files, users must hard refresh (`Cmd+Shift+R`) to see changes.
 - **Port conflicts** — do NOT run a separate static server. Flask on port 5000 (local) or 5050 (Docker) serves everything. Port 5000 on macOS may conflict with AirPlay Receiver.
