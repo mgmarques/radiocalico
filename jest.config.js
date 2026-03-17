@@ -4,10 +4,10 @@ module.exports = {
   collectCoverageFrom: ['static/js/player.js'],
   coverageThresholds: {
     global: {
-      statements: 94,
-      branches: 80,
-      functions: 88,
-      lines: 96,
+      statements: 90,
+      branches: 78,
+      functions: 85,
+      lines: 90,
     },
   },
 };

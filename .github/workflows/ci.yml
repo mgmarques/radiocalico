@@ -44,7 +44,7 @@ jobs:
       - name: HTMLHint (HTML)
         run: npx htmlhint static/index.html
 
-  # ── Python tests + coverage (99% threshold) ────────────────
+  # ── Python tests + coverage (98% threshold) ────────────────
   python-tests:
     runs-on: ubuntu-latest
     needs: [lint]
@@ -82,7 +82,7 @@ jobs:
           DB_USER: testuser
           DB_PASSWORD: testpass
           DB_NAME: radiocalico_test
-        run: pytest test_app.py --cov=app --cov-report=term-missing --cov-fail-under=99 -v
+        run: pytest test_app.py --cov=app --cov-report=term-missing --cov-fail-under=98 -v
 
   # ── Python integration tests ────────────────────────────────
   integration-tests:

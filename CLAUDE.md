@@ -13,7 +13,8 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Artwork & Duration**: iTunes Search API (client-side). `trackTimeMillis` used for duration display.
 - **Ratings**: Stored in local MySQL only. CloudFront host does NOT accept ratings.
 - **Auth**: Token-based authentication. Passwords hashed with PBKDF2 (260k iterations) + random salt. Timing-safe comparison via hmac.compare_digest. Tokens stored in `localStorage`.
-- **Testing**: Python: pytest + pytest-cov (99% coverage). JS: Jest + jsdom (156 tests, 96% line coverage). Security: bandit (SAST) + safety (dependency scan) + npm audit + hadolint (Dockerfile) + trivy (image scan) + OWASP ZAP (DAST). CI: GitHub Actions on push/PR.
+- **Logging**: Structured JSON logs across all layers. Python: `python-json-logger` with request_id, method, path, status, duration_ms. nginx: JSON access log format with upstream timing. JS: `log.info/warn/error()` outputs JSON to browser console. X-Request-ID header for cross-layer correlation.
+- **Testing**: Python: pytest + pytest-cov (98% coverage). JS: Jest + jsdom (159 tests, 96% line coverage). Security: bandit (SAST) + safety (dependency scan) + npm audit + hadolint (Dockerfile) + trivy (image scan) + OWASP ZAP (DAST). CI: GitHub Actions on push/PR.
 
 ## File Tree
 
@@ -42,7 +43,7 @@ radiocalico/
 │   ├── requirements.txt            # Python deps (flask, flask-cors, pymysql, python-dotenv, flask-limiter)
 │   ├── requirements-dev.txt        # Dev deps (pytest, pytest-cov, bandit, safety)
 │   ├── conftest.py                 # Pytest fixtures (test DB, client, auth)
-│   ├── test_app.py                 # 61 unit tests (99% coverage)
+│   ├── test_app.py                 # 61 unit tests (98% coverage)
 │   ├── pytest.ini                  # Pytest configuration
 │   ├── .bandit                     # Bandit security scan config
 │   └── venv/                       # Python virtual environment
@@ -53,7 +54,7 @@ radiocalico/
 │   │   └── player.css              # All styles, responsive layout, design tokens
 │   └── js/
 │       ├── player.js               # Playback, metadata, artwork, ratings, auth, sharing
-│       └── player.test.js          # 156 JavaScript unit tests (Jest + jsdom, 96% line coverage)
+│       └── player.test.js          # 159 JavaScript unit tests (Jest + jsdom, 96% line coverage)
 └── .claude/
     └── commands/
         ├── start.md                # /start — launch dev environment
@@ -74,8 +75,8 @@ radiocalico/
 | `static/js/player.js` | Playback, metadata, artwork, ratings, auth, profile, sharing, feedback |
 | `static/css/player.css` | All styles, responsive layout, design tokens, dark/light themes |
 | `api/app.py` | Flask REST API: ratings, auth, profile, feedback + static file serving |
-| `api/test_app.py` | 61 Python unit tests covering all endpoints (99% coverage) |
-| `static/js/player.test.js` | 156 JavaScript unit tests (Jest + jsdom, 96% line coverage) |
+| `api/test_app.py` | 61 Python unit tests covering all endpoints (98% coverage) |
+| `static/js/player.test.js` | 159 JavaScript unit tests (Jest + jsdom, 96% line coverage) |
 | `api/conftest.py` | Pytest fixtures: test DB setup/teardown, client, auth helpers |
 | `api/.env.example` | Environment variable template (DB creds, Flask config, CORS) |
 | `api/requirements.txt` | Python dependencies (flask, flask-cors, pymysql, python-dotenv, flask-limiter) |
@@ -327,10 +328,10 @@ CREATE TABLE feedback (
 
 ### Test Suite
 
-**217 total tests** across Python and JavaScript:
+**220 total unit tests** across Python and JavaScript:
 
-- **61 Python tests** in `api/test_app.py` — all endpoints and helper functions (99% coverage)
-- **156 JavaScript tests** in `static/js/player.test.js` — pure functions, DOM, ratings, auth, sharing, history, theme, quality, HLS, metadata, profile, feedback (96% line coverage)
+- **61 Python tests** in `api/test_app.py` — all endpoints and helper functions (98% coverage)
+- **159 JavaScript tests** in `static/js/player.test.js` — pure functions, DOM, ratings, auth, sharing, history, theme, quality, HLS, metadata, profile, feedback, structured logger (96% line coverage)
 - Python uses isolated `radiocalico_test` database (created/destroyed per test via `conftest.py`)
 - Python fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
 - JS uses Jest + jsdom with mocked `fetch`, `Hls.js`, `localStorage`, `window.open`
@@ -352,7 +353,7 @@ CREATE TABLE feedback (
 | `make test` | Run all tests (Python + JavaScript) |
 | `make test-py` | Run Python unit tests only |
 | `make test-js` | Run JavaScript unit tests only |
-| `make coverage` | Python tests + coverage (fails if <99%) |
+| `make coverage` | Python tests + coverage (fails if <98%) |
 | `make lint` | Run all linters (Python + JS + CSS + HTML) |
 | `make lint-py` | Ruff check + format check (Python) |
 | `make lint-js` | ESLint (JavaScript) |
@@ -375,7 +376,7 @@ CREATE TABLE feedback (
 - **Metadata comes from CloudFront JSON**, not ID3 tags. The ID3 parser is implemented as fallback but the stream does not currently embed ID3 tags.
 - **Database credentials are loaded from environment variables** via python-dotenv (`api/.env.example` provides the template). `CORS_ORIGIN` env var controls allowed CORS origins.
 - **Debug mode is off by default**, controlled by `FLASK_DEBUG` env var.
-- **Tests exist** — 217 unit tests (61 Python + 156 JS), 22 integration tests, 18 E2E tests. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions.
+- **Tests exist** — 220 unit tests (61 Python + 159 JS), 22 integration tests, 19 E2E tests. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions.
 - **Linting** — Ruff (Python), ESLint (JS), Stylelint (CSS), HTMLHint (HTML). Run `make lint` before committing. `make fix-py` auto-fixes Python issues.
 - **iTunes API** is called client-side for artwork — no proxy or caching layer yet.
 - **Ratings are local only** — not sent to the CloudFront/stream host.

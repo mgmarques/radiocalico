@@ -1902,6 +1902,44 @@ describe('audio timeupdate', () => {
     });
 });
 
+/* ── Structured logger ─────────────────────────────────────── */
+
+describe('log', () => {
+    test('log.info outputs JSON to console.log', () => {
+        const spy = jest.spyOn(console, 'log').mockImplementation();
+        player.log.info('test_event', { key: 'value' });
+        expect(spy).toHaveBeenCalledTimes(1);
+        const output = JSON.parse(spy.mock.calls[0][0]);
+        expect(output.level).toBe('info');
+        expect(output.logger).toBe('player');
+        expect(output.message).toBe('test_event');
+        expect(output.key).toBe('value');
+        expect(output.timestamp).toBeDefined();
+        spy.mockRestore();
+    });
+
+    test('log.warn outputs JSON to console.warn', () => {
+        const spy = jest.spyOn(console, 'warn').mockImplementation();
+        player.log.warn('warning_event', { detail: 'oops' });
+        expect(spy).toHaveBeenCalledTimes(1);
+        const output = JSON.parse(spy.mock.calls[0][0]);
+        expect(output.level).toBe('warn');
+        expect(output.message).toBe('warning_event');
+        spy.mockRestore();
+    });
+
+    test('log.error outputs JSON to console.error', () => {
+        const spy = jest.spyOn(console, 'error').mockImplementation();
+        player.log.error('error_event', { code: 500 });
+        expect(spy).toHaveBeenCalledTimes(1);
+        const output = JSON.parse(spy.mock.calls[0][0]);
+        expect(output.level).toBe('error');
+        expect(output.message).toBe('error_event');
+        expect(output.code).toBe(500);
+        spy.mockRestore();
+    });
+});
+
 /* ── Module exports accessors ──────────────────────────────── */
 
 describe('module exports state accessors', () => {
