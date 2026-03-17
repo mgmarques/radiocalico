@@ -516,6 +516,10 @@ graph LR
     js-tests --> e2e-tests
     integration-tests --> e2e-tests
 
+    python-tests --> browser-tests["browser-tests<br/>Selenium<br/>headless Chrome"]
+    js-tests --> browser-tests
+    integration-tests --> browser-tests
+
     python-tests --> zap["zap<br/>OWASP ZAP<br/>DAST baseline"]
     js-tests --> zap
 
@@ -539,6 +543,7 @@ graph LR
     style js-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
     style skills-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
     style e2e-tests fill:#EFA63C,stroke:#231F20,color:#231F20
+    style browser-tests fill:#EFA63C,stroke:#231F20,color:#231F20
     style zap fill:#EFA63C,stroke:#231F20,color:#231F20
     style bandit fill:#D8F2D5,stroke:#1F4E23,color:#231F20
     style safety fill:#D8F2D5,stroke:#1F4E23,color:#231F20
@@ -551,6 +556,7 @@ graph LR
 |-----|-------------|
 | `python-tests` | pytest + coverage (95% threshold) with MySQL service |
 | `js-tests` | Jest + coverage (90% lines threshold) |
+| `browser-tests` | Selenium + headless Chrome against Docker prod stack |
 | `bandit` | Python SAST |
 | `safety` | Python dependency scan |
 | `npm-audit` | JS dependency scan |
@@ -738,10 +744,10 @@ Detailed project documentation is available in the [`docs/`](docs/) directory:
 
 | Document | Description |
 |----------|-------------|
-| [Architecture Diagrams](docs/architecture.md) | 5 Mermaid diagrams: system architecture, request flow, CI/CD pipeline, database schema, and authentication flow. Visual reference for how all components connect across the Docker production stack. |
+| [Architecture Diagrams](docs/architecture.md) | 8 Mermaid diagrams: system architecture, request flow, data flow (playback & user interactions), event-driven architecture, CI/CD pipeline, database schema, and authentication flow. Visual reference for how all components connect across the Docker production stack. |
 | [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (467 tests across 6 suites), security measures, and performance optimizations. |
 | [Requirements](docs/requirements.md) | 91 requirements: 53 functional (FR-1xx to FR-8xx covering streaming, metadata, ratings, auth, profiles, feedback, sharing, and theme) and 38 non-functional (NFR-1xx to NFR-6xx covering performance, security, reliability, observability, maintainability, and compatibility). Includes traceability matrix linking each requirement to its implementation and tests. |
-| [V&V Test Plan](docs/vv-test-plan.md) | 52 user-perspective test cases (TC-1xx to TC-9xx) with step-by-step procedures, expected results, and automated test mapping. Includes manual test procedures for audio playback, automated coverage matrix across all 5 test suites, and an execution summary template. |
+| [V&V Test Plan](docs/vv-test-plan.md) | 52 user-perspective test cases (TC-1xx to TC-9xx) with step-by-step procedures, expected results, and automated test mapping. Includes manual test procedures for audio playback, automated coverage matrix across all 6 test suites, and an execution summary template. |
 | [Design Document](design.md) | Original architecture and design document from the initial prototype phase. |
 
 ---
@@ -761,7 +767,7 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 │   ├── testing.md         # 467 tests, 6 suites, CI/CD pipeline
 │   ├── database.md        # MySQL schema, 4 tables, constraints
 │   └── style-guide.md     # CSS tokens, code conventions, formats
-├── commands/              # Slash commands (17 total, all v1.0.0)
+├── commands/              # Slash commands (18 total, all v1.0.0)
 │   ├── start.md           # /start — launch dev environment
 │   ├── run-ci.md          # /run-ci — lint + tests + security
 │   ├── create-pr.md       # /create-pr — branch, commit, push, PR

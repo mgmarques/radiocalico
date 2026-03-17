@@ -641,11 +641,11 @@ This Verification & Validation (V&V) test plan ensures that Radio Calico meets a
 - Requirement: NFR-505
 - Precondition: Claude Code environment with project loaded
 - Steps:
-  1. Verify 17 slash command files exist in `.claude/commands/`
+  1. Verify 18 slash command files exist in `.claude/commands/`
   2. Run `/start` to verify the dev environment launch command works
   3. Run `/run-ci` to verify the CI pipeline command works
-- Expected result: All 17 slash commands are present and parseable. They provide automated workflows for development, testing, and deployment tasks.
-- Automated: Yes — `tests/test_skills.py` (58 tests validate all slash commands)
+- Expected result: All 18 slash commands are present and parseable. They provide automated workflows for development, testing, and deployment tasks.
+- Automated: Yes — `tests/test_skills.py` (169 tests validate all slash commands)
 
 ---
 

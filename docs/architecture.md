@@ -4,9 +4,12 @@
 
 1. [System Architecture](#1-system-architecture)
 2. [Request Flow](#2-request-flow)
-3. [CI/CD Pipeline](#3-cicd-pipeline)
-4. [Database Schema](#4-database-schema)
-5. [Authentication Flow](#5-authentication-flow)
+3. [Data Flow — Playback & Metadata](#3-data-flow--playback--metadata)
+4. [Data Flow — User Interactions](#4-data-flow--user-interactions)
+5. [Event-Driven Architecture](#5-event-driven-architecture)
+6. [CI/CD Pipeline](#6-cicd-pipeline)
+7. [Database Schema](#7-database-schema)
+8. [Authentication Flow](#8-authentication-flow)
 
 ---
 
@@ -101,9 +104,126 @@ sequenceDiagram
 
 ---
 
-## 3. CI/CD Pipeline
+## 3. Data Flow — Playback & Metadata
 
-GitHub Actions workflow triggered on push/PR to `main`. Lint runs first, then test jobs run in parallel after lint passes. Security scans (bandit, safety, npm-audit, hadolint, trivy) run independently with no dependencies. E2E tests and ZAP DAST scan run after the test jobs complete.
+How track metadata flows from CloudFront through the player to the UI, including latency compensation, iTunes artwork caching, and history accumulation.
+
+```mermaid
+graph TD
+    Load["Page Load"] --> FM["fetchMetadata()"]
+    FM --> CF["CloudFront<br/>metadatav2.json"]
+    CF --> Delay["Latency delay<br/>(hls.latency or 6s)"]
+    Delay --> UT["updateTrack(artist, title, album)"]
+
+    UT --> DOM["Update DOM<br/>(artist, title, album)"]
+    UT --> Timer["songStartTime<br/>= Date.now()"]
+    UT --> FA["fetchArtwork()"]
+    UT --> RUI["updateRatingUI()"]
+    UT --> PH["pushHistory()"]
+
+    FA --> Cache["fetchItunesCached()<br/>(localStorage 24h TTL)"]
+    Cache --> iTunes["iTunes Search API<br/>(artwork + duration)"]
+
+    Play["User clicks Play"] --> HLS["HLS.js loads stream"]
+    HLS --> Audio["Audio plays"]
+    HLS --> FC["FRAG_CHANGED event"]
+    FC --> TMF["triggerMetadataFetch()<br/>(3s debounce)"]
+    TMF --> FM
+
+    style Load fill:#D8F2D5,stroke:#1F4E23
+    style Play fill:#D8F2D5,stroke:#1F4E23
+    style UT fill:#38A29D,stroke:#1F4E23,color:#FFF
+    style Cache fill:#EFA63C,stroke:#231F20
+```
+
+---
+
+## 4. Data Flow — User Interactions
+
+How user actions (rating, sharing, auth, profile, feedback, theme, quality) flow through the system from UI click to API/state change.
+
+```mermaid
+graph TD
+    subgraph Rating
+        RClick["Click thumbs up/down"] --> SR["submitRating(score)"]
+        SR --> PostRate["POST /api/ratings"]
+        PostRate --> FTR["fetchTrackRatings()"]
+        FTR --> Counts["Update like/dislike counts"]
+    end
+
+    subgraph Sharing
+        SClick["Click share button"] --> GST["getShareText() /<br/>getRecentlyPlayedText()"]
+        GST --> WO["window.open(URL)"]
+    end
+
+    subgraph Auth
+        Login["Submit login form"] --> PostLogin["POST /api/login"]
+        PostLogin --> Token["Store token in localStorage"]
+        Token --> Profile["showProfileView() → loadProfile()"]
+        Logout["Click logout"] --> PostLogout["POST /api/logout"]
+        PostLogout --> Clear["Clear localStorage"]
+        Clear --> AuthView["showAuthView()"]
+    end
+
+    subgraph Settings
+        Theme["Toggle theme radio"] --> AT["applyTheme()"]
+        AT --> DT["data-theme attribute"]
+        AT --> LS["localStorage rc-theme"]
+        Quality["Toggle quality radio"] --> ASQ["applyStreamQuality()"]
+        ASQ --> Init["initHls() + localStorage"]
+    end
+
+    style RClick fill:#D8F2D5,stroke:#1F4E23
+    style SClick fill:#D8F2D5,stroke:#1F4E23
+    style Login fill:#D8F2D5,stroke:#1F4E23
+    style Logout fill:#D8F2D5,stroke:#1F4E23
+    style Theme fill:#D8F2D5,stroke:#1F4E23
+    style Quality fill:#D8F2D5,stroke:#1F4E23
+```
+
+---
+
+## 5. Event-Driven Architecture
+
+All HLS.js events, audio element events, and DOM event handlers that drive the player's behavior.
+
+```mermaid
+graph LR
+    subgraph "HLS.js Events"
+        MP["MANIFEST_PARSED"] --> EnablePlay["Enable play button<br/>+ set quality level"]
+        FC["FRAG_CHANGED"] --> TMF["triggerMetadataFetch()"]
+        FPM["FRAG_PARSING_METADATA"] --> ID3["parseID3Frames()<br/>→ handleMetadataFields()"]
+        LL["LEVEL_LOADED"] --> SrcQ["Update source quality display"]
+        ERR["ERROR (fatal)"] --> Retry["Exponential backoff retry<br/>(max 10, 4s→60s)"]
+    end
+
+    subgraph "Audio Events"
+        Playing["playing"] --> PauseIcon["showPlayIcon('pause')"]
+        Waiting["waiting"] --> SpinIcon["showPlayIcon('spinner')"]
+        TimeUp["timeupdate (~4Hz)"] --> BarTime["Update elapsed / total"]
+    end
+
+    subgraph "DOM Click Handlers"
+        PlayBtn["play-btn"] --> Toggle["togglePlay()"]
+        MuteBtn["mute-btn"] --> Mute["Toggle mute/unmute"]
+        RateBtn["rate-up / rate-down"] --> Submit["submitRating(1/0)"]
+        MenuBtn["menu-btn"] --> Open["openDrawer()"]
+        CloseBtn["drawer-close"] --> Close["closeDrawer()"]
+        SettingsBtn["settings-btn"] --> Drop["Toggle dropdown"]
+    end
+
+    style MP fill:#38A29D,stroke:#1F4E23,color:#FFF
+    style FC fill:#38A29D,stroke:#1F4E23,color:#FFF
+    style ERR fill:#EFA63C,stroke:#231F20
+    style PlayBtn fill:#D8F2D5,stroke:#1F4E23
+    style RateBtn fill:#D8F2D5,stroke:#1F4E23
+```
+
+---
+
+## 6. CI/CD Pipeline
+
+GitHub Actions workflow (13 jobs) triggered on push/PR to `main`. Lint runs first, then test jobs in parallel. Security scans run independently. E2E, browser, and ZAP run after test jobs complete.
 
 ```mermaid
 graph LR
@@ -113,14 +233,18 @@ graph LR
         lint["lint<br/>ruff + ESLint<br/>+ Stylelint + HTMLHint"]
     end
 
-    lint --> python-tests["python-tests<br/>pytest + coverage<br/>(98% threshold)"]
+    lint --> python-tests["python-tests<br/>pytest + coverage<br/>(95% threshold)"]
     lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
     lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
-    lint --> skills-tests["skills-tests<br/>pytest<br/>17 slash commands"]
+    lint --> skills-tests["skills-tests<br/>pytest<br/>18 slash commands"]
 
     python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]
     js-tests --> e2e-tests
     integration-tests --> e2e-tests
+
+    python-tests --> browser-tests["browser-tests<br/>Selenium<br/>headless Chrome"]
+    js-tests --> browser-tests
+    integration-tests --> browser-tests
 
     python-tests --> zap["zap<br/>OWASP ZAP<br/>DAST baseline"]
     js-tests --> zap
@@ -145,6 +269,7 @@ graph LR
     style js-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
     style skills-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
     style e2e-tests fill:#EFA63C,stroke:#231F20,color:#231F20
+    style browser-tests fill:#EFA63C,stroke:#231F20,color:#231F20
     style zap fill:#EFA63C,stroke:#231F20,color:#231F20
     style bandit fill:#D8F2D5,stroke:#1F4E23,color:#231F20
     style safety fill:#D8F2D5,stroke:#1F4E23,color:#231F20
@@ -155,7 +280,7 @@ graph LR
 
 ---
 
-## 4. Database Schema
+## 7. Database Schema
 
 Entity-relationship diagram of the four MySQL tables. The `profiles` table has a foreign key to `users` (one-to-one). The `feedback` table stores a snapshot of the user's profile at submission time (denormalized). The `ratings` table is independent, keyed by station + IP.
 
@@ -206,7 +331,7 @@ erDiagram
 
 ---
 
-## 5. Authentication Flow
+## 8. Authentication Flow
 
 Complete lifecycle from registration through login, authenticated operations (profile and feedback), and logout. Tokens are generated server-side with `secrets.token_hex(32)` and stored in both the database and the client's `localStorage`.
 

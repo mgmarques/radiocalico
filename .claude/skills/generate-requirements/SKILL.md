@@ -85,9 +85,9 @@ Create/update `docs/requirements.md` with a structured requirements document.
    - X-Request-ID cross-layer correlation
 
    **NFR-5xx: Maintainability**:
-   - 373 tests across 5 suites, 98% Python coverage, 96% JS coverage
-   - 4 linters, CI/CD with 12 GitHub Actions jobs
-   - 15 Claude Code slash commands
+   - 467 tests across 6 suites, 95% Python coverage, 96% JS coverage
+   - 4 linters, CI/CD with 13 GitHub Actions jobs
+   - 18 Claude Code slash commands
 
    **NFR-6xx: Compatibility**:
    - HLS.js for non-Safari, native HLS for Safari

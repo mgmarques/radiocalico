@@ -29,7 +29,7 @@
 
 Radio Calico is a live audio streaming web player with a Python Flask backend for track ratings, user accounts, and feedback. The application streams audio via HLS from AWS CloudFront in two user-selectable quality levels (48 kHz FLAC lossless and AAC Hi-Fi 211 kbps), displays real-time track metadata from a CloudFront JSON endpoint, fetches album artwork and duration from the iTunes Search API, and allows users to rate tracks, manage profiles, and submit feedback. All user-generated data is stored locally in MySQL.
 
-The frontend is a vanilla JavaScript single-page application with no build step or framework dependency. The backend is a stateless Flask REST API accessed through PyMySQL with parameterized queries. In production, the stack runs in Docker containers with nginx serving static files and reverse-proxying API requests to gunicorn. The project includes 399 automated tests across 5 test suites, 6 security scanning tools, 4 linters, and a GitHub Actions CI pipeline with 11 parallel jobs.
+The frontend is a vanilla JavaScript single-page application with no build step or framework dependency. The backend is a stateless Flask REST API accessed through PyMySQL with parameterized queries. In production, the stack runs in Docker containers with nginx serving static files and reverse-proxying API requests to gunicorn. The project includes 467 automated tests across 6 test suites, 6 security scanning tools, 4 linters, and a GitHub Actions CI pipeline with 13 parallel jobs.
 
 ---
 
@@ -834,14 +834,18 @@ graph LR
         lint["lint<br/>ruff + ESLint<br/>+ Stylelint + HTMLHint"]
     end
 
-    lint --> python-tests["python-tests<br/>pytest + coverage<br/>(98% threshold)"]
+    lint --> python-tests["python-tests<br/>pytest + coverage<br/>(95% threshold)"]
     lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
     lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
-    lint --> skills-tests["skills-tests<br/>pytest<br/>17 slash commands"]
+    lint --> skills-tests["skills-tests<br/>pytest<br/>18 slash commands"]
 
     python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]
     js-tests --> e2e-tests
     integration-tests --> e2e-tests
+
+    python-tests --> browser-tests["browser-tests<br/>Selenium<br/>headless Chrome"]
+    js-tests --> browser-tests
+    integration-tests --> browser-tests
 
     python-tests --> zap["zap<br/>OWASP ZAP<br/>DAST baseline"]
     js-tests --> zap
@@ -866,6 +870,7 @@ graph LR
     style js-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
     style skills-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
     style e2e-tests fill:#EFA63C,stroke:#231F20,color:#231F20
+    style browser-tests fill:#EFA63C,stroke:#231F20,color:#231F20
     style zap fill:#EFA63C,stroke:#231F20,color:#231F20
     style bandit fill:#D8F2D5,stroke:#1F4E23,color:#231F20
     style safety fill:#D8F2D5,stroke:#1F4E23,color:#231F20
@@ -874,15 +879,16 @@ graph LR
     style trivy fill:#D8F2D5,stroke:#1F4E23,color:#231F20
 ```
 
-### 9.2 Test Suites (399 Total Tests)
+### 9.2 Test Suites (467 Total Tests)
 
 | Suite | File | Tests | Tool | Coverage Threshold |
 |-------|------|-------|------|--------------------|
-| Python unit | `api/test_app.py` | 61 | pytest + pytest-cov | 98% line coverage |
+| Python unit | `api/test_app.py` | 61 | pytest + pytest-cov | 95% line coverage |
 | Python integration | `api/test_integration.py` | 19 | pytest | -- |
 | JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom | 90% line threshold (actual ~96%) |
 | End-to-end | `tests/test_e2e.py` | 19 | pytest + requests | -- |
-| Skills validation | `tests/test_skills.py` | 138 | pytest | -- |
+| Browser | `tests/test_browser.py` | 37 | Selenium + headless Chrome | -- |
+| Skills validation | `tests/test_skills.py` | 169 | pytest | -- |
 
 **Python unit tests** (`api/test_app.py`): Cover all API endpoints, helper functions (`hash_password`, `verify_password`, `get_user_from_token`, `require_auth`), error paths, edge cases, and rate limiting. Use an isolated `radiocalico_test` database created and destroyed per test session. Fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`.
 
@@ -892,7 +898,9 @@ graph LR
 
 **End-to-end tests** (`tests/test_e2e.py`): Make real HTTP requests to the full Docker production stack (nginx, gunicorn, MySQL). Validate static file serving, security headers, API proxy behavior, health checks, and error handling.
 
-**Skills validation tests** (`tests/test_skills.py`): Validate all 17 Claude Code slash commands for correct structure, version references, and file path accuracy.
+**Browser tests** (`tests/test_browser.py`): Use Selenium with headless Chrome against the Docker production stack. Validate page load, theme switching, drawer navigation, auth UI, rating buttons, share buttons, responsive layout, and settings dropdown.
+
+**Skills validation tests** (`tests/test_skills.py`): Validate all 18 Claude Code slash commands for correct structure, version references, and file path accuracy.
 
 ### 9.3 Security Scanning (6 Tools)
 
