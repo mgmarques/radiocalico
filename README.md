@@ -847,7 +847,7 @@ Bootstrap Claude Code best practices in any project with one command:
 curl -sL https://raw.githubusercontent.com/mgmarques/radiocalico/main/scripts/init-claude-code.sh | bash -s /path/to/your-project
 ```
 
-This creates 12 files (CLAUDE.md, settings, rules, skills, tests, .claudeignore, CONTRIBUTING.md, VERSION) — all safe to re-run, never overwrites existing files. Then edit CLAUDE.md to describe your project.
+This creates 15 files (CLAUDE.md, settings, rules, 3 skills, 3 agents, tests, .claudeignore, CONTRIBUTING.md, VERSION) — all safe to re-run, never overwrites existing files. Then edit CLAUDE.md to describe your project.
 
 ---
 

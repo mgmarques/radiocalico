@@ -15,8 +15,9 @@
 #   .claude/settings.json  — Permissions, hooks, denied destructive ops
 #   .claude/rules/         — Topic-specific rule files
 #   .claude/skills/        — Skill catalog README
-#   .claude/commands/      — Example slash command
-#   tests/test_skills.py   — Skill validation test framework
+#   .claude/commands/      — Example slash commands (3 starter)
+#   .claude/agents/        — Example custom agents (3 starter)
+#   tests/test_skills.py   — Skill + agent validation test framework
 #
 # Safe to run on existing projects — never overwrites existing files.
 
@@ -201,12 +202,29 @@ if create_if_missing ".claude/skills/README.md"; then
 | /run-ci | Run full CI pipeline |
 | /create-pr | Branch, commit, push, create PR |
 
+## Custom Agents
+
+Task-specific AI personalities in \`.claude/agents/\`:
+
+| Agent | Focus |
+|-------|-------|
+| code-reviewer | PR review, conventions, security |
+| qa-engineer | Run tests, triage failures |
+| devops | CI/CD, Docker, deployment |
+
 ## Creating New Skills
 
 1. Create \`.claude/commands/your-skill.md\` with version header
 2. Create \`.claude/skills/your-skill/SKILL.md\` (copy)
 3. Add tests in \`tests/test_skills.py\`
 4. Update this catalog
+
+## Creating New Agents
+
+1. Create \`.claude/agents/your-agent.md\` with version header
+2. Include: heading, Workflow section, Key Files section, Rules section
+3. Add to \`EXPECTED_AGENTS\` in \`tests/test_skills.py\`
+4. Update this catalog and CLAUDE.md
 CATALOG
     info ".claude/skills/README.md (catalog)"
 fi
@@ -276,6 +294,101 @@ CMD
     info ".claude/commands/create-pr.md + skill"
 fi
 
+# ── .claude/agents/ ─────────────────────────────────────────
+if create_if_missing ".claude/agents/code-reviewer.md"; then
+    cat > .claude/agents/code-reviewer.md << 'AGENT'
+<!-- Agent v1.0.0 -->
+# Code Reviewer Agent
+
+You are a Code Reviewer for this project. You review pull requests and code changes for quality, correctness, and adherence to project conventions.
+
+## Workflow
+
+1. **Read the diff** — understand what changed and why
+2. **Check conventions** — verify code follows `.claude/rules/` guidelines
+3. **Verify tests** — ensure new code has tests, existing tests still pass
+4. **Security review** — check for injection, XSS, hardcoded secrets
+5. **Suggest improvements** — provide specific, actionable feedback
+
+## Key Files
+
+- `CLAUDE.md` — project conventions and architecture
+- `.claude/rules/` — detailed coding rules
+- `tests/` — test suite
+
+## Rules
+
+- Always read the code before commenting
+- Be specific — include file paths and line numbers
+- Distinguish between blocking issues and suggestions
+- Check that tests cover the new functionality
+- Flag any hardcoded secrets or credentials
+AGENT
+    info ".claude/agents/code-reviewer.md"
+fi
+
+if create_if_missing ".claude/agents/qa-engineer.md"; then
+    cat > .claude/agents/qa-engineer.md << 'AGENT'
+<!-- Agent v1.0.0 -->
+# QA Engineer Agent
+
+You are a QA Engineer for this project. You run tests, analyze failures, and ensure code quality.
+
+## Workflow
+
+1. **Identify scope** — determine which tests are relevant to the change
+2. **Run tests** — execute the appropriate test commands
+3. **Analyze failures** — read both the test and the source code
+4. **Diagnose root cause** — distinguish between test bugs, source bugs, and environment issues
+5. **Suggest fixes** — provide specific code changes with file paths
+6. **Verify** — re-run after fixes to confirm all tests pass
+
+## Key Files
+
+- `tests/` — test suite
+- `Makefile` — test and CI targets (if present)
+
+## Rules
+
+- Never skip or disable tests without explaining why
+- When a test fails, always read the source code it tests before suggesting changes
+- Report results as: `PASS (N/N)` or `FAIL (N/N) — [list of failures]`
+AGENT
+    info ".claude/agents/qa-engineer.md"
+fi
+
+if create_if_missing ".claude/agents/devops.md"; then
+    cat > .claude/agents/devops.md << 'AGENT'
+<!-- Agent v1.0.0 -->
+# DevOps Agent
+
+You are a DevOps Engineer for this project. You manage CI/CD, Docker, deployment, and infrastructure configuration.
+
+## Workflow
+
+1. **Diagnose** — identify if issue is CI, Docker, deployment, or configuration
+2. **Inspect configs** — read Dockerfiles, compose files, CI YAML, Makefile
+3. **Check logs** — review build output, container logs, CI job results
+4. **Fix** — provide specific config changes with explanations
+5. **Verify** — suggest commands to confirm the fix works
+
+## Key Files
+
+- `Dockerfile` — container build (if present)
+- `docker-compose.yml` — service orchestration (if present)
+- `.github/workflows/` — CI/CD pipeline (if present)
+- `Makefile` — build and deploy targets (if present)
+
+## Rules
+
+- Never expose secrets in CI logs or Docker layers
+- Always use non-root users in containers when possible
+- Keep CI pipelines fast — parallelize independent jobs
+- Use specific version tags for base images, not `latest`
+AGENT
+    info ".claude/agents/devops.md"
+fi
+
 # ── CLAUDE.md ────────────────────────────────────────────────
 if create_if_missing "CLAUDE.md"; then
     cat > CLAUDE.md << CLAUDE
@@ -328,11 +441,22 @@ make ci        # Full CI pipeline
 | \`/run-ci\` | Run full CI pipeline |
 | \`/create-pr\` | Branch, commit, push, create PR |
 
+## Custom Agents
+
+Task-specific AI personalities in \`.claude/agents/\` with specialized workflows.
+
+| Agent | File | Focus |
+|-------|------|-------|
+| Code Reviewer | \`code-reviewer.md\` | PR review, conventions, security |
+| QA Engineer | \`qa-engineer.md\` | Run tests, triage failures |
+| DevOps | \`devops.md\` | CI/CD, Docker, deployment |
+
 ## Claude Code Configuration
 
 - **Rules**: \`.claude/rules/\` — topic-specific context (loaded on demand)
 - **Settings**: \`.claude/settings.json\` — auto-approved commands, hooks
 - **Skills**: \`.claude/skills/\` — slash command directories
+- **Agents**: \`.claude/agents/\` — task-specific AI personalities
 - **Ignore**: \`.claudeignore\` — excludes noise from context
 CLAUDE
     info "CLAUDE.md (template — edit to match your project)"
@@ -357,6 +481,7 @@ This project is configured for [Claude Code](https://claude.ai/claude-code):
 
 - **CLAUDE.md** — Project overview and conventions
 - **\`.claude/rules/\`** — Detailed rules loaded on relevant topics
+- **\`.claude/agents/\`** — Task-specific AI personalities (code-reviewer, qa-engineer, devops)
 - **\`.claude/settings.json\`** — Auto-approved commands and hooks
 - **\`.claudeignore\`** — Keeps context focused
 
@@ -388,10 +513,10 @@ fi
 # ── tests/test_skills.py ────────────────────────────────────
 if create_if_missing "tests/test_skills.py"; then
     cat > tests/test_skills.py << 'TESTS'
-"""Tests for Claude Code slash commands (skills).
+"""Tests for Claude Code slash commands (skills) and custom agents.
 
-Validates that all command files exist with correct structure,
-version headers, and meaningful content.
+Validates that all command files and agent files exist with correct
+structure, version headers, and meaningful content.
 """
 
 import re
@@ -402,12 +527,22 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 COMMANDS_DIR = ROOT / ".claude" / "commands"
 SKILLS_DIR = ROOT / ".claude" / "skills"
+AGENTS_DIR = ROOT / ".claude" / "agents"
 
 EXPECTED_COMMANDS = [
     "start.md",
     "run-ci.md",
     "create-pr.md",
 ]
+
+EXPECTED_AGENTS = [
+    "code-reviewer.md",
+    "qa-engineer.md",
+    "devops.md",
+]
+
+
+# ── Command Tests ─────────────────────────────────────────────
 
 
 class TestCommandFilesExist:
@@ -459,17 +594,96 @@ class TestProjectVersionFile:
     def test_version_is_semver(self):
         version = (ROOT / "VERSION").read_text().strip()
         assert re.match(r"^\d+\.\d+\.\d+$", version)
+
+
+# ── Agent Tests ───────────────────────────────────────────────
+
+
+class TestAgentFilesExist:
+    """All expected agent files must exist."""
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_agent_file_exists(self, filename):
+        path = AGENTS_DIR / filename
+        assert path.exists(), f"Missing agent file: {path}"
+
+    def test_no_unexpected_agents(self):
+        actual = {f.name for f in AGENTS_DIR.glob("*.md")}
+        expected = set(EXPECTED_AGENTS)
+        extra = actual - expected
+        assert not extra, f"Unexpected agent files: {extra}"
+
+    def test_agents_directory_exists(self):
+        assert AGENTS_DIR.is_dir()
+
+
+class TestAgentVersionHeaders:
+    """All agents must have a version header."""
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_has_version_header(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        assert "<!-- Agent v" in content, f"{filename} missing version header"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_version_is_semver(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        match = re.search(r"v(\d+\.\d+\.\d+)", content)
+        assert match, f"{filename} has no semver version"
+
+    def test_all_agent_versions_consistent(self):
+        versions = set()
+        for filename in EXPECTED_AGENTS:
+            content = (AGENTS_DIR / filename).read_text()
+            match = re.search(r"v(\d+\.\d+\.\d+)", content)
+            if match:
+                versions.add(match.group(1))
+        assert len(versions) == 1, f"Inconsistent agent versions: {versions}"
+
+
+class TestAgentContent:
+    """Agents must have meaningful content."""
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_has_heading(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        assert "# " in content, f"{filename} missing heading"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_has_substantial_content(self, filename):
+        content = (AGENTS_DIR / filename).read_text().strip()
+        lines = [l for l in content.splitlines() if not l.startswith("<!--")]
+        assert len(lines) >= 10, f"{filename} too short ({len(lines)} lines)"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_has_workflow_or_rules(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        has_section = "## Workflow" in content or "## Rules" in content
+        assert has_section, f"{filename} missing Workflow or Rules section"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_has_key_files_section(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        assert "## Key Files" in content or "## Available" in content, (
+            f"{filename} missing Key Files section"
+        )
 TESTS
-    info "tests/test_skills.py (skill validation framework)"
+    info "tests/test_skills.py (skill + agent validation framework)"
 fi
 
 # ── Summary ──────────────────────────────────────────────────
 echo ""
 echo "✅ Claude Code initialized for $PROJECT_NAME"
 echo ""
+echo "   Created:"
+echo "   • 3 slash commands (/start, /run-ci, /create-pr)"
+echo "   • 3 custom agents (code-reviewer, qa-engineer, devops)"
+echo "   • Rules, settings, .claudeignore, tests"
+echo ""
 echo "   Next steps:"
 echo "   1. Edit CLAUDE.md — describe your project"
 echo "   2. Edit .claude/rules/ — add project-specific rules"
-echo "   3. Run: pytest tests/test_skills.py -v"
-echo "   4. Add more skills as needed (see .claude/skills/README.md)"
+echo "   3. Edit .claude/agents/ — customize or add agents"
+echo "   4. Run: pytest tests/test_skills.py -v"
+echo "   5. Add more skills/agents (see .claude/skills/README.md)"
 echo ""
