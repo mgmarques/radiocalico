@@ -104,57 +104,6 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 
 ## Architecture
 
-Initial design:
-
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                          CONTENT LAYER                                 │
-│                                                                        │
-│   ┌───────────────┐     ┌──────────────────┐     ┌──────────────────┐  │
-│   │ Audio Source  │────>│ HLS Encoder      │────>│ AWS CloudFront   │  │
-│   │ (Radio Feed)  │     │ (+ metadata)     │     │ CDN              │  │
-│   └───────────────┘     └──────────────────┘     └────────┬─────────┘  │
-│                                                           │            │
-│                                                  ┌───────────────┐     │
-│                                                  │metadatav2.json│     │
-│                                                  └────────┬──────┘     │
-└───────────────────────────────────────────────────────────┼────────────┘
-                                                            │
-                           HTTPS (HLS + JSON metadata)      │
-                                                            │
-┌───────────────────────────────────────────────────────────┼────────────┐
-│                      PRESENTATION LAYER                   │            │
-│                                                           v            │
-│   ┌──────────────────────────────────────────────────────────────┐     │
-│   │                    Web Browser                               │     │
-│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐   │     │
-│   │  │ HLS.js      │  │ player.js   │  │ index.html +        │   │     │
-│   │  │ (streaming) │─>│ (logic)     │─>│ player.css (UI)     │   │     │
-│   │  └─────────────┘  └──────┬──────┘  └─────────────────────┘   │     │
-│   │                          │                                   │     │
-│   │              artwork     │    ratings / auth / profile       │     │
-│   │              query       │    feedback                       │     │
-│   │                v         v                                   │     │
-│   │         ┌────────────┐  ┌──────────────────┐                 │     │
-│   │         │ iTunes API │  │ Flask API :5000  │                 │     │
-│   │         │ (artwork)  │  │ /api/*           │                 │     │
-│   │         └────────────┘  └────────┬─────────┘                 │     │
-│   └──────────────────────────────────┼───────────────────────────┘     │
-└──────────────────────────────────────┼────────────────────────────────-┘
-                                       │
-┌──────────────────────────────────────┼────────────────────────────────┐
-│                        SERVICE LAYER │                                │
-│                                      v                                │
-│   ┌──────────────────────┐      ┌──────────────────────┐              │
-│   │  Flask API           │      │  MySQL 5.7           │              │
-│   │  (api/app.py)        │─────>│  ratings, users,     │              │
-│   │  Port 5000           │      │  profiles, feedback  │              │
-│   └──────────────────────┘      └──────────────────────┘              │
-└───────────────────────────────────────────────────────────────────────┘
-```
-
-### System Architecture (Mermaid)
-
 High-level overview of all components and how they connect in the Docker production stack.
 
 ```mermaid
@@ -198,60 +147,70 @@ graph TD
 
 ### Data Flow — Playback & Metadata
 
-```text
-Page Load ──> fetchMetadata() ──> CloudFront /metadatav2.json
-                                        │
-                                        v
-                                 updateTrack(artist, title, album)
-                                   │         │            │
-                                   v         v            v
-                             DOM updated  songStartTime  fetchArtwork()
-                                          = Date.now()       │
-                                                             v
-                                                      iTunes Search API
-                                                      (artwork + duration)
+```mermaid
+graph TD
+    Load["Page Load"] --> FM["fetchMetadata()"]
+    FM --> CF["CloudFront<br/>metadatav2.json"]
+    CF --> Delay["Latency delay<br/>(hls.latency or 6s)"]
+    Delay --> UT["updateTrack(artist, title, album)"]
 
-User clicks Play ──> HLS.js loads stream ──> audio plays
-                          │
-                          ├── FRAG_CHANGED ──> triggerMetadataFetch() (3s debounce)
-                          │                         │
-                          │                         v
-                          │                  fetchMetadata() ──> delayed updateTrack()
-                          │                  (waits hls.latency to sync audio/UI)
-                          │
-                          └── audio decoded ──> speakers
+    UT --> DOM["Update DOM<br/>(artist, title, album)"]
+    UT --> Timer["songStartTime<br/>= Date.now()"]
+    UT --> FA["fetchArtwork()"]
+    UT --> RUI["updateRatingUI()"]
+    UT --> PH["pushHistory()"]
+
+    FA --> Cache["fetchItunesCached()<br/>(localStorage 24h TTL)"]
+    Cache --> iTunes["iTunes Search API<br/>(artwork + duration)"]
+
+    Play["User clicks Play"] --> HLS["HLS.js loads stream"]
+    HLS --> Audio["Audio plays"]
+    HLS --> FC["FRAG_CHANGED event"]
+    FC --> TMF["triggerMetadataFetch()<br/>(3s debounce)"]
+    TMF --> FM
+
+    style Load fill:#D8F2D5,stroke:#1F4E23
+    style Play fill:#D8F2D5,stroke:#1F4E23
+    style UT fill:#38A29D,stroke:#1F4E23,color:#FFF
+    style Cache fill:#EFA63C,stroke:#231F20
 ```
 
 ### Data Flow — Authentication & Profile
 
-```text
-Register ──> POST /api/register { username, password }
-                  │
-                  v
-            Hash password (PBKDF2 (260k iterations) + random salt with timing-safe comparison)
-            Store in users table
-            201 Created
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant JS as player.js
+    participant API as Flask API
+    participant DB as MySQL
 
-Login ──> POST /api/login { username, password }
-               │
-               v
-         Verify password against stored hash
-         Generate token (secrets.token_hex)
-         Store token in users table
-         Return { token, username }
-               │
-               v
-         Frontend stores in localStorage (rc-token, rc-user)
+    Note over U,DB: Register
+    U->>JS: Fill username + password, click Register
+    JS->>API: POST /api/register {username, password}
+    API->>API: PBKDF2 hash (260k iterations + random salt)
+    API->>DB: INSERT INTO users
+    DB-->>API: OK
+    API-->>JS: 201 Created
 
-Profile ──> GET/PUT /api/profile (Authorization: Bearer <token>)
-                 │
-                 v
-          Read/write profiles table (nickname, email, genres, about)
+    Note over U,DB: Login
+    U->>JS: Fill credentials, submit form
+    JS->>API: POST /api/login {username, password}
+    API->>DB: SELECT password_hash, salt
+    API->>API: Verify (timing-safe hmac.compare_digest)
+    API->>DB: UPDATE users SET token = random_hex
+    API-->>JS: {token, username}
+    JS->>JS: localStorage.setItem(rc-token, rc-user)
 
-Feedback ──> POST /api/feedback (Authorization: Bearer <token>)
-                  │
-                  v
-           Store message + full profile snapshot in feedback table
+    Note over U,DB: Profile & Feedback
+    U->>JS: Update profile fields
+    JS->>API: PUT /api/profile (Bearer token)
+    API->>DB: UPSERT profiles
+    API-->>JS: 200 OK
+
+    U->>JS: Submit feedback message
+    JS->>API: POST /api/feedback (Bearer token)
+    API->>DB: INSERT feedback (message + profile snapshot)
+    API-->>JS: 201 Created
 ```
 
 ---

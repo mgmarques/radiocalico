@@ -1,32 +1,37 @@
 <!-- Radio Calico Skill v1.0.0 -->
 Update README.md with architecture diagrams from docs/architecture.md.
 
+### Diagrams to sync (6 total)
+
+All diagrams in README.md are Mermaid code blocks. Replace each with the latest version from `docs/architecture.md`:
+
+1. **System Architecture** (graph TD) — in the "## Architecture" section
+2. **Data Flow — Playback & Metadata** (graph TD) — in "### Data Flow — Playback & Metadata"
+3. **Data Flow — Authentication & Profile** (sequenceDiagram) — in "### Data Flow — Authentication & Profile"
+4. **Request Flow** (sequenceDiagram) — in "### Request Flow"
+5. **CI/CD Pipeline** (graph LR) — in "### CI/CD" subsection
+6. **Database Schema** (erDiagram) — in "### Database Schema"
+
 ### Steps
 
 1. **Read** `docs/architecture.md` to get the latest Mermaid diagrams
-2. **Read** `README.md` to find the current architecture/diagram sections
-3. **Update** README.md by:
-   - Adding or replacing the **System Architecture** diagram in the architecture section
-   - Adding or replacing the **Request Flow** diagram near the deployment section
-   - Adding or replacing the **CI/CD Pipeline** diagram in the Testing & CI section
-   - Adding or replacing the **Database Schema** ER diagram near the database section
+2. **Read** `README.md` to find each diagram section by its heading
+3. **Replace** each Mermaid code block with the corresponding one from `docs/architecture.md`
+4. **Preserve** the 1-2 sentence description before each diagram
+5. **Do NOT** add the Authentication Flow or Event-Driven Architecture diagrams to README (those stay in tech-spec only)
 
 ### Rules
 
-- Only include the System Architecture, Request Flow, CI/CD Pipeline, and Database Schema diagrams in README.md (the Auth Flow stays only in the tech spec)
-- Keep the Mermaid code blocks exactly as they are in `docs/architecture.md`
-- Add a brief description (1-2 sentences) before each diagram
-- If README.md already has a diagram section, replace it in place
-- If README.md has no diagram section, add it after the relevant existing section
-- Do NOT remove any existing README content — only add/replace diagram blocks
-- After updating, verify the Mermaid syntax renders on GitHub (fenced code blocks with `mermaid` tag)
+- Replace Mermaid code blocks in place — do NOT duplicate or move them
+- Keep the exact Mermaid syntax from `docs/architecture.md` (including style lines)
+- Do NOT remove any non-diagram README content (screenshots, text, tables)
+- Do NOT convert any remaining `text` code blocks (the project structure tree stays as text)
 
 ### Prerequisites
 
-- `docs/architecture.md` must exist (run `/generate-diagrams` first if missing)
-- If `docs/architecture.md` doesn't exist, tell the user to run `/generate-diagrams` first
+- `docs/architecture.md` must exist with all 8 diagrams (run `/generate-diagrams` first if missing)
 
 ### Report
 
-- List which diagrams were added/updated in README.md
-- Note any sections that were skipped (already up to date)
+- List which of the 6 diagrams were updated
+- Note any that were already up to date (identical content)
