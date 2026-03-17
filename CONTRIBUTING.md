@@ -125,7 +125,7 @@ Key files to know:
 
 ## Test Suite
 
-401 tests across 5 suites. All must pass before merging.
+467 tests across 6 suites. All must pass before merging.
 
 | Suite | Command | What it tests |
 |-------|---------|---------------|
@@ -133,7 +133,8 @@ Key files to know:
 | Python integration (19) | `make test-integration` | Multi-step workflows |
 | JavaScript (162) | `make test-js` | All player.js functions |
 | E2E (19) | `make test-e2e` | Full stack through Docker |
-| Skills (158) | `make test-skills` | All 17 slash commands |
+| Browser (37) | `make test-browser` | UI, themes, auth, playback (Selenium) |
+| Skills (169) | `make test-skills` | All 18 slash commands |
 
 ## Code Review Checklist
 

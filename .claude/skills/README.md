@@ -17,6 +17,7 @@
 |-------|-------------|----------|
 | [/run-ci](run-ci/SKILL.md) | Run full CI pipeline: lint + coverage + security | MySQL, Node.js |
 | [/test-ratings](test-ratings/SKILL.md) | Test the ratings API end-to-end with curl | Running server |
+| [/test-browser](test-browser/SKILL.md) | Run 37 Selenium browser tests (headless Chrome) | Docker + Chrome |
 | [/docker-verify](docker-verify/SKILL.md) | Rebuild Docker prod stack and run E2E + health checks | Docker |
 | [/security-audit](security-audit/SKILL.md) | Run all 6 security tools and suggest fixes | Docker (for Trivy/ZAP) |
 

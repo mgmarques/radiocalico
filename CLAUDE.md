@@ -15,8 +15,8 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Artwork**: iTunes Search API (client-side, cached in localStorage 24h TTL).
 - **Auth**: Token-based. PBKDF2 (260k iterations). Tokens in `localStorage`.
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
-- **Testing**: 401 tests (61 unit + 19 integration + 162 JS + 19 E2E + 140 skills). See `.claude/rules/testing.md`.
-- **CI/CD**: GitHub Actions (12 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
+- **Testing**: 467 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 169 skills). See `.claude/rules/testing.md`.
+- **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
 - **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination.
 
 ## Key URLs & Endpoints
@@ -69,7 +69,8 @@ make lint          # All linters (Ruff + ESLint + Stylelint + HTMLHint)
 make ci            # Full pipeline: lint + coverage + security
 make test-integration  # 19 API integration tests
 make test-e2e          # 19 E2E tests (Docker prod required)
-make test-skills       # 140 skill validation tests
+make test-skills       # 169 skill validation tests
+make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 
 # Hard refresh after static file edits: Cmd+Shift+R
 ```

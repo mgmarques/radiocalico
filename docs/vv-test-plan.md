@@ -705,7 +705,7 @@ This Verification & Validation (V&V) test plan ensures that Radio Calico meets a
 | TC-903 | NFR-203, NFR-204 | `tests/test_e2e.py` | `TestSecurityHeaders::test_x_content_type_options`, `test_x_frame_options`, `test_csp_header`, `test_permissions_policy`, `test_server_version_hidden` |
 | TC-904 | NFR-402 | `tests/test_e2e.py` | `TestSecurityHeaders::test_request_id_header` |
 | TC-905 | NFR-401, NFR-406 | `static/js/player.test.js` | `log > log.info outputs JSON to console.log`, `log > log.warn outputs JSON to console.warn`, `log > log.error outputs JSON to console.error` |
-| TC-906 | NFR-505 | `tests/test_skills.py` | 158 slash command validation tests |
+| TC-906 | NFR-505 | `tests/test_skills.py` | 169 slash command validation tests |
 
 ### 11.1 Selenium Browser Tests (`tests/test_browser.py`)
 

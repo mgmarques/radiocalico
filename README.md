@@ -478,7 +478,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**401 total tests** across 5 suites:
+**467 total tests** across 6 suites:
 
 | Suite | Tests | Tool | Coverage |
 |-------|-------|------|----------|
@@ -486,7 +486,8 @@ make ci            # Full pipeline: Python + JS coverage + security
 | Python integration | 19 | pytest | Multi-step API workflows |
 | JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
 | E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
-| Skills validation | 140 | pytest | All 17 slash commands |
+| Browser (Selenium) | 37 | Selenium + headless Chrome | UI, themes, auth, playback |
+| Skills validation | 169 | pytest | All 18 slash commands |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
 - **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`
@@ -509,7 +510,7 @@ graph LR
     lint --> python-tests["python-tests<br/>pytest + coverage<br/>(95% threshold)"]
     lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
     lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
-    lint --> skills-tests["skills-tests<br/>pytest<br/>17 slash commands"]
+    lint --> skills-tests["skills-tests<br/>pytest<br/>18 slash commands"]
 
     python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]
     js-tests --> e2e-tests
@@ -738,7 +739,7 @@ Detailed project documentation is available in the [`docs/`](docs/) directory:
 | Document | Description |
 |----------|-------------|
 | [Architecture Diagrams](docs/architecture.md) | 5 Mermaid diagrams: system architecture, request flow, CI/CD pipeline, database schema, and authentication flow. Visual reference for how all components connect across the Docker production stack. |
-| [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (401 tests across 5 suites), security measures, and performance optimizations. |
+| [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (467 tests across 6 suites), security measures, and performance optimizations. |
 | [Requirements](docs/requirements.md) | 91 requirements: 53 functional (FR-1xx to FR-8xx covering streaming, metadata, ratings, auth, profiles, feedback, sharing, and theme) and 38 non-functional (NFR-1xx to NFR-6xx covering performance, security, reliability, observability, maintainability, and compatibility). Includes traceability matrix linking each requirement to its implementation and tests. |
 | [V&V Test Plan](docs/vv-test-plan.md) | 52 user-perspective test cases (TC-1xx to TC-9xx) with step-by-step procedures, expected results, and automated test mapping. Includes manual test procedures for audio playback, automated coverage matrix across all 5 test suites, and an execution summary template. |
 | [Design Document](design.md) | Original architecture and design document from the initial prototype phase. |
@@ -757,7 +758,7 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 ├── TEMPLATE.md            # Reusable patterns for new projects
 ├── rules/                 # Deep context loaded on relevant topics
 │   ├── architecture.md    # Player.js internals, metadata, events
-│   ├── testing.md         # 401 tests, 5 suites, CI/CD pipeline
+│   ├── testing.md         # 467 tests, 6 suites, CI/CD pipeline
 │   ├── database.md        # MySQL schema, 4 tables, constraints
 │   └── style-guide.md     # CSS tokens, code conventions, formats
 ├── commands/              # Slash commands (17 total, all v1.0.0)
@@ -789,7 +790,7 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 | **Auto-lint hook** | Runs Ruff/ESLint automatically after every file edit |
 | **Compaction reminder** | Re-injects critical rules when context gets compressed |
 | **`.claudeignore`** | Excludes node_modules, venv, coverage from context |
-| **158 skill tests** | Validates all 17 commands: structure, versions, references, consistency |
+| **169 skill tests** | Validates all 18 commands: structure, versions, references, consistency |
 
 ### Command Examples
 
@@ -814,7 +815,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
 
 1. **Clone + setup**: `make install` (or `/start` in Claude Code)
 2. **Develop**: Claude reads CLAUDE.md automatically. Use `/add-endpoint` for new routes.
-3. **Test**: `/run-ci` runs lint + coverage + security. All 401 tests must pass.
+3. **Test**: `/run-ci` runs lint + coverage + security. All 467 tests must pass.
 4. **PR**: `/create-pr` creates a branch, commits, pushes, and opens a PR with summary.
 5. **Add skills**: Create `.claude/commands/your-skill.md` + `.claude/skills/your-skill/SKILL.md`, add to `tests/test_skills.py`.
 
