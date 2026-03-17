@@ -401,7 +401,7 @@ The MySQL database is auto-initialized with the schema from `db/init.sql` on fir
 make test          # Run all tests (Python + JavaScript)
 make test-py       # Run Python unit tests only (61 tests)
 make test-js       # Run JavaScript unit tests only (156 tests)
-make coverage      # Python tests + coverage report (fails if <99%)
+make coverage      # Python tests + coverage report (fails if <98%)
 make coverage-js   # JavaScript tests + coverage report (fails if <96% lines)
 make security      # Bandit (SAST) + Safety (deps) + npm audit
 make security-all  # All scans: security + hadolint + trivy + zap
@@ -418,7 +418,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 | Stack | Tests | Tool | Coverage |
 |-------|-------|------|----------|
-| Python (backend) | 61 | pytest + pytest-cov | 99% (only `app.run()` uncovered) |
+| Python (backend) | 61 | pytest + pytest-cov | 98% |
 | JavaScript (frontend) | 159 | Jest + jsdom | 96% lines (94% statements) |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
@@ -431,7 +431,7 @@ All tests and security scans run automatically on every push and pull request vi
 
 | Job | What it does |
 |-----|-------------|
-| `python-tests` | pytest + coverage (99% threshold) with MySQL service |
+| `python-tests` | pytest + coverage (98% threshold) with MySQL service |
 | `js-tests` | Jest + coverage (96% lines threshold) |
 | `bandit` | Python SAST |
 | `safety` | Python dependency scan |
@@ -528,7 +528,7 @@ radiocalico/
 | DB Driver | PyMySQL | Python-MySQL connector |
 | Rate Limiting | flask-limiter | Request rate limiting for auth endpoints |
 | Config | python-dotenv | Environment variable management |
-| Python Testing | pytest + pytest-cov | 61 backend unit tests (99% coverage) |
+| Python Testing | pytest + pytest-cov | 61 backend unit tests (98% coverage) |
 | JS Testing | Jest + jsdom | 44 frontend unit tests |
 | Security | Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP | SAST, dependency, Dockerfile, image, and DAST scanning |
 | Containers | Docker + Docker Compose | Dev/prod deployment with MySQL |
