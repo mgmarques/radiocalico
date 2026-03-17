@@ -368,6 +368,7 @@ CREATE TABLE feedback (
 | Python integration | `api/test_integration.py` | 19 | pytest |
 | JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom (96% line coverage) |
 | E2E | `tests/test_e2e.py` | 19 | pytest + requests (Docker prod stack) |
+| Skills | `tests/test_skills.py` | 83 | pytest (validates all 12 slash commands) |
 
 - Python unit tests use isolated `radiocalico_test` database (created/destroyed per test)
 - Python fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
@@ -406,6 +407,7 @@ CREATE TABLE feedback (
 | `make zap` | OWASP ZAP DAST baseline scan (requires running app) |
 | `make docker-security` | Docker-specific scans: hadolint + trivy |
 | `make test-integration` | API integration tests (requires MySQL) |
+| `make test-skills` | Validate all 12 slash commands (structure, versions, refs) |
 | `make test-e2e` | E2E tests against running Docker prod stack |
 | `make docker-e2e` | Start prod, run E2E tests, stop prod |
 | `make ci` | Full pipeline: lint + coverage + security |
@@ -415,7 +417,7 @@ CREATE TABLE feedback (
 - **Metadata comes from CloudFront JSON**, not ID3 tags. The ID3 parser is implemented as fallback but the stream does not currently embed ID3 tags.
 - **Database credentials are loaded from environment variables** via python-dotenv (`api/.env.example` provides the template). `CORS_ORIGIN` env var controls allowed CORS origins.
 - **Debug mode is off by default**, controlled by `FLASK_DEBUG` env var.
-- **Tests exist** — 261 tests: 61 Python unit + 19 integration + 162 JS unit + 19 E2E. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions (11 jobs).
+- **Tests exist** — 344 tests: 61 Python unit + 19 integration + 162 JS unit + 19 E2E + 83 skills. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions (11 jobs).
 - **iTunes API** is cached client-side in localStorage (24h TTL) via `fetchItunesCached()`. No server-side proxy.
 - **Ratings are local only** — not sent to the CloudFront/stream host.
 - **Cache issues** — after editing static files, users must hard refresh (`Cmd+Shift+R`) to see changes.

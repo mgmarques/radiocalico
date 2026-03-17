@@ -14,7 +14,7 @@ E2E_BASE_URL ?= http://127.0.0.1:5050
 .PHONY: install test test-py test-js coverage coverage-js ci clean \
         lint lint-py lint-js lint-css lint-html fix-py \
         security security-all bandit safety audit-npm hadolint trivy zap \
-        test-integration test-e2e docker-e2e \
+        test-integration test-skills test-e2e docker-e2e \
         docker-dev docker-prod docker-down docker-build docker-test docker-security
 
 ## Install all dependencies (prod + dev)
@@ -127,6 +127,10 @@ zap:
 ## Run API integration tests (requires MySQL running)
 test-integration:
 	$(ACTIVATE) cd api && pytest test_integration.py -v
+
+## Validate all Claude Code slash commands (structure, versions, references)
+test-skills:
+	$(ACTIVATE) pytest tests/test_skills.py -v
 
 ## Run end-to-end tests against running Docker prod stack
 test-e2e:
