@@ -84,11 +84,27 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 
 *Feedback form — submit via email (stored in DB), or post on X/Twitter or Telegram.*
 
+### Docker Production Stack
+
+<p align="center">
+  <img src="docs/7_Docker_contanier.png" alt="Radio Calico Docker Containers" width="525">
+</p>
+
+*Docker production deployment — nginx reverse proxy, gunicorn (4 workers), and MySQL 8.0 running as healthy containers.*
+
+### CI/CD Pipeline (GitHub Actions)
+
+<p align="center">
+  <img src="docs/8_CiCD.png" alt="Radio Calico CI/CD Pipeline" width="525">
+</p>
+
+*GitHub Actions workflow — 12 parallel jobs: lint, unit tests (Python + JS), integration tests, E2E tests, skills validation, and 6 security scans (Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP).*
+
 ---
 
 ## Architecture
 
-Initial desing:
+Initial design:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
