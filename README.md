@@ -491,7 +491,7 @@ make test          # Run all tests (Python + JavaScript)
 make test-py       # Run Python unit tests only (61 tests)
 make test-js       # Run JavaScript unit tests only (162 tests)
 make coverage      # Python tests + coverage report (fails if <98%)
-make coverage-js   # JavaScript tests + coverage report (fails if <96% lines)
+make coverage-js   # JavaScript tests + coverage report (fails if <90% lines)
 make security      # Bandit (SAST) + Safety (deps) + npm audit
 make security-all  # All scans: security + hadolint + trivy + zap
 make hadolint      # Dockerfile best practices linting
@@ -509,7 +509,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 |-------|-------|------|----------|
 | Python unit | 61 | pytest + pytest-cov | 98% |
 | Python integration | 19 | pytest | Multi-step API workflows |
-| JavaScript unit | 162 | Jest + jsdom | 96% lines |
+| JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
 | E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
@@ -532,7 +532,7 @@ graph LR
 
     lint --> python-tests["python-tests<br/>pytest + coverage<br/>(98% threshold)"]
     lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
-    lint --> js-tests["js-tests<br/>Jest + coverage<br/>(96% threshold)"]
+    lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
     lint --> skills-tests["skills-tests<br/>pytest<br/>17 slash commands"]
 
     python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]
@@ -573,7 +573,7 @@ graph LR
 | Job | What it does |
 |-----|-------------|
 | `python-tests` | pytest + coverage (98% threshold) with MySQL service |
-| `js-tests` | Jest + coverage (96% lines threshold) |
+| `js-tests` | Jest + coverage (90% lines threshold) |
 | `bandit` | Python SAST |
 | `safety` | Python dependency scan |
 | `npm-audit` | JS dependency scan |
@@ -720,7 +720,7 @@ erDiagram
 | Rate Limiting | flask-limiter | Request rate limiting for auth endpoints |
 | Config | python-dotenv | Environment variable management |
 | Python Testing | pytest + pytest-cov | 61 backend unit tests (98% coverage) |
-| JS Testing | Jest + jsdom | 162 frontend unit tests (96% line coverage) |
+| JS Testing | Jest + jsdom | 162 frontend unit tests (90% line threshold) |
 | Security | Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP | SAST, dependency, Dockerfile, image, and DAST scanning |
 | Containers | Docker + Docker Compose | Dev/prod deployment with MySQL |
 | Reverse Proxy | nginx (alpine) | Static file serving + /api proxy (prod) |

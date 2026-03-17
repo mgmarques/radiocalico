@@ -1,6 +1,6 @@
 """Tests for Claude Code slash commands (skills).
 
-Validates that all 12 command files:
+Validates that all 17 command files:
 - Exist with correct structure and version headers
 - Reference valid files, paths, and make targets
 - Have consistent information with the actual codebase

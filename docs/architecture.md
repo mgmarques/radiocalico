@@ -115,7 +115,7 @@ graph LR
 
     lint --> python-tests["python-tests<br/>pytest + coverage<br/>(98% threshold)"]
     lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
-    lint --> js-tests["js-tests<br/>Jest + coverage<br/>(96% threshold)"]
+    lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
     lint --> skills-tests["skills-tests<br/>pytest<br/>17 slash commands"]
 
     python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]

@@ -836,7 +836,7 @@ graph LR
 
     lint --> python-tests["python-tests<br/>pytest + coverage<br/>(98% threshold)"]
     lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
-    lint --> js-tests["js-tests<br/>Jest + coverage<br/>(96% threshold)"]
+    lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
     lint --> skills-tests["skills-tests<br/>pytest<br/>17 slash commands"]
 
     python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]
@@ -880,7 +880,7 @@ graph LR
 |-------|------|-------|------|--------------------|
 | Python unit | `api/test_app.py` | 61 | pytest + pytest-cov | 98% line coverage |
 | Python integration | `api/test_integration.py` | 19 | pytest | -- |
-| JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom | 96% line coverage |
+| JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom | 90% line threshold (actual ~96%) |
 | End-to-end | `tests/test_e2e.py` | 19 | pytest + requests | -- |
 | Skills validation | `tests/test_skills.py` | 138 | pytest | -- |
 

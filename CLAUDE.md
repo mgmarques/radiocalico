@@ -14,7 +14,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Ratings**: Stored in local MySQL only. CloudFront host does NOT accept ratings.
 - **Auth**: Token-based authentication. Passwords hashed with PBKDF2 (260k iterations) + random salt. Timing-safe comparison via hmac.compare_digest. Tokens stored in `localStorage`.
 - **Logging**: Structured JSON logs across all layers. Python: `python-json-logger` with request_id, method, path, status, duration_ms. nginx: JSON access log format with upstream timing. JS: `log.info/warn/error()` outputs JSON to browser console. X-Request-ID header for cross-layer correlation.
-- **Testing**: Python: pytest + pytest-cov (98% coverage). JS: Jest + jsdom (162 tests, 96% line coverage). Integration: 19 multi-step API workflow tests. E2E: 19 tests against Docker prod stack. Security: bandit (SAST) + safety (deps) + npm audit + hadolint (Dockerfile) + trivy (image scan) + OWASP ZAP (DAST). CI: GitHub Actions (11 jobs) on push/PR.
+- **Testing**: Python: pytest + pytest-cov (98% coverage). JS: Jest + jsdom (162 tests, 90% line threshold, ~96% actual). Integration: 19 multi-step API workflow tests. E2E: 19 tests against Docker prod stack. Security: bandit (SAST) + safety (deps) + npm audit + hadolint (Dockerfile) + trivy (image scan) + OWASP ZAP (DAST). CI: GitHub Actions (11 jobs) on push/PR.
 - **Linting**: Ruff (Python lint + format), ESLint (JS), Stylelint (CSS), HTMLHint (HTML). Run `make lint` before committing.
 - **Performance**: WebP images (logo 50% smaller), dns-prefetch for CDN/API domains, iTunes API cached in localStorage (24h TTL), API pagination on ratings endpoint.
 
@@ -59,7 +59,7 @@ radiocalico/
 │   │   └── player.css              # All styles, responsive layout, design tokens
 │   └── js/
 │       ├── player.js               # Playback, metadata, artwork, ratings, auth, sharing
-│       └── player.test.js          # 162 JavaScript unit tests (Jest + jsdom, 96% line coverage)
+│       └── player.test.js          # 162 JavaScript unit tests (Jest + jsdom, 90% line threshold, ~96% actual)
 ├── tests/
 │   ├── conftest.py                 # E2E test fixtures (base_url)
 │   └── test_e2e.py                 # 19 E2E tests (nginx → gunicorn → MySQL)
@@ -99,7 +99,7 @@ radiocalico/
 | `api/app.py` | Flask REST API: ratings, auth, profile, feedback + static file serving |
 | `api/test_app.py` | 61 Python unit tests covering all endpoints (98% coverage) |
 | `api/test_integration.py` | 19 integration tests: user lifecycle, ratings, sessions, auth edge cases |
-| `static/js/player.test.js` | 162 JavaScript unit tests (Jest + jsdom, 96% line coverage) |
+| `static/js/player.test.js` | 162 JavaScript unit tests (Jest + jsdom, 90% line threshold, ~96% actual) |
 | `tests/test_e2e.py` | 19 E2E tests: static files, security headers, API proxy, error handling |
 | `api/conftest.py` | Pytest fixtures: test DB setup/teardown, client, auth helpers |
 | `api/.env.example` | Environment variable template (DB creds, Flask config, CORS) |
@@ -371,7 +371,7 @@ CREATE TABLE feedback (
 |-------|------|-------|------|
 | Python unit | `api/test_app.py` | 61 | pytest (98% coverage) |
 | Python integration | `api/test_integration.py` | 19 | pytest |
-| JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom (96% line coverage) |
+| JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom (90% line threshold, ~96% actual) |
 | E2E | `tests/test_e2e.py` | 19 | pytest + requests (Docker prod stack) |
 | Skills | `tests/test_skills.py` | 138 | pytest (validates all 17 slash commands) |
 
