@@ -535,6 +535,13 @@ async function checkIfRated(station) {
  * @async
  */
 async function updateRatingUI() {
+    // Immediately clear previous song's rating state so buttons are clickable
+    rateUp.classList.remove('rated');
+    rateDown.classList.remove('rated');
+    rateFb.textContent = '';
+    rateUpCount.textContent = '0';
+    rateDownCount.textContent = '0';
+
     const station = `${artistEl.textContent} - ${trackEl.textContent}`;
     const alreadyRated = await checkIfRated(station);
     rateUp.classList.toggle('rated', alreadyRated);
