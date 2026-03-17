@@ -849,9 +849,49 @@ describe('renderHistory', () => {
 
 /* ── fetchArtwork ──────────────────────────────────────────── */
 
+describe('fetchItunesCached', () => {
+    beforeEach(() => {
+        Object.keys(mockStorage).forEach(k => { if (k.startsWith('rc-itunes-')) delete mockStorage[k]; });
+    });
+
+    test('returns cached data on cache hit', async () => {
+        const cachedData = { results: [{ artworkUrl100: 'cached.jpg' }] };
+        mockStorage['rc-itunes-test query'] = JSON.stringify({ data: cachedData, ts: Date.now() });
+        global.fetch = jest.fn();
+        const result = await player.fetchItunesCached('test query');
+        expect(result).toEqual(cachedData);
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('fetches from API on cache miss', async () => {
+        const apiData = { results: [{ artworkUrl100: 'api.jpg' }] };
+        global.fetch = jest.fn(() =>
+            Promise.resolve({ ok: true, json: () => Promise.resolve(apiData) })
+        );
+        const result = await player.fetchItunesCached('new query');
+        expect(result).toEqual(apiData);
+        expect(global.fetch).toHaveBeenCalled();
+        // Should now be cached
+        expect(mockStorage['rc-itunes-new query']).toBeDefined();
+    });
+
+    test('fetches from API on expired cache', async () => {
+        const staleData = { results: [] };
+        mockStorage['rc-itunes-old query'] = JSON.stringify({ data: staleData, ts: Date.now() - 25 * 60 * 60 * 1000 });
+        const freshData = { results: [{ artworkUrl100: 'fresh.jpg' }] };
+        global.fetch = jest.fn(() =>
+            Promise.resolve({ ok: true, json: () => Promise.resolve(freshData) })
+        );
+        const result = await player.fetchItunesCached('old query');
+        expect(result).toEqual(freshData);
+    });
+});
+
 describe('fetchArtwork', () => {
     beforeEach(() => {
         document.getElementById('artwork').innerHTML = '';
+        // Clear iTunes cache entries from localStorage mock
+        Object.keys(mockStorage).forEach(k => { if (k.startsWith('rc-itunes-')) delete mockStorage[k]; });
     });
 
     test('sets artwork from iTunes API result', async () => {
