@@ -74,6 +74,7 @@ def _setup_test_db():
 
 
 def _teardown_test_db():
+    """Drop the test database to clean up after tests."""
     conn = _admin_conn()
     with conn.cursor() as cur:
         cur.execute(f"DROP DATABASE IF EXISTS {TEST_DB}")
