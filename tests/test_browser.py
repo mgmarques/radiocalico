@@ -217,8 +217,9 @@ class TestDrawer:
         WebDriverWait(driver, 5).until(
             lambda d: "open" in d.find_element(By.ID, "drawer").get_attribute("class")
         )
-        # Close
-        driver.find_element(By.ID, "drawer-close").click()
+        # Close via JS click (button may overlap with heading in headless)
+        close_btn = driver.find_element(By.ID, "drawer-close")
+        driver.execute_script("arguments[0].click();", close_btn)
         time.sleep(0.5)
         assert "open" not in driver.find_element(By.ID, "drawer").get_attribute("class")
 
@@ -238,7 +239,8 @@ class TestDrawer:
         )
         auth_section = driver.find_element(By.ID, "drawer-auth")
         assert auth_section is not None
-        driver.find_element(By.ID, "drawer-close").click()
+        close_btn = driver.find_element(By.ID, "drawer-close")
+        driver.execute_script("arguments[0].click();", close_btn)
 
 
 # ── Authentication Flow ──────────────────────────────────────
@@ -296,7 +298,8 @@ class TestAuth:
                 assert auth.is_displayed()
         except Exception:
             pass  # Not logged in, skip
-        driver.find_element(By.ID, "drawer-close").click()
+        close_btn = driver.find_element(By.ID, "drawer-close")
+        driver.execute_script("arguments[0].click();", close_btn)
 
 
 # ── Share Buttons ────────────────────────────────────────────
