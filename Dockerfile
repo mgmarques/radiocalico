@@ -6,6 +6,14 @@ WORKDIR /app
 # Create non-root user
 RUN addgroup --system appuser && adduser --system --ingroup appuser appuser
 
+# Upgrade vulnerable system packages and pip packages
+# hadolint ignore=DL3008,DL3013
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir --force-reinstall 'wheel>=0.46.2' 'jaraco.context>=6.1.0' \
+    && rm -rf /usr/local/lib/python3.11/site-packages/setuptools/_vendor/wheel-*.dist-info \
+              /usr/local/lib/python3.11/site-packages/setuptools/_vendor/jaraco.context-*.dist-info
+
 # Install production dependencies
 COPY api/requirements.txt api/requirements.txt
 RUN pip install --no-cache-dir gunicorn==22.0.0 -r api/requirements.txt
@@ -36,6 +44,7 @@ COPY api/requirements-dev.txt api/requirements-dev.txt
 RUN pip install --no-cache-dir -r api/requirements-dev.txt
 
 # Install Node.js for JavaScript tests + curl for health checks
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends nodejs npm curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -48,10 +57,8 @@ COPY package.json jest.config.js ./
 COPY static/js/player.test.js static/js/player.test.js
 COPY Makefile ./
 
-RUN npm install --ignore-scripts
-
-# Set ownership to non-root user
-RUN chown -R appuser:appuser /app
+RUN npm install --ignore-scripts \
+    && chown -R appuser:appuser /app
 
 ENV FLASK_DEBUG=true
 

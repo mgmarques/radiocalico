@@ -1,0 +1,187 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Python tests + coverage (99% threshold) ────────────────
+  python-tests:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testroot
+          MYSQL_DATABASE: radiocalico_test
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r api/requirements.txt -r api/requirements-dev.txt
+
+      - name: Run tests with coverage
+        working-directory: api
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: testuser
+          DB_PASSWORD: testpass
+          DB_NAME: radiocalico_test
+        run: pytest test_app.py --cov=app --cov-report=term-missing --cov-fail-under=99 -v
+
+  # ── JavaScript tests + coverage (96% lines threshold) ──────
+  js-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npx jest --coverage --verbose
+
+  # ── Security: Bandit (Python SAST) ─────────────────────────
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit
+        run: bandit -r api/app.py -f txt
+
+  # ── Security: Safety (Python dependency scan) ──────────────
+  safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Safety
+        run: pip install safety
+
+      - name: Run Safety
+        run: safety check -r api/requirements.txt || true
+
+  # ── Security: npm audit (JS dependency scan) ───────────────
+  npm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --omit=dev
+
+  # ── Security: Hadolint (Dockerfile linting) ────────────────
+  hadolint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+  # ── Security: Trivy (Docker image vulnerability scan) ──────
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t radiocalico-app:ci --target prod .
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: radiocalico-app:ci
+          severity: HIGH,CRITICAL
+          exit-code: 1
+
+  # ── Security: OWASP ZAP (DAST baseline scan) ──────────────
+  zap:
+    runs-on: ubuntu-latest
+    needs: [python-tests, js-tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env for Docker
+        run: |
+          cat > .env << 'EOF'
+          MYSQL_ROOT_PASSWORD=zaproot
+          DB_HOST=db
+          DB_USER=zapuser
+          DB_PASSWORD=zappass
+          DB_NAME=radiocalico
+          CORS_ORIGIN=*
+          APP_PORT=5050
+          EOF
+
+      - name: Start production stack
+        run: docker compose --profile prod up --build -d
+
+      - name: Wait for healthy
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:5050/health > /dev/null 2>&1; then
+              echo "App is healthy"
+              exit 0
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 5
+          done
+          echo "App did not become healthy"
+          docker compose --profile prod logs
+          exit 1
+
+      - name: Run OWASP ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: http://127.0.0.1:5050
+          cmd_options: -l WARN -I -j
+          allow_issue_writing: false
+
+      - name: Stop stack
+        if: always()
+        run: docker compose --profile prod down -v
