@@ -35,6 +35,8 @@ EXPECTED_COMMANDS = [
     "generate-diagrams.md",
     "generate-tech-spec.md",
     "update-readme-diagrams.md",
+    "generate-requirements.md",
+    "generate-vv-plan.md",
 ]
 
 
@@ -289,6 +291,90 @@ class TestUpdateReadmeDiagramsCommand:
     def test_preserves_existing_content(self):
         content = (COMMANDS_DIR / "update-readme-diagrams.md").read_text()
         assert "NOT remove" in content or "not remove" in content.lower() or "Do NOT" in content
+
+
+class TestGenerateRequirementsCommand:
+    """Validate /generate-requirements command content."""
+
+    def test_mentions_output_file(self):
+        content = (COMMANDS_DIR / "generate-requirements.md").read_text()
+        assert "docs/requirements.md" in content
+
+    def test_has_functional_requirements_section(self):
+        content = (COMMANDS_DIR / "generate-requirements.md").read_text()
+        for area in ["Audio Streaming", "Track Metadata", "Ratings", "Authentication",
+                      "User Profile", "Feedback", "Social Sharing", "Theme"]:
+            assert area in content, f"Missing functional area: {area}"
+
+    def test_has_non_functional_requirements_section(self):
+        content = (COMMANDS_DIR / "generate-requirements.md").read_text()
+        for area in ["Performance", "Security", "Reliability", "Observability", "Maintainability"]:
+            assert area in content, f"Missing NFR area: {area}"
+
+    def test_has_requirement_format(self):
+        content = (COMMANDS_DIR / "generate-requirements.md").read_text()
+        assert "FR-" in content, "Should use FR-xxx format for functional requirements"
+        assert "NFR-" in content, "Should use NFR-xxx format for non-functional requirements"
+
+    def test_has_traceability_matrix(self):
+        content = (COMMANDS_DIR / "generate-requirements.md").read_text()
+        assert "Traceability" in content or "traceability" in content
+
+    def test_references_source_files(self):
+        content = (COMMANDS_DIR / "generate-requirements.md").read_text()
+        for ref in ["app.py", "player.js", "nginx.conf"]:
+            assert ref in content, f"Missing source reference: {ref}"
+
+
+class TestGenerateVVPlanCommand:
+    """Validate /generate-vv-plan command content."""
+
+    def test_mentions_output_file(self):
+        content = (COMMANDS_DIR / "generate-vv-plan.md").read_text()
+        assert "docs/vv-test-plan.md" in content
+
+    def test_has_all_test_case_sections(self):
+        content = (COMMANDS_DIR / "generate-vv-plan.md").read_text()
+        for section in ["Audio Streaming", "Track Metadata", "Ratings", "Authentication",
+                        "User Profile", "Feedback", "Social Sharing", "Theme", "Non-Functional"]:
+            assert section in content, f"Missing test section: {section}"
+
+    def test_uses_tc_format(self):
+        content = (COMMANDS_DIR / "generate-vv-plan.md").read_text()
+        assert "TC-" in content, "Should use TC-xxx format for test cases"
+
+    def test_has_test_case_structure(self):
+        content = (COMMANDS_DIR / "generate-vv-plan.md").read_text()
+        for field in ["Precondition", "Steps", "Expected result", "Automated"]:
+            assert field in content, f"Missing test case field: {field}"
+
+    def test_references_all_test_suites(self):
+        content = (COMMANDS_DIR / "generate-vv-plan.md").read_text()
+        for suite in ["test_app.py", "test_integration.py", "player.test.js", "test_e2e.py", "test_skills.py"]:
+            assert suite in content, f"Missing test suite reference: {suite}"
+
+    def test_has_manual_test_procedures(self):
+        content = (COMMANDS_DIR / "generate-vv-plan.md").read_text()
+        assert "Manual" in content or "manual" in content
+
+    def test_has_coverage_matrix(self):
+        content = (COMMANDS_DIR / "generate-vv-plan.md").read_text()
+        assert "Coverage Matrix" in content or "coverage" in content.lower()
+
+    def test_has_execution_summary_template(self):
+        content = (COMMANDS_DIR / "generate-vv-plan.md").read_text()
+        assert "Execution Summary" in content or "Pass/Fail" in content
+
+    def test_references_requirements(self):
+        content = (COMMANDS_DIR / "generate-vv-plan.md").read_text()
+        assert "requirements.md" in content, "Should reference requirements doc"
+
+    def test_mentions_specific_test_cases(self):
+        content = (COMMANDS_DIR / "generate-vv-plan.md").read_text()
+        # Should have test cases for core user flows
+        assert "TC-101" in content or "Play audio" in content.lower()
+        assert "TC-301" in content or "Rate a track" in content.lower()
+        assert "TC-401" in content or "Register" in content
 
 
 class TestCLAUDEmdConsistency:

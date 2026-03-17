@@ -59,7 +59,7 @@ jobs:
       - name: Install pytest
         run: pip install pytest
 
-      - name: Validate all 15 slash commands
+      - name: Validate all 17 slash commands
         run: pytest tests/test_skills.py -v
 
   # ── Python tests + coverage (98% threshold) ────────────────
