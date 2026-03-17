@@ -1,5 +1,6 @@
-# Environment variables (contains credentials)
+# Environment variables and secrets
 .env
+.mcp.json
 
 # Python
 __pycache__/
