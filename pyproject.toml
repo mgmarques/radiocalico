@@ -1,0 +1,12 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"api/test_app.py" = ["S101", "S106"]
+"api/test_integration.py" = ["S101", "S106"]
+"api/conftest.py" = ["S101", "S106", "S608"]

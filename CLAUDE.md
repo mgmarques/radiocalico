@@ -353,20 +353,30 @@ CREATE TABLE feedback (
 | `make test-py` | Run Python unit tests only |
 | `make test-js` | Run JavaScript unit tests only |
 | `make coverage` | Python tests + coverage (fails if <99%) |
+| `make lint` | Run all linters (Python + JS + CSS + HTML) |
+| `make lint-py` | Ruff check + format check (Python) |
+| `make lint-js` | ESLint (JavaScript) |
+| `make lint-css` | Stylelint (CSS) |
+| `make lint-html` | HTMLHint (HTML) |
+| `make fix-py` | Auto-fix Python lint + format issues |
 | `make security` | Bandit + Safety + npm audit |
 | `make security-all` | All scans: security + hadolint + trivy + zap |
 | `make hadolint` | Dockerfile best practices linting |
 | `make trivy` | Docker image vulnerability scan (requires built image) |
 | `make zap` | OWASP ZAP DAST baseline scan (requires running app) |
 | `make docker-security` | Docker-specific scans: hadolint + trivy |
-| `make ci` | Full pipeline: Python coverage + JS tests + security |
+| `make test-integration` | API integration tests (requires MySQL) |
+| `make test-e2e` | E2E tests against running Docker prod stack |
+| `make docker-e2e` | Start prod, run E2E tests, stop prod |
+| `make ci` | Full pipeline: lint + coverage + security |
 
 ## Important Notes
 
 - **Metadata comes from CloudFront JSON**, not ID3 tags. The ID3 parser is implemented as fallback but the stream does not currently embed ID3 tags.
 - **Database credentials are loaded from environment variables** via python-dotenv (`api/.env.example` provides the template). `CORS_ORIGIN` env var controls allowed CORS origins.
 - **Debug mode is off by default**, controlled by `FLASK_DEBUG` env var.
-- **Tests exist** — 217 tests (61 Python + 156 JS). Run `make ci` before merging changes. Add tests for new endpoints and JS functions. CI runs automatically on push/PR via GitHub Actions.
+- **Tests exist** — 217 unit tests (61 Python + 156 JS), 22 integration tests, 18 E2E tests. Run `make ci` before merging. CI runs automatically on push/PR via GitHub Actions.
+- **Linting** — Ruff (Python), ESLint (JS), Stylelint (CSS), HTMLHint (HTML). Run `make lint` before committing. `make fix-py` auto-fixes Python issues.
 - **iTunes API** is called client-side for artwork — no proxy or caching layer yet.
 - **Ratings are local only** — not sent to the CloudFront/stream host.
 - **Cache issues** — after editing static files, users must hard refresh (`Cmd+Shift+R`) to see changes.

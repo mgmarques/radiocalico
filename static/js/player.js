@@ -247,11 +247,8 @@ function parseID3Frames(raw) {
         if (id.startsWith('T') && id !== 'TXXX') {
             const enc = raw[off + 10];
             const body = raw.slice(off + 11, off + 10 + sz);
-            let txt = '';
-            if (enc === 3)      txt = new TextDecoder('utf-8').decode(body);
-            else if (enc === 1) txt = new TextDecoder('utf-16').decode(body);
-            else if (enc === 2) txt = new TextDecoder('utf-16be').decode(body);
-            else                txt = new TextDecoder('iso-8859-1').decode(body);
+            const encoding = enc === 3 ? 'utf-8' : enc === 1 ? 'utf-16' : enc === 2 ? 'utf-16be' : 'iso-8859-1';
+            let txt = new TextDecoder(encoding).decode(body);
             txt = txt.replace(/\0/g, '').trim();
             if (txt) frames[id] = txt;
         }

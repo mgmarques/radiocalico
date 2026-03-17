@@ -1,21 +1,28 @@
 # Radio Calico — CI/CD automation targets
 # Usage: make test | make coverage | make security | make ci
+# Lint: make lint | make lint-py | make lint-js | make lint-css | make lint-html
 # Docker: make docker-dev | make docker-prod | make docker-down
 # Security: make security | make security-all | make audit-npm | make hadolint
 #           make trivy | make zap
+# Integration: make test-integration | make test-e2e | make docker-e2e
 
 ACTIVATE := . api/venv/bin/activate &&
 IMAGE_NAME := radiocalico-app
 ZAP_TARGET ?= http://host.docker.internal:5050
+E2E_BASE_URL ?= http://127.0.0.1:5050
 
-.PHONY: install test test-py test-js coverage ci clean \
+.PHONY: install test test-py test-js coverage coverage-js ci clean \
+        lint lint-py lint-js lint-css lint-html fix-py \
         security security-all bandit safety audit-npm hadolint trivy zap \
+        test-integration test-e2e docker-e2e \
         docker-dev docker-prod docker-down docker-build docker-test docker-security
 
 ## Install all dependencies (prod + dev)
 install:
 	$(ACTIVATE) cd api && pip install -r requirements-dev.txt
 	npm install
+
+## ── Unit tests ────────────────────────────────────────────────
 
 ## Run all unit tests (Python + JavaScript)
 test: test-py test-js
@@ -35,6 +42,35 @@ coverage-js:
 ## Run Python tests with coverage report (fail if <99%)
 coverage:
 	$(ACTIVATE) cd api && pytest test_app.py --cov=app --cov-report=term-missing --cov-fail-under=99 -v
+
+## ── Linting targets ───────────────────────────────────────────
+
+## Run all linters
+lint: lint-py lint-js lint-css lint-html
+
+## Python linting (ruff check + format check)
+lint-py:
+	@echo "=== Ruff (Python lint + format) ==="
+	$(ACTIVATE) ruff check api/ && ruff format --check api/
+
+## JavaScript linting
+lint-js:
+	@echo "=== ESLint (JavaScript) ==="
+	npx eslint static/js/player.js
+
+## CSS linting
+lint-css:
+	@echo "=== Stylelint (CSS) ==="
+	npx stylelint "static/css/**/*.css"
+
+## HTML linting
+lint-html:
+	@echo "=== HTMLHint (HTML) ==="
+	npx htmlhint static/index.html
+
+## Auto-fix Python lint and format issues
+fix-py:
+	$(ACTIVATE) ruff check --fix api/ && ruff format api/
 
 ## ── Security targets ────────────────────────────────────────
 
@@ -86,8 +122,33 @@ zap:
 		ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
 		-t $(ZAP_TARGET) -l WARN -I -j
 
-## Full CI pipeline: tests + coverage + security
-ci: coverage coverage-js security
+## ── Integration & E2E tests ──────────────────────────────────
+
+## Run API integration tests (requires MySQL running)
+test-integration:
+	$(ACTIVATE) cd api && pytest test_integration.py -v
+
+## Run end-to-end tests against running Docker prod stack
+test-e2e:
+	E2E_BASE_URL=$(E2E_BASE_URL) $(ACTIVATE) pip install requests -q && pytest tests/test_e2e.py -v
+
+## Full E2E: start prod stack, run e2e tests, stop stack
+docker-e2e:
+	docker compose --profile prod up --build -d
+	@echo "Waiting for stack to be healthy..."
+	@for i in $$(seq 1 30); do \
+		if curl -sf $(E2E_BASE_URL)/health > /dev/null 2>&1; then \
+			echo "Stack is healthy"; \
+			break; \
+		fi; \
+		echo "Waiting... ($$i/30)"; \
+		sleep 5; \
+	done
+	E2E_BASE_URL=$(E2E_BASE_URL) $(ACTIVATE) pip install requests -q && pytest tests/test_e2e.py -v || (docker compose --profile prod down -v && exit 1)
+	docker compose --profile prod down -v
+
+## Full CI pipeline: lint + tests + coverage + security
+ci: lint coverage coverage-js security
 	@echo ""
 	@echo "=== CI pipeline passed ==="
 
