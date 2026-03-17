@@ -242,9 +242,7 @@ def get_ratings_summary():
     summary = {}
     for row in rows:
         summary[row["station"]] = {"likes": int(row["likes"]), "dislikes": int(row["dislikes"])}
-    response = jsonify(summary)
-    response.headers["Cache-Control"] = "public, max-age=30"
-    return response
+    return jsonify(summary)
 
 
 @app.route("/api/ratings", methods=["POST"])
