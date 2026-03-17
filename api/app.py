@@ -189,22 +189,34 @@ def serve_index():
 
 @app.route("/api/ratings", methods=["GET"])
 def get_ratings():
-    """Return all ratings ordered by most recent first.
+    """Return ratings ordered by most recent first, with optional pagination.
 
     GET /api/ratings
+    GET /api/ratings?limit=50&offset=0
+
+    Query params:
+        limit (int, optional): Maximum number of results (default 100, max 500).
+        offset (int, optional): Number of results to skip (default 0).
 
     Returns:
         Response: JSON array of rating objects, each containing ``id``,
         ``station``, ``score``, and ``created_at``. Status 200.
     """
+    limit = min(int(request.args.get("limit", 100)), 500)
+    offset = max(int(request.args.get("offset", 0)), 0)
     db = get_db()
     try:
         with db.cursor() as cursor:
-            cursor.execute("SELECT id, station, score, created_at FROM ratings ORDER BY created_at DESC")
+            cursor.execute(
+                "SELECT id, station, score, created_at FROM ratings ORDER BY created_at DESC LIMIT %s OFFSET %s",
+                (limit, offset),
+            )
             rows = cursor.fetchall()
     finally:
         db.close()
-    return jsonify(rows)
+    response = jsonify(rows)
+    response.headers["Cache-Control"] = "public, max-age=30"
+    return response
 
 
 @app.route("/api/ratings/summary", methods=["GET"])
@@ -230,7 +242,9 @@ def get_ratings_summary():
     summary = {}
     for row in rows:
         summary[row["station"]] = {"likes": int(row["likes"]), "dislikes": int(row["dislikes"])}
-    return jsonify(summary)
+    response = jsonify(summary)
+    response.headers["Cache-Control"] = "public, max-age=30"
+    return response
 
 
 @app.route("/api/ratings", methods=["POST"])
