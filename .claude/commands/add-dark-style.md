@@ -1,3 +1,4 @@
+<!-- Radio Calico Skill v1.0.0 -->
 Add dark mode styling for a new CSS component in Radio Calico.
 
 The user will describe a component or class name. Follow this process:

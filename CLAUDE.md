@@ -67,16 +67,21 @@ radiocalico/
 ├── eslint.config.js                # ESLint configuration
 ├── .stylelintrc.json               # Stylelint configuration
 ├── .htmlhintrc                     # HTMLHint configuration
+├── VERSION                         # Project version (semver)
 └── .claude/
-    └── commands/
+    └── commands/                   # Claude Code slash commands (all v1.0.0)
         ├── start.md                # /start — launch dev environment
         ├── check-stream.md         # /check-stream — check stream & server status
         ├── troubleshoot.md         # /troubleshoot — diagnose common issues
         ├── test-ratings.md         # /test-ratings — test ratings API end-to-end
+        ├── run-ci.md               # /run-ci — run full CI pipeline
+        ├── create-pr.md            # /create-pr — branch, commit, push, create PR
+        ├── docker-verify.md        # /docker-verify — rebuild + verify Docker prod stack
+        ├── add-endpoint.md         # /add-endpoint — scaffold new API route + tests
+        ├── security-audit.md       # /security-audit — run all 6 security tools
         ├── add-share-button.md     # /add-share-button — add new share platform
         ├── add-dark-style.md       # /add-dark-style — add dark mode for new components
-        ├── update-claude-md.md     # /update-claude-md — refresh CLAUDE.md from codebase
-        └── run-ci.md              # /run-ci — run full CI pipeline (tests + security)
+        └── update-claude-md.md     # /update-claude-md — refresh CLAUDE.md from codebase
 ```
 
 ## Key Files

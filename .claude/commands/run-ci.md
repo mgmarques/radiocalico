@@ -1,3 +1,4 @@
+<!-- Radio Calico Skill v1.0.0 -->
 Run the full Radio Calico CI pipeline (lint + tests + coverage + security).
 
 1. Ensure MySQL is running: `brew services list | grep mysql`
