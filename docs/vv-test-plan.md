@@ -23,15 +23,17 @@ This Verification & Validation (V&V) test plan ensures that Radio Calico meets a
 | **Unit Tests**     | Individual functions and API endpoints in isolation             | Fully automated (pytest, Jest) |
 | **Integration Tests** | Multi-step workflows across multiple API endpoints          | Fully automated (pytest) |
 | **End-to-End Tests** | Full nginx + gunicorn + MySQL stack via HTTP                 | Fully automated (pytest + requests) |
-| **Manual Tests**   | Audio playback, real-time streaming, browser behavior           | Manual execution with documented procedures |
+| **Browser Tests**  | Real browser interactions: UI, themes, drawers, auth, playback  | Fully automated (Selenium + headless Chrome) |
+| **Manual Tests**   | Audio quality verification, subjective UX assessment            | Manual execution with documented procedures |
 
 ### 1.3 Tools
 
 | Tool           | Purpose                                      |
 |----------------|----------------------------------------------|
 | pytest         | Python unit and integration tests             |
-| pytest-cov     | Python code coverage (98%+ threshold)         |
+| pytest-cov     | Python code coverage (95%+ threshold)         |
 | Jest + jsdom   | JavaScript unit tests (DOM simulation)        |
+| Selenium       | Browser-based E2E tests (headless Chrome)     |
 | requests       | Python HTTP client for E2E tests              |
 | Bandit         | Python SAST security scanning                 |
 | Safety         | Python dependency vulnerability scanning      |
@@ -703,13 +705,38 @@ This Verification & Validation (V&V) test plan ensures that Radio Calico meets a
 | TC-903 | NFR-203, NFR-204 | `tests/test_e2e.py` | `TestSecurityHeaders::test_x_content_type_options`, `test_x_frame_options`, `test_csp_header`, `test_permissions_policy`, `test_server_version_hidden` |
 | TC-904 | NFR-402 | `tests/test_e2e.py` | `TestSecurityHeaders::test_request_id_header` |
 | TC-905 | NFR-401, NFR-406 | `static/js/player.test.js` | `log > log.info outputs JSON to console.log`, `log > log.warn outputs JSON to console.warn`, `log > log.error outputs JSON to console.error` |
-| TC-906 | NFR-505 | `tests/test_skills.py` | 58 slash command validation tests |
+| TC-906 | NFR-505 | `tests/test_skills.py` | 158 slash command validation tests |
+
+### 11.1 Selenium Browser Tests (`tests/test_browser.py`)
+
+37 browser-based tests using Selenium + headless Chrome that automate previously manual test cases:
+
+| Test Case | Selenium Test Class::Method |
+|-----------|----------------------------|
+| TC-101 | `TestAudioPlayback::test_play_button_visible`, `test_click_play_starts_loading` |
+| TC-104 | `TestAudioPlayback::test_volume_slider_exists` |
+| TC-105 | `TestAudioPlayback::test_mute_button_exists` |
+| TC-201 | `TestPageLoad::test_artist_element_exists`, `test_track_element_exists` |
+| TC-202 | `TestPageLoad::test_artwork_container_exists` |
+| TC-301 | `TestRatings::test_click_thumbs_up` |
+| TC-401 | `TestAuth::test_register_and_login_flow` |
+| TC-406 | `TestAuth::test_logout` |
+| TC-701-706 | `TestShareButtons::test_share_whatsapp_exists` through `test_share_amazon_exists` |
+| TC-801 | `TestTheme::test_switch_to_light_theme` |
+| TC-802 | `TestTheme::test_default_theme_is_dark`, `test_switch_back_to_dark_theme` |
+| TC-803 | `TestTheme::test_theme_persists_on_reload` |
+| TC-805 | `TestTheme::test_data_theme_attribute_changes` |
+| TC-103 | `TestStreamQuality::test_quality_radios_exist`, `test_quality_label_shows` |
+| Responsive | `TestResponsive::test_desktop_layout_has_two_columns`, `test_mobile_layout_at_narrow_width` |
+| Drawer | `TestDrawer::test_drawer_opens`, `test_drawer_closes_via_button`, `test_drawer_closes_via_overlay` |
+
+Run: `make test-browser` (requires Docker prod stack + Chrome)
 
 ---
 
 ## 12. Manual Test Procedures
 
-The following test cases require manual execution because they involve real audio playback, hardware interaction (speakers/headphones), and real-time streaming behavior that cannot be fully simulated in automated tests.
+The following test cases require manual execution because they involve subjective audio quality assessment and real-time streaming behavior that automated tests cannot evaluate.
 
 ### Manual Procedure: TC-101 - Play/Pause Toggle
 

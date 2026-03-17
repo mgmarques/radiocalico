@@ -212,6 +212,64 @@ jobs:
         if: always()
         run: docker compose --profile prod down -v
 
+  # ── Browser tests (Selenium + headless Chrome) ──────────────
+  browser-tests:
+    runs-on: ubuntu-latest
+    needs: [python-tests, js-tests, integration-tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Create .env for Docker
+        run: |
+          cat > .env << 'EOF'
+          MYSQL_ROOT_PASSWORD=browserroot
+          DB_HOST=db
+          DB_USER=browseruser
+          DB_PASSWORD=browserpass
+          DB_NAME=radiocalico
+          CORS_ORIGIN=*
+          APP_PORT=5050
+          EOF
+
+      - name: Start production stack
+        run: docker compose --profile prod up --build -d
+
+      - name: Wait for healthy
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:5050/health > /dev/null 2>&1; then
+              echo "App is healthy"
+              exit 0
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 5
+          done
+          echo "App did not become healthy"
+          docker compose --profile prod logs
+          exit 1
+
+      - name: Install test dependencies
+        run: pip install pytest selenium webdriver-manager
+
+      - name: Run Selenium browser tests
+        env:
+          E2E_BASE_URL: http://127.0.0.1:5050
+          BROWSER_HEADLESS: "true"
+        run: pytest tests/test_browser.py -v
+
+      - name: Stop stack
+        if: always()
+        run: docker compose --profile prod down -v
+
   # ── Security: Bandit (Python SAST) ─────────────────────────
   bandit:
     runs-on: ubuntu-latest
