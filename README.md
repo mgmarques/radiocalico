@@ -748,6 +748,7 @@ Detailed project documentation is available in the [`docs/`](docs/) directory:
 | [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (582 tests across 6 suites), security measures, and performance optimizations. |
 | [Requirements](docs/requirements.md) | 91 requirements: 53 functional (FR-1xx to FR-8xx covering streaming, metadata, ratings, auth, profiles, feedback, sharing, and theme) and 38 non-functional (NFR-1xx to NFR-6xx covering performance, security, reliability, observability, maintainability, and compatibility). Includes traceability matrix linking each requirement to its implementation and tests. |
 | [V&V Test Plan](docs/vv-test-plan.md) | 52 user-perspective test cases (TC-1xx to TC-9xx) with step-by-step procedures, expected results, and automated test mapping. Includes manual test procedures for audio playback, automated coverage matrix across all 6 test suites, and an execution summary template. |
+| [Skills vs Agents](docs/Skills_vs_Agents.md) | Comparison of 18 slash commands (skills) vs 9 custom agents: when to use which, current structure, and future improvement roadmap (inter-agent collaboration, tool-aware agents, security-first defaults, chained pipelines, memory, self-testing). Includes prioritized P0–P3 roadmap. |
 | [Design Document](design.md) | Original architecture and design document from the initial prototype phase. |
 
 ---
