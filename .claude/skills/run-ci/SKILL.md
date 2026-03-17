@@ -5,18 +5,18 @@ Run the full Radio Calico CI pipeline (lint + tests + coverage + security).
 2. Run `make ci` from the project root
 3. Report results:
    - Linting passed/failed (Ruff, ESLint, Stylelint, HTMLHint)
-   - Python tests passed/failed (61 unit tests, 98% coverage target)
+   - Python tests passed/failed (61 unit tests, 95% coverage target)
    - JavaScript tests passed/failed (162 tests via Jest, 90% line coverage target)
    - Bandit findings (expected: 0 issues)
    - Safety findings
    - npm audit findings
 4. If any tests fail, investigate and suggest fixes
-5. If Python coverage drops below 98%, identify uncovered lines
+5. If Python coverage drops below 95%, identify uncovered lines
 
 The CI pipeline runs:
 - `ruff check` + `ruff format --check` (Python linting)
 - `eslint` + `stylelint` + `htmlhint` (frontend linting)
-- `pytest` with `--cov=app --cov-fail-under=98` (Python backend)
+- `pytest` with `--cov=app --cov-fail-under=95` (Python backend)
 - `jest` with `--coverage` (JavaScript frontend, 90% line threshold)
 - `bandit` static security analysis
 - `safety` dependency vulnerability check

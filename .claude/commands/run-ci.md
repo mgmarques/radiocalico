@@ -16,7 +16,7 @@ Run the full Radio Calico CI pipeline (lint + tests + coverage + security).
 The CI pipeline runs:
 - `ruff check` + `ruff format --check` (Python linting)
 - `eslint` + `stylelint` + `htmlhint` (frontend linting)
-- `pytest` with `--cov=app --cov-fail-under=98` (Python backend)
+- `pytest` with `--cov=app --cov-fail-under=95` (Python backend)
 - `jest` with `--coverage` (JavaScript frontend, 90% line threshold)
 - `bandit` static security analysis
 - `safety` dependency vulnerability check
