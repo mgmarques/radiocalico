@@ -71,22 +71,4 @@ module.exports = [
             'no-console': 'off',
         },
     },
-    {
-        files: ['static/sw.js'],
-        languageOptions: {
-            ecmaVersion: 2020,
-            sourceType: 'script',
-            globals: {
-                self: 'readonly',
-                caches: 'readonly',
-                fetch: 'readonly',
-                URL: 'readonly',
-                Promise: 'readonly',
-                Response: 'readonly',
-            },
-        },
-        rules: {
-            'no-console': 'off',
-        },
-    },
 ];
