@@ -88,6 +88,8 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 
 ## Architecture
 
+Initial desing:
+
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │                          CONTENT LAYER                                 │
@@ -133,6 +135,49 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 │   │  Port 5000           │      │  profiles, feedback  │              │
 │   └──────────────────────┘      └──────────────────────┘              │
 └───────────────────────────────────────────────────────────────────────┘
+```
+
+### System Architecture (Mermaid)
+
+High-level overview of all components and how they connect in the Docker production stack.
+
+```mermaid
+graph TD
+    Browser["Browser<br/>(HLS.js + player.js)"]
+
+    subgraph CloudFront["AWS CloudFront CDN"]
+        HLS["HLS Stream<br/>live.m3u8<br/>(FLAC + AAC)"]
+        Meta["Metadata JSON<br/>metadatav2.json"]
+    end
+
+    subgraph Docker["Docker Production Stack"]
+        nginx["nginx:alpine<br/>:80"]
+        gunicorn["gunicorn + Flask<br/>:5000 (internal)"]
+        MySQL["MySQL 8.0<br/>:3306 (internal)"]
+    end
+
+    iTunes["iTunes Search API<br/>Artwork + Duration"]
+    GoogleFonts["Google Fonts<br/>Montserrat + Open Sans"]
+
+    Browser -- "HLS stream (FLAC/AAC)" --> HLS
+    Browser -- "GET metadatav2.json" --> Meta
+    Browser -- "Static files (HTML/CSS/JS)" --> nginx
+    Browser -- "/api/* requests" --> nginx
+    Browser -- "Song search (artwork, duration)" --> iTunes
+    Browser -- "Font loading" --> GoogleFonts
+
+    nginx -- "Serves static files" --> nginx
+    nginx -- "proxy_pass /api/" --> gunicorn
+    gunicorn -- "PyMySQL queries" --> MySQL
+
+    style Browser fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style nginx fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style gunicorn fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style MySQL fill:#EFA63C,stroke:#231F20,color:#231F20
+    style HLS fill:#f5f5f5,stroke:#38A29D,color:#231F20
+    style Meta fill:#f5f5f5,stroke:#38A29D,color:#231F20
+    style iTunes fill:#f5f5f5,stroke:#999,color:#231F20
+    style GoogleFonts fill:#f5f5f5,stroke:#999,color:#231F20
 ```
 
 ### Data Flow — Playback & Metadata
@@ -391,6 +436,50 @@ cp .env.example .env
 
 The MySQL database is auto-initialized with the schema from `db/init.sql` on first startup.
 
+### Request Flow
+
+Sequence diagram showing the four main request types: static file serving, API calls through the nginx reverse proxy, HLS streaming from CloudFront, and artwork lookups from iTunes.
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant N as nginx
+    participant G as gunicorn/Flask
+    participant DB as MySQL
+    participant CF as CloudFront
+    participant IT as iTunes API
+
+    Note over B,N: Static File Request
+    B->>N: GET /index.html
+    N-->>B: 200 index.html (from /usr/share/nginx/html)
+
+    Note over B,N: Cached Static Asset
+    B->>N: GET /css/player.css
+    N-->>B: 200 player.css (Cache-Control: 7d, immutable)
+
+    Note over B,DB: API Request (e.g., submit rating)
+    B->>N: POST /api/ratings {station, score}
+    N->>G: proxy_pass + X-Forwarded-For + X-Request-ID
+    G->>DB: INSERT INTO ratings (station, score, ip)
+    DB-->>G: OK / IntegrityError (duplicate)
+    G-->>N: 201 {"status":"ok"} / 409 {"error":"already rated"}
+    N-->>B: Response + X-Request-ID header
+
+    Note over B,CF: HLS Audio Streaming
+    B->>CF: GET /hls/live.m3u8
+    CF-->>B: HLS master playlist (FLAC level 0, AAC level 1)
+    B->>CF: GET /hls/segment_NNN.ts
+    CF-->>B: Audio segment (decoded by HLS.js or native)
+
+    Note over B,CF: Metadata Fetch (on FRAG_CHANGED)
+    B->>CF: GET /metadatav2.json
+    CF-->>B: {current_artist, current_title, prev_artist_1..5, ...}
+
+    Note over B,IT: Artwork + Duration Lookup
+    B->>IT: GET /search?term=Artist+Title&entity=song&limit=1
+    IT-->>B: {artworkUrl100, trackTimeMillis, collectionName}
+```
+
 ---
 
 ## Testing & CI
@@ -430,6 +519,56 @@ make ci            # Full pipeline: Python + JS coverage + security
 ### CI/CD
 
 All tests and security scans run automatically on every push and pull request via **GitHub Actions** (`.github/workflows/ci.yml`).
+
+GitHub Actions workflow: lint runs first, then test jobs in parallel, with security scans running independently.
+
+```mermaid
+graph LR
+    Push["Push / PR<br/>to main"] --> lint
+
+    subgraph Linting
+        lint["lint<br/>ruff + ESLint<br/>+ Stylelint + HTMLHint"]
+    end
+
+    lint --> python-tests["python-tests<br/>pytest + coverage<br/>(98% threshold)"]
+    lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
+    lint --> js-tests["js-tests<br/>Jest + coverage<br/>(96% threshold)"]
+    lint --> skills-tests["skills-tests<br/>pytest<br/>17 slash commands"]
+
+    python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]
+    js-tests --> e2e-tests
+    integration-tests --> e2e-tests
+
+    python-tests --> zap["zap<br/>OWASP ZAP<br/>DAST baseline"]
+    js-tests --> zap
+
+    subgraph "Security Scans (no dependencies)"
+        bandit["bandit<br/>Python SAST"]
+        safety["safety<br/>Python deps"]
+        npm-audit["npm-audit<br/>JS deps"]
+        hadolint["hadolint<br/>Dockerfile lint"]
+        trivy["trivy<br/>Docker image<br/>vuln scan"]
+    end
+
+    Push --> bandit
+    Push --> safety
+    Push --> npm-audit
+    Push --> hadolint
+    Push --> trivy
+
+    style lint fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
+    style python-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style integration-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style js-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style skills-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
+    style e2e-tests fill:#EFA63C,stroke:#231F20,color:#231F20
+    style zap fill:#EFA63C,stroke:#231F20,color:#231F20
+    style bandit fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style safety fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style npm-audit fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style hadolint fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    style trivy fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+```
 
 | Job | What it does |
 |-----|-------------|
@@ -527,6 +666,56 @@ radiocalico/
 | Fonts | Google Fonts | Montserrat (headings), Open Sans (body) |
 | Backend | Python Flask | REST API for all endpoints |
 | Database | MySQL 5.7 | Ratings, users, profiles, feedback |
+
+### Database Schema
+
+Entity-relationship diagram of the four MySQL tables showing relationships between users, profiles, feedback, and ratings.
+
+```mermaid
+erDiagram
+    users {
+        INT id PK "AUTO_INCREMENT"
+        VARCHAR(50) username UK "NOT NULL, UNIQUE"
+        VARCHAR(64) password_hash "NOT NULL"
+        VARCHAR(32) salt "NOT NULL"
+        VARCHAR(64) token "NULL (set on login)"
+        TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    profiles {
+        INT id PK "AUTO_INCREMENT"
+        INT user_id FK "NOT NULL, UNIQUE"
+        VARCHAR(100) nickname "DEFAULT ''"
+        VARCHAR(255) email "DEFAULT ''"
+        VARCHAR(500) genres "DEFAULT ''"
+        TEXT about "NULL"
+        TIMESTAMP updated_at "ON UPDATE CURRENT_TIMESTAMP"
+    }
+
+    feedback {
+        INT id PK "AUTO_INCREMENT"
+        VARCHAR(255) email "DEFAULT ''"
+        TEXT message "NOT NULL"
+        VARCHAR(45) ip "DEFAULT ''"
+        VARCHAR(50) username "DEFAULT ''"
+        VARCHAR(100) nickname "DEFAULT ''"
+        VARCHAR(500) genres "DEFAULT ''"
+        TEXT about "NULL"
+        TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    ratings {
+        INT id PK "AUTO_INCREMENT"
+        VARCHAR(255) station "NOT NULL"
+        TINYINT score "NOT NULL (0 or 1)"
+        VARCHAR(45) ip "NOT NULL"
+        TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    users ||--o| profiles : "has (ON DELETE CASCADE)"
+    users ||--o{ feedback : "submits (denormalized snapshot)"
+```
+
 | DB Driver | PyMySQL | Python-MySQL connector |
 | Rate Limiting | flask-limiter | Request rate limiting for auth endpoints |
 | Config | python-dotenv | Environment variable management |
