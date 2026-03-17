@@ -220,13 +220,27 @@ class TestGenerateDiagramsCommand:
 
     def test_mentions_all_diagram_types(self):
         content = (COMMANDS_DIR / "generate-diagrams.md").read_text()
-        for diagram in ["System Architecture", "Request Flow", "CI/CD Pipeline", "Database Schema", "Authentication Flow"]:
+        for diagram in [
+            "System Architecture", "Request Flow",
+            "Data Flow", "Event-Driven",
+            "CI/CD Pipeline", "Database Schema", "Authentication Flow",
+        ]:
             assert diagram in content, f"Missing diagram type: {diagram}"
 
     def test_references_source_files(self):
         content = (COMMANDS_DIR / "generate-diagrams.md").read_text()
-        for ref in ["app.py", "nginx.conf", "docker-compose.yml", "ci.yml", "init.sql"]:
+        for ref in ["app.py", "player.js", "nginx.conf", "docker-compose.yml", "ci.yml", "init.sql"]:
             assert ref in content, f"Missing source file reference: {ref}"
+
+    def test_mentions_data_flow_details(self):
+        content = (COMMANDS_DIR / "generate-diagrams.md").read_text()
+        for detail in ["fetchMetadata", "fetchItunesCached", "updateTrack", "localStorage"]:
+            assert detail in content, f"Missing data flow detail: {detail}"
+
+    def test_mentions_event_details(self):
+        content = (COMMANDS_DIR / "generate-diagrams.md").read_text()
+        for event in ["MANIFEST_PARSED", "FRAG_CHANGED", "FRAG_PARSING_METADATA", "LEVEL_LOADED", "ERROR"]:
+            assert event in content, f"Missing HLS event: {event}"
 
 
 class TestGenerateTechSpecCommand:
