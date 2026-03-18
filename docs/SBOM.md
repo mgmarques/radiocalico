@@ -135,6 +135,36 @@ Source: `package.json` &nbsp;·&nbsp; Scanner: `npm audit`
 
 ---
 
+## Impact Analysis
+
+> Real-world assessment of each vulnerability in the context of the Radio Calico deployment. A vulnerability in a library does not always mean the application is affected — it depends on whether the vulnerable code path is reachable at runtime.
+
+### Rating Legend
+
+| Rating | Meaning |
+| --- | --- |
+| 🟢 Not Applicable | Vulnerable code path unreachable in this deployment |
+| 🟡 Low (build-time only) | Risk exists during CI/dev builds only, not at runtime |
+| 🟠 Moderate | Partially affects the app — monitor and patch when convenient |
+| 🔴 High | Directly exploitable in the current deployment — patch immediately |
+| ⚪ Unknown | No analysis yet — review manually against the codebase |
+
+| Package | Vuln ID | Impact Rating | Analysis |
+| --- | --- | --- | --- |
+| `pip` | `CVE-2025-8869` | 🟢 Not Applicable | pip is only invoked during Docker image builds and local `pip install` runs. The production container (gunicorn + nginx) never calls pip. Exploitation requires supplying a maliciously crafted tar archive to the pip process during installation — not reachable through normal application traffic. |
+| `pip` | `CVE-2026-1703` | 🟢 Not Applicable | Same build-time-only scope as CVE-2025-8869. Wheel extraction happens only during `pip install`; no wheel archives are processed at runtime. Risk is limited to supply-chain compromise of a dependency during CI/CD. |
+| `setuptools` | `PYSEC-2022-43012` | 🟢 Not Applicable | setuptools is used only during package installation. The Flask application (`api/app.py`) never imports or invokes setuptools at runtime. This ReDoS/HTML-injection vuln requires feeding maliciously crafted package metadata to setuptools during `pip install` — not possible via app traffic. |
+| `setuptools` | `PYSEC-2022-43012` | 🟢 Not Applicable | setuptools is used only during package installation. The Flask application (`api/app.py`) never imports or invokes setuptools at runtime. This ReDoS/HTML-injection vuln requires feeding maliciously crafted package metadata to setuptools during `pip install` — not possible via app traffic. |
+| `setuptools` | `PYSEC-2025-49` | 🟢 Not Applicable | `PackageIndex` is the setuptools feature for downloading packages from PyPI. Radio Calico never calls PackageIndex at runtime; it is only exercised during dependency installation in CI or dev. Production containers do not run pip or setuptools after the image is built. |
+| `setuptools` | `PYSEC-2025-49` | 🟢 Not Applicable | `PackageIndex` is the setuptools feature for downloading packages from PyPI. Radio Calico never calls PackageIndex at runtime; it is only exercised during dependency installation in CI or dev. Production containers do not run pip or setuptools after the image is built. |
+| `setuptools` | `CVE-2024-6345` | 🟡 Low (build-time only) | The most severe setuptools vuln: RCE if `package_index` fetches from a compromised source. The production Flask app never invokes `package_index`, so runtime risk is zero. However, the attack surface exists during CI `pip install` if a dependency index is compromised. Recommend upgrading setuptools to ≥ 70.0.0 in the dev venv to close this gap. |
+| `@tootallnate/once` | `@tootallnate/once` | 🟢 Not Applicable | Transitive dependency of Jest (dev tooling only). Not installed in the production Docker image. No production code path touches `@tootallnate/once`. Exploitation would require control over the test environment itself. |
+| `http-proxy-agent` | `http-proxy-agent` | 🟢 Not Applicable | Transitive test dependency pulled in by Jest → jsdom → http-proxy-agent. Radio Calico does not use HTTP proxying anywhere — all external requests (CloudFront, iTunes API) use standard `fetch()` or `httpx`. Not present in the production runtime environment. |
+| `jest-environment-jsdom` | `jest-environment-jsdom` | 🟢 Not Applicable | jsdom is a simulated browser DOM used exclusively by Jest unit tests (`player.test.js`). Never deployed to production and not reachable by end users or external traffic. Exploitation would require an attacker to control test input, which is not a realistic threat model. |
+| `jsdom` | `jsdom` | 🟢 Not Applicable | Same scope as jest-environment-jsdom. jsdom is a test-only dependency — no jsdom code runs in the browser or on the production server. |
+
+---
+
 > **Remediation**: update the package version in `api/requirements.txt` or `package.json`, then run `make generate-sbom` to verify the fix.
 
 *Refresh: `make generate-sbom` locally, or open a PR to main (CI auto-updates `docs/SBOM.md`).*

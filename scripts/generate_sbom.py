@@ -138,6 +138,102 @@ def get_npm_vulns():
     return vulns
 
 
+# ── Impact analysis registry ─────────────────────────────────────────────────
+# Keyed by vuln ID (CVE / PYSEC) or by package name for npm advisory slugs.
+# Add an entry here whenever a new vulnerability appears in the SBOM.
+# Vulns without an entry are marked "⚪ Unknown — review manually".
+
+_IMPACT = {
+    # ── pip ──────────────────────────────────────────────────────────────────
+    # pip is invoked ONLY at build time (CI `pip install` / local venv setup).
+    # The production Docker container runs gunicorn + nginx and never calls pip.
+    "CVE-2025-8869": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "pip is only invoked during Docker image builds and local `pip install` runs. "
+            "The production container (gunicorn + nginx) never calls pip. "
+            "Exploitation requires supplying a maliciously crafted tar archive to the pip "
+            "process during installation — not reachable through normal application traffic."
+        ),
+    },
+    "CVE-2026-1703": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "Same build-time-only scope as CVE-2025-8869. Wheel extraction happens only "
+            "during `pip install`; no wheel archives are processed at runtime. "
+            "Risk is limited to supply-chain compromise of a dependency during CI/CD."
+        ),
+    },
+    # ── setuptools ───────────────────────────────────────────────────────────
+    # setuptools is a packaging tool.  api/app.py never imports or calls it at runtime.
+    "PYSEC-2022-43012": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "setuptools is used only during package installation. "
+            "The Flask application (`api/app.py`) never imports or invokes setuptools at "
+            "runtime. This ReDoS/HTML-injection vuln requires feeding maliciously crafted "
+            "package metadata to setuptools during `pip install` — not possible via app traffic."
+        ),
+    },
+    "PYSEC-2025-49": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "`PackageIndex` is the setuptools feature for downloading packages from PyPI. "
+            "Radio Calico never calls PackageIndex at runtime; it is only exercised during "
+            "dependency installation in CI or dev. Production containers do not run pip or "
+            "setuptools after the image is built."
+        ),
+    },
+    "CVE-2024-6345": {
+        "rating": "🟡 Low (build-time only)",
+        "analysis": (
+            "The most severe setuptools vuln: RCE if `package_index` fetches from a "
+            "compromised source. The production Flask app never invokes `package_index`, "
+            "so runtime risk is zero. However, the attack surface exists during CI `pip install` "
+            "if a dependency index is compromised. "
+            "Recommend upgrading setuptools to ≥ 70.0.0 in the dev venv to close this gap."
+        ),
+    },
+    # ── npm / jest transitive deps ───────────────────────────────────────────
+    # All four npm vulns are transitive test-only dependencies pulled in by Jest.
+    # None are present in the production Docker image (no `npm ci` in prod).
+    # None are loaded by the Radio Calico frontend (static/js/player.js).
+    "@tootallnate/once": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "Transitive dependency of Jest (dev tooling only). "
+            "Not installed in the production Docker image. "
+            "No production code path touches `@tootallnate/once`. "
+            "Exploitation would require control over the test environment itself."
+        ),
+    },
+    "http-proxy-agent": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "Transitive test dependency pulled in by Jest → jsdom → http-proxy-agent. "
+            "Radio Calico does not use HTTP proxying anywhere — all external requests "
+            "(CloudFront, iTunes API) use standard `fetch()` or `httpx`. "
+            "Not present in the production runtime environment."
+        ),
+    },
+    "jest-environment-jsdom": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "jsdom is a simulated browser DOM used exclusively by Jest unit tests "
+            "(`player.test.js`). Never deployed to production and not reachable by end users "
+            "or external traffic. Exploitation would require an attacker to control test input, "
+            "which is not a realistic threat model."
+        ),
+    },
+    "jsdom": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "Same scope as jest-environment-jsdom. jsdom is a test-only dependency — "
+            "no jsdom code runs in the browser or on the production server."
+        ),
+    },
+}
+
 # ── Formatting ────────────────────────────────────────────────────────────────
 
 _SEV_RANK = {"critical": 4, "high": 3, "moderate": 2, "medium": 2, "low": 1}
@@ -291,6 +387,58 @@ def generate_sbom(today: str) -> None:
                         f"| {published} | {fix} | {v['description']} |"
                     )
             L.append("")
+
+    # ── Impact analysis ──
+    L += [
+        "---",
+        "",
+        "## Impact Analysis",
+        "",
+        "> Real-world assessment of each vulnerability in the context of the Radio Calico "
+        "deployment. A vulnerability in a library does not always mean the application is "
+        "affected — it depends on whether the vulnerable code path is reachable at runtime.",
+        "",
+        "### Rating Legend",
+        "",
+        "| Rating | Meaning |",
+        "| --- | --- |",
+        "| 🟢 Not Applicable | Vulnerable code path unreachable in this deployment |",
+        "| 🟡 Low (build-time only) | Risk exists during CI/dev builds only, not at runtime |",
+        "| 🟠 Moderate | Partially affects the app — monitor and patch when convenient |",
+        "| 🔴 High | Directly exploitable in the current deployment — patch immediately |",
+        "| ⚪ Unknown | No analysis yet — review manually against the codebase |",
+        "",
+    ]
+
+    all_vulns = []
+    for name in sorted(py_vulns):
+        for v in py_vulns[name]:
+            all_vulns.append((name, v))
+    for name in sorted(npm_vulns):
+        for v in npm_vulns[name]:
+            all_vulns.append((name, v))
+
+    if all_vulns:
+        L += [
+            "| Package | Vuln ID | Impact Rating | Analysis |",
+            "| --- | --- | --- | --- |",
+        ]
+        for name, v in all_vulns:
+            vuln_id = v["id"]
+            impact = _IMPACT.get(vuln_id) or _IMPACT.get(name)
+            if impact:
+                rating = impact["rating"]
+                analysis = impact["analysis"]
+            else:
+                rating = "⚪ Unknown"
+                analysis = (
+                    "No impact analysis available — review manually "
+                    "against the Radio Calico codebase."
+                )
+            L.append(f"| `{name}` | `{vuln_id}` | {rating} | {analysis} |")
+        L.append("")
+    else:
+        L += ["✅ No vulnerabilities to analyse.", ""]
 
     # ── Footer ──
     L += [
