@@ -19,6 +19,8 @@ import argparse
 import json
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -45,6 +47,22 @@ def _run_json(cmd, **kwargs):
         return {}, False
 
 
+def _get_published_date(vuln_id: str, cache: dict) -> str:
+    """Return the published date (YYYY-MM-DD) for a vuln ID from OSV.dev, or '—'."""
+    if vuln_id in cache:
+        return cache[vuln_id]
+    url = f"https://api.osv.dev/v1/vulns/{vuln_id}"
+    try:
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            data = json.loads(resp.read())
+        published = data.get("published", "")
+        result = published[:10] if published else "—"
+    except (urllib.error.URLError, json.JSONDecodeError, Exception):
+        result = "—"
+    cache[vuln_id] = result
+    return result
+
+
 # ── Python ────────────────────────────────────────────────────────────────────
 
 def get_python_packages():
@@ -54,8 +72,8 @@ def get_python_packages():
 
 
 def get_python_vulns():
-    """Return {pkg_name_lower: [{id, description}]} via pip-audit --format=json."""
-    # pip-audit JSON: {"dependencies": [{"name":..,"version":..,"vulns":[{"id":..,"description":..}]}]}
+    """Return {pkg_name_lower: [{id, fix_version, description}]} via pip-audit --format=json."""
+    # pip-audit JSON: {"dependencies": [{"name":..,"version":..,"vulns":[{"id":..,"fix_versions":[..],"description":..}]}]}
     data, ok = _run_json(["pip-audit", "--format=json"])
     if not ok:
         # fallback: try python -m pip_audit
@@ -72,6 +90,7 @@ def get_python_vulns():
             vulns[key] = [
                 {
                     "id": v.get("id", "?"),
+                    "fix_version": (v.get("fix_versions") or ["—"])[0],
                     "description": v.get("description", "")[:120],
                 }
                 for v in dep_vulns
@@ -93,7 +112,7 @@ def get_npm_packages():
 
 
 def get_npm_vulns():
-    """Return {pkg_name: [{id, severity, description}]} via npm audit --json."""
+    """Return {pkg_name: [{id, severity, fix_version, description}]} via npm audit --json."""
     # npm audit exits non-zero when vulns exist, so we ignore rc
     data, _ = _run_json(["npm", "audit", "--json"])
     vulns = {}
@@ -106,8 +125,15 @@ def get_npm_vulns():
                 break
         cves = info.get("cves", [])
         vuln_id = cves[0] if cves else info.get("url", pkg_name)
+        fix_available = info.get("fixAvailable", False)
+        if fix_available is False:
+            fix_version = "None"
+        elif isinstance(fix_available, dict):
+            fix_version = fix_available.get("version", "Available")
+        else:
+            fix_version = "Available"
         vulns.setdefault(pkg_name, []).append(
-            {"id": str(vuln_id), "severity": severity, "description": title or severity}
+            {"id": str(vuln_id), "severity": severity, "fix_version": fix_version, "description": title or severity}
         )
     return vulns
 
@@ -155,6 +181,15 @@ def generate_sbom(today: str) -> None:
     npm_vuln_n = sum(len(v) for v in npm_vulns.values())
     total_vuln_n = py_vuln_n + npm_vuln_n
     total_pkgs = len(py_pkgs) + len(npm_pkgs)
+
+    # Fetch published dates from OSV.dev for all unique vuln IDs
+    date_cache: dict = {}
+    if total_vuln_n:
+        print("Fetching vulnerability published dates (OSV.dev)...")
+        for vulns_dict in (py_vulns, npm_vulns):
+            for vlist in vulns_dict.values():
+                for v in vlist:
+                    _get_published_date(v["id"], date_cache)
 
     L = []
 
@@ -228,26 +263,32 @@ def generate_sbom(today: str) -> None:
             L += [
                 "### Python",
                 "",
-                "| Package | Vuln ID | Description |",
-                "| --- | --- | --- |",
+                "| Package | Vuln ID | Published | Fix Version | Description |",
+                "| --- | --- | --- | --- | --- |",
             ]
             for name in sorted(py_vulns):
                 for v in py_vulns[name]:
-                    L.append(f"| `{name}` | `{v['id']}` | {v['description']} |")
+                    published = date_cache.get(v["id"], "—")
+                    fix = v.get("fix_version", "—")
+                    L.append(
+                        f"| `{name}` | `{v['id']}` | {published} | {fix} | {v['description']} |"
+                    )
             L.append("")
 
         if npm_vulns:
             L += [
                 "### Node.js",
                 "",
-                "| Package | Vuln ID | Severity | Description |",
-                "| --- | --- | --- | --- |",
+                "| Package | Vuln ID | Severity | Published | Fix Version | Description |",
+                "| --- | --- | --- | --- | --- | --- |",
             ]
             for name in sorted(npm_vulns):
                 for v in npm_vulns[name]:
+                    published = date_cache.get(v["id"], "—")
+                    fix = v.get("fix_version", "—")
                     L.append(
                         f"| `{name}` | `{v['id']}` | {v.get('severity', '—')} "
-                        f"| {v['description']} |"
+                        f"| {published} | {fix} | {v['description']} |"
                     )
             L.append("")
 
