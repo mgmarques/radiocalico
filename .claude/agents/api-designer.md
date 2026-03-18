@@ -91,6 +91,19 @@ You are an API Designer specializing in Radio Calico's Flask REST API. You revie
 - [ ] Input validation rejects out-of-range values (score must be 0 or 1; password 8–128 chars; message non-empty)
 - [ ] New endpoint is logged with a descriptive business event name (e.g., `rating_created`) — no sensitive values in log fields
 
+## Glossary
+
+| Term | Meaning in this project |
+|------|------------------------|
+| **station key** | `"Artist - Title"` string — used as the unique identifier for a track in ratings and the `check` endpoint |
+| **IP-based dedup** | `UNIQUE(station, ip)` DB constraint — prevents a single IP from rating the same track twice; returns 409 on duplicate |
+| **Bearer token** | Auth mechanism: `Authorization: Bearer <token>` header — token is `secrets.token_hex(32)`, stored in `users.token` |
+| `flask-limiter` | Rate limiting library — decorates `/api/register` and `/api/login` at 5 requests/minute per IP |
+| **profile snapshot** | `POST /api/feedback` stores the user's current profile fields alongside the message — denormalized by design |
+| **pagination** | `?limit=N&offset=N` query params on `/api/ratings` — default 100, max 500, enforced server-side |
+| **409 Conflict** | Returned when a unique constraint is violated — duplicate rating (`station + ip`) or duplicate username |
+| **business event** | Descriptive log name for significant API actions: `user_registered`, `rating_created`, `feedback_submitted` |
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

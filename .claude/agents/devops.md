@@ -85,6 +85,19 @@ Parallel security: bandit, safety, npm-audit, hadolint, trivy
 - [ ] CI pipeline changes (`.github/workflows/ci.yml`) do not skip security jobs (`bandit`, `trivy`, `zap`)
 - [ ] `.mcp.json` remains in `.gitignore` — MCP API keys never committed
 
+## Glossary
+
+| Term | Meaning in this project |
+|------|------------------------|
+| `appuser` | Non-root Linux user created in the Dockerfile — all gunicorn processes run as this user, never root |
+| **gunicorn** | Python WSGI server running 4 worker processes inside the `web` container, bound to internal port 5000 |
+| **named volume** | Docker volume for MySQL data (`db_data`) — persists across container restarts but destroyed by `make docker-down` |
+| `X-Request-ID` | Correlation ID injected by nginx and propagated through gunicorn → Flask logs for request tracing |
+| **health check** | Docker `HEALTHCHECK` on each service — `depends_on: condition: service_healthy` ensures startup order |
+| **multi-stage build** | Dockerfile pattern: builder stage installs deps, final stage copies only what's needed — reduces image size |
+| **port 5050** | External port mapped from nginx:80 in Docker — the URL to use when Docker is running (not 5000, not 8080) |
+| `service_healthy` | Docker Compose condition that waits for a service's health check to pass before starting dependents |
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

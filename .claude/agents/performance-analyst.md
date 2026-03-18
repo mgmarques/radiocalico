@@ -91,6 +91,19 @@ You are a Performance Analyst specializing in Radio Calico's frontend loading, A
 - [ ] Any new CDN or proxy layer does not strip `X-Request-ID` or `Authorization` headers
 - [ ] Static asset caching (`Cache-Control: 7d`) applies only to versioned/immutable assets — not API responses
 
+## Glossary
+
+| Term | Meaning in this project |
+|------|------------------------|
+| `METADATA_DEBOUNCE_MS` | 3000ms minimum interval between metadata fetches — prevents CloudFront API flooding on rapid `FRAG_CHANGED` events |
+| `pendingTrackUpdate` | Delayed UI update mechanism — holds the new track info until `hls.latency` seconds pass so UI syncs with audio |
+| `hls.latency` | Live stream latency reported by HLS.js — used as the delay value in `pendingTrackUpdate` (fallback: 6s) |
+| **FCP** | First Contentful Paint — target < 2s; measured with Lighthouse in browser DevTools |
+| `fetchItunesCached()` | iTunes API wrapper with 24h localStorage TTL — cache key is `itunes-cache-<artist>-<title>` |
+| **CDN edge cache** | CloudFront caches `metadatav2.json` and HLS segments — Radio Calico has no control over TTL on these |
+| `FRAG_CHANGED` | HLS.js event fired when a new stream fragment is loaded — triggers `triggerMetadataFetch()` with debounce |
+| **keyset pagination** | High-performance alternative to `OFFSET` for large tables — not yet needed but relevant if `ratings` grows past ~50k rows |
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

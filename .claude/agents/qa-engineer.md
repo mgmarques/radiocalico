@@ -54,6 +54,18 @@ You are a QA Engineer specializing in Radio Calico's test suite. Your mission is
 - Check coverage thresholds after adding new code — don't let coverage drop
 - Report results as: `PASS (N/N)` or `FAIL (N/N) — [list of failures]`
 
+## Glossary
+
+| Term | Meaning in this project |
+|------|------------------------|
+| `radiocalico_test` | Isolated MySQL database created and destroyed per Python test run — never the real `radiocalico` db |
+| **fixture** | pytest setup helper (`client`, `registered_user`, `auth_token`, `auth_headers`) that provisions test state |
+| **jsdom** | Simulated browser DOM used by Jest — lacks real HLS playback; `Hls.js` and `audio` are mocked |
+| **coverage threshold** | Python ≥ 95% (`pytest-cov`), JS ≥ 90% lines (Jest) — CI fails if either drops |
+| **skills+agents suite** | `tests/test_skills.py` — validates structure and metadata of all 18 commands + 9 agents, not application logic |
+| **E2E test** | Makes real HTTP requests to nginx → gunicorn → MySQL; requires `make docker-prod` running first |
+| **browser test** | Selenium + headless Chrome driving the actual UI; requires Docker prod + Chrome driver |
+
 ## Memory
 
 After each session, save findings to `.claude/memory/` and update `MEMORY.md`:

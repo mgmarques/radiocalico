@@ -90,6 +90,19 @@ These values must match across all documents:
 - [ ] Security tool list (`bandit`, `safety`, `npm audit`, `hadolint`, `trivy`, `zap`) stays accurate in all docs that mention it
 - [ ] `.mcp.json` is documented as gitignored — never shown as a file to commit
 
+## Glossary
+
+| Term | Meaning in this project |
+|------|------------------------|
+| **FR / NFR** | Functional Requirement / Non-Functional Requirement — format `FR-xxx` and `NFR-xxx` in `docs/requirements.md` |
+| **TC-xxx** | Test Case identifier used in `docs/vv-test-plan.md` — includes preconditions, steps, and expected result |
+| **source of truth** | The actual file that defines a value — e.g., test counts come from the test files, not from CLAUDE.md |
+| **cross-document consistency** | The practice of keeping the same value (test count, endpoint count, CI job count) identical across all docs that reference it |
+| **Mermaid** | Markdown-native diagram syntax rendered by GitHub — all architecture diagrams use Radio Calico color tokens |
+| **V&V plan** | Verification & Validation test plan in `docs/vv-test-plan.md` — maps each requirement to test cases and automation |
+| `/generate-*` skill | Slash commands that regenerate entire documents (`/generate-diagrams`, `/generate-tech-spec`, etc.) — use for full rewrites, not targeted edits |
+| **diagram tokens** | Radio Calico colors used in Mermaid: `#D8F2D5` mint, `#1F4E23` forest, `#38A29D` teal, `#EFA63C` orange |
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

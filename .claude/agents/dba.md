@@ -53,6 +53,18 @@ You are a Database Administrator specializing in Radio Calico's MySQL schema and
 - Never suggest ORM adoption — project uses raw SQL by design
 - Always consider the impact on existing data when suggesting schema changes
 
+## Glossary
+
+| Term | Meaning in this project |
+|------|------------------------|
+| **station key** | The string `"Artist - Title"` used as the deduplication key in `ratings.station` and `ratings/check?station=` |
+| **parameterized query** | SQL using `%s` placeholders with PyMySQL — the only acceptable form; f-strings or `.format()` are SQL injection |
+| **profile snapshot** | The `feedback` table stores a full copy of the user's profile at submission time — intentionally denormalized for audit trail |
+| `ON DELETE CASCADE` | FK constraint on `profiles` and `feedback` — deleting a user removes all their related rows automatically |
+| **keyset pagination** | Alternative to `OFFSET` for large tables — not yet implemented; current `?limit=N&offset=N` is sufficient at current scale |
+| `radiocalico_test` | The test-only database — Python unit tests create and destroy it per run, never touching production `radiocalico` |
+| **score** | `ratings.score` is TINYINT: `1` = thumbs up, `0` = thumbs down — not a BOOLEAN, not a string |
+
 ## Memory
 
 After each session, save findings to `.claude/memory/` and update `MEMORY.md`:

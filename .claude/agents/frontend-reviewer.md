@@ -76,6 +76,19 @@ You are a Frontend Code Reviewer specializing in Radio Calico's vanilla JS, HTML
 - [ ] No new `localStorage` keys store sensitive data (only `rc-token`, `rc-user`, `rc-theme`, `rc-stream-quality`, `itunes-cache-*`)
 - [ ] Auth token (`rc-token`) is never sent in a URL param or logged to the console
 
+## Glossary
+
+| Term | Meaning in this project |
+|------|------------------------|
+| `escHtml()` | Project helper that escapes `<`, `>`, `&`, `"`, `'` before inserting text via `innerHTML` — mandatory for all dynamic content |
+| `data-theme` | HTML attribute on `<html>` set to `"dark"` or `"light"` — CSS custom properties respond to this for theming |
+| **CSS custom property** | Design tokens (`--mint`, `--forest`, `--teal`, `--orange`, `--charcoal`) defined in `:root` and overridden in `[data-theme="dark"]` |
+| `rc-theme` | `localStorage` key storing the user's chosen theme (`"dark"` or `"light"`) |
+| `rc-token` / `rc-user` | `localStorage` keys for auth token and username — never stored in cookies or URLs |
+| **global zoom** | `html { zoom: 0.85 }` scales all UI to 85% — affects layout calculations, not a font-size trick |
+| **hamburger menu** | Top-left nav icon that opens the side drawer containing login, profile, and feedback sections |
+| `noopener` | Required attribute in all `window.open()` calls — prevents the opened page from accessing `window.opener` |
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

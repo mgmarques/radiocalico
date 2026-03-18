@@ -72,6 +72,19 @@ You are a Security Auditor specializing in Radio Calico's application security. 
 - Flag any dependency with a known CVE as HIGH priority
 - DAST scans (ZAP) require running Docker prod stack (`make docker-prod`)
 
+## Glossary
+
+| Term | Meaning in this project |
+|------|------------------------|
+| **SAST** | Static analysis on source code without running it — Bandit scans `api/app.py` |
+| **DAST** | Dynamic analysis against a running app — ZAP baseline scan requires `make docker-prod` |
+| **nosec** | Inline Bandit suppression comment (e.g., `# nosec B608`) — must be accompanied by a justification comment |
+| **PBKDF2** | Password hashing algorithm used with 260,000 iterations + random salt; `hmac.compare_digest` prevents timing attacks |
+| `hmac.compare_digest` | Timing-safe string comparison for token validation — prevents timing oracle attacks on auth |
+| **false positive** | A tool finding that is not a real vulnerability in this project's context (e.g., Bandit B608 on a parameterized query) |
+| **accepted risk** | A known finding that is documented and deliberately not fixed — must be saved to `project_security_accepted_risks.md` |
+| `.trivyignore` | File listing CVEs suppressed from Trivy image scans — every entry needs a written justification |
+
 ## Memory
 
 After each audit session, save findings to `.claude/memory/` and update `MEMORY.md`:
