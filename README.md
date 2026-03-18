@@ -1,10 +1,16 @@
 # Radio Calico
 
-<img src="RadioCalicoLogoTM.png" alt="Radio Calico Logo" width="20%">
+<table><tr>
+<td valign="middle" width="20%"><img src="RadioCalicoLogoTM.png" alt="Radio Calico Logo" width="100%"></td>
+<td valign="middle">
 
-A live audio streaming web player — Ad-free, subscription-free — 48 kHz FLAC lossless or AAC Hi-Fi 211 kbps via HLS
+**A live audio streaming web player**
+Ad-free, subscription-free — 48 kHz FLAC lossless or AAC Hi-Fi 211 kbps via HLS
 
 > Study Case: Claude Code — Building Faster with AI, from Prototype to Prod (2026)
+
+</td>
+</tr></table>
 
 ---
 
