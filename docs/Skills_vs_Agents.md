@@ -2,7 +2,7 @@
 
 ## Overview
 
-Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash commands (skills)** for task automation and **9 custom agents** for persistent expert personas. This document explains the differences, current implementation, and future improvement roadmap.
+Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash commands (skills)** for task automation and **10 custom agents** for persistent expert personas. This document explains the differences, current implementation, and future improvement roadmap.
 
 ---
 
@@ -17,8 +17,8 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash
 | **Analogy** | A recipe card you follow once | A team member you consult repeatedly |
 | **Statefulness** | Stateless — each run is independent | Context-aware — remembers conversation history |
 | **Best for** | Repeatable automation (CI, PR, scaffolding) | Judgment calls (code review, architecture, triage) |
-| **Count** | 18 skills | 9 agents |
-| **Tests** | 247 tests (structure, versions, references) | 37 tests (structure, versions, content, domain) |
+| **Count** | 18 skills | 10 agents |
+| **Tests** | 291 tests (structure, versions, references) | included in 291 |
 | **Version header** | `<!-- Radio Calico Skill v1.0.0 -->` | `<!-- Radio Calico Agent v1.0.0 -->` |
 
 ### When to Use Which
@@ -33,6 +33,7 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash
 | "Is this PR ready to merge?" | Agent (Release Manager) |
 | "Scaffold a new API endpoint" | Skill (`/add-endpoint`) |
 | "Does this endpoint follow our REST conventions?" | Agent (API Designer) |
+| "Update V&V plan with today's test results" | Agent (V&V Plan Updater) |
 
 ---
 
@@ -65,7 +66,7 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash
 
 ---
 
-## Current Agents (9)
+## Current Agents (10)
 
 | Agent | File | Domain | Key Strength |
 |-------|------|--------|--------------|
@@ -78,6 +79,7 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash
 | **Security Auditor** | `security-auditor.md` | Security | 6 scanning tools, OWASP top 10, vulnerability triage |
 | **Performance Analyst** | `performance-analyst.md` | Performance | Caching, CDN, debounce, pagination, resource optimization |
 | **Documentation Writer** | `documentation-writer.md` | Docs | Cross-doc consistency, Mermaid diagrams, doc generation |
+| **V&V Plan Updater** | `vv-plan-updater.md` | QA / Docs | Runs all test suites, fills execution summary, detects coverage gaps |
 
 ### Current Agent Structure
 
@@ -89,6 +91,7 @@ Each agent follows a consistent format:
 
 ## Description          — One-line summary + **Triggers:** keywords for auto-routing
 ## Instructions         — Persona definition ("You are a...")
+## CI Automation        — (V&V Plan Updater only) links to GitHub Actions workflow
 ## Domain Tables        — Reference data (endpoints, tools, files)
 ## Workflow             — Step-by-step process (5-6 steps)
 ## Key Files            — Files this agent works with
@@ -96,7 +99,7 @@ Each agent follows a consistent format:
 ## Security Checklist   — Domain-scoped checks (references .claude/rules/security-baseline.md)
 ## Confidence Framework — 3-level (HIGH/MEDIUM/LOW) decision criteria with escalation rules
 ## Glossary             — 7-8 Radio Calico-specific term definitions
-## Memory               — (QA, Security, DBA) what to persist to .claude/memory/ between sessions
+## Memory               — (QA, Security, DBA, V&V Plan Updater) persist findings to .claude/memory/
 ## Examples             — 2 input/output pairs with realistic scenarios
 ```
 
@@ -134,19 +137,20 @@ Input: sql (string) — parameterized query only
 
 #### 3. Memory-Enabled Agents ✅ Implemented
 
-**Status**: QA Engineer, Security Auditor, and DBA agents now have a `## Memory` section that instructs them to write findings to `.claude/memory/` files after each session.
+**Status**: QA Engineer, Security Auditor, DBA, and V&V Plan Updater agents have a `## Memory` section that instructs them to write findings to `.claude/memory/` files after each session.
 
 Each saves domain-specific findings:
 
 - **QA Engineer** → flaky tests, coverage gaps, recurring failures, environment quirks
 - **Security Auditor** → open vulnerabilities, accepted risks, pinned CVEs
 - **DBA** → pending migrations, slow queries, MySQL version quirks, schema rationale
+- **V&V Plan Updater** → new TC IDs added, test count changes, blocked runs, coverage gaps
 
 All memory files follow the frontmatter format with `name`, `description`, and `type` fields, and are indexed in `MEMORY.md`.
 
 #### 4. Confidence Scoring ✅ Implemented
 
-**Status**: All 9 agents now have a `## Confidence Framework` section with a 3-level table:
+**Status**: All 10 agents now have a `## Confidence Framework` section with a 3-level table:
 
 | Level | Behavior |
 | --- | --- |
@@ -154,24 +158,35 @@ All memory files follow the frontmatter format with `name`, `description`, and `
 | **MEDIUM** | Partial context or adjacent risk — proceeds but surfaces assumptions |
 | **LOW** | Irreversible or security-sensitive — stops and asks |
 
-Each agent's LOW criteria is anchored to its most dangerous action (e.g., Security Auditor stops if weakening a control; DBA stops on irreversible migrations).
+Each agent's LOW criteria is anchored to its most dangerous action (e.g., Security Auditor stops if weakening a control; DBA stops on irreversible migrations; V&V Plan Updater stops if overwriting Pass entries without actually running the tests).
 
 #### 5. Security-First Agent Defaults ✅ Implemented
 
 **Status**: `.claude/rules/security-baseline.md` created with 10 non-negotiable rules (S-1 through S-10) covering XSS, SQL injection, secrets, containers, rate limiting, IP privacy, auth, and tabnapping. OWASP Top 10 mapping and secrets management policy included.
 
-All 9 agents have a `## Security Checklist` section with domain-specific checks that reference the baseline. The Security Auditor's checklist maps one item per S-rule with exact grep patterns.
+All 10 agents have a `## Security Checklist` section with domain-specific checks that reference the baseline. The Security Auditor's checklist maps one item per S-rule with exact grep patterns.
 
 #### 6. Automated Agent Selection ✅ Implemented
 
-**Status**: All 9 agents have a `**Triggers:**` line in their `## Description` field listing natural-language keywords Claude Code uses for routing.
+**Status**: All 10 agents have a `**Triggers:**` line in their `## Description` field listing natural-language keywords Claude Code uses for routing.
 
 Examples:
 - "test failing", "coverage dropped", "jest error" → QA Engineer
 - "502 Bad Gateway", "docker-compose", "pipeline failing" → DevOps
 - "ready to merge", "changelog", "version bump" → Release Manager
+- "update V&V plan", "test execution results", "TC missing", "coverage gap" → V&V Plan Updater
 
-#### 7. Agent Self-Testing
+#### 7. V&V Plan CI Automation ✅ Implemented
+
+**Status**: A dedicated GitHub Actions workflow (`.github/workflows/update-vv-plan.yml`) automatically updates `docs/vv-test-plan.md` section 13 on every PR to `main`.
+
+- Runs Python unit, integration, JS unit, and skills tests inside CI
+- E2E and Browser TCs are marked `🚧 **Blocked**` (Docker not available in CI)
+- `scripts/update_vv_plan.py` rewrites the execution summary with emoji+bold status values
+- Bot commits the updated file back with `[skip ci]` to avoid an infinite loop
+- Full local runs (all suites) remain accessible via the V&V Plan Updater agent
+
+#### 8. Agent Self-Testing
 
 **Current**: Tests validate agent file structure (headings, versions, key sections).
 
@@ -182,15 +197,16 @@ Examples:
 
 **How**: Add `tests/test_agent_behavior.py` with prompt-response pairs that validate agent reasoning patterns.
 
-#### 8. Domain-Specific Glossaries ✅ Implemented
+#### 9. Domain-Specific Glossaries ✅ Implemented
 
-**Status**: All 9 agents now have a `## Glossary` section with 7–8 Radio Calico-specific term definitions. Each term is project-specific or has a project-specific meaning — no generic dictionary definitions.
+**Status**: All 10 agents now have a `## Glossary` section with 7–8 Radio Calico-specific term definitions. Each term is project-specific or has a project-specific meaning — no generic dictionary definitions.
 
 Examples:
 
 - **QA Engineer** defines `radiocalico_test`, fixture, jsdom, coverage threshold, E2E vs browser vs skills suite
 - **Performance Analyst** defines `METADATA_DEBOUNCE_MS`, `pendingTrackUpdate`, `hls.latency`, FCP, `FRAG_CHANGED`
 - **DBA** defines station key, parameterized query, profile snapshot, score TINYINT
+- **V&V Plan Updater** defines TC-xxx, Coverage Matrix, Test Type, Manual-only TC, Docker prod, gap
 
 ---
 
@@ -201,8 +217,9 @@ Examples:
 | **P0** | Security-first agent defaults | All agents enforce security baseline | ✅ Done |
 | **P0** | Domain-specific glossaries | Reduces misinterpretation errors | ✅ Done |
 | **P0** | Confidence scoring | Agents signal when to trust vs verify | ✅ Done |
-| **P0** | Memory-enabled agents | QA, Security, DBA persist findings | ✅ Done |
+| **P0** | Memory-enabled agents | QA, Security, DBA, V&V Updater persist findings | ✅ Done |
 | **P0** | Automated agent selection | Keyword triggers in Description fields | ✅ Done |
+| **P0** | V&V Plan CI automation | PR-only workflow auto-fills execution summary | ✅ Done |
 | **P1** | Inter-agent collaboration | Agents produce richer, cross-domain advice | Planned |
 | **P1** | Chained skill pipelines | Complex workflows in one command | Planned |
 | **P1** | Agent self-testing | Validates reasoning quality, not just structure | Planned |
@@ -217,7 +234,9 @@ Examples:
 
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
 - [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents)
-- Project agents: `.claude/agents/*.md` (9 files)
+- Project agents: `.claude/agents/*.md` (10 files)
 - Project skills: `.claude/commands/*.md` (18 files) + `.claude/skills/*/SKILL.md` (mirrors)
-- Agent tests: `tests/test_skills.py` (284 tests)
+- Agent + skills tests: `tests/test_skills.py` (291 tests)
+- V&V plan update script: `scripts/update_vv_plan.py`
+- V&V plan CI workflow: `.github/workflows/update-vv-plan.yml`
 - Bootstrap script: `scripts/init-claude-code.sh` (creates 3 starter agents + 3 skills)
