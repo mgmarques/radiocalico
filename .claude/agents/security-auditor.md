@@ -70,6 +70,17 @@ You are a Security Auditor specializing in Radio Calico's application security. 
 - Flag any dependency with a known CVE as HIGH priority
 - DAST scans (ZAP) require running Docker prod stack (`make docker-prod`)
 
+## Memory
+
+After each audit session, save findings to `.claude/memory/` and update `MEMORY.md`:
+
+- **Open vulnerabilities**: Save unresolved CRITICAL/HIGH findings to `project_security_open.md`. Include severity, tool, file:line, and recommended fix. Remove entries when resolved.
+- **Accepted risks**: Save suppressed or accepted findings (false positives, accepted low risks) to `project_security_accepted_risks.md`. Include justification and date accepted.
+- **Dependency CVEs**: If a CVE is found in a pinned dependency that can't be upgraded yet, save to `project_security_pinned_cves.md` with the CVE ID and the blocker reason.
+- **Baseline changes**: If a new tool finding is introduced by a code change (not a pre-existing issue), note the commit or PR in the finding.
+
+**Update, don't duplicate** — check existing files before writing. If a finding was resolved, remove it from `project_security_open.md`. Keeping stale open findings is worse than no memory.
+
 ## Examples
 
 ### Input
