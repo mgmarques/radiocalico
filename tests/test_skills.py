@@ -1,6 +1,6 @@
 """Tests for Claude Code slash commands (skills) and custom agents.
 
-Validates that all 17 command files and 9 agent files:
+Validates that all 17 command files and 10 agent files:
 - Exist with correct structure and version headers
 - Reference valid files, paths, and make targets
 - Have consistent information with the actual codebase
@@ -42,7 +42,7 @@ EXPECTED_COMMANDS = [
     "test-browser.md",
 ]
 
-# ── All 9 expected agents ──────────────────────────────────────
+# ── All 10 expected agents ──────────────────────────────────────
 
 EXPECTED_AGENTS = [
     "qa-engineer.md",
@@ -54,6 +54,7 @@ EXPECTED_AGENTS = [
     "security-auditor.md",
     "performance-analyst.md",
     "documentation-writer.md",
+    "vv-plan-updater.md",
 ]
 
 
@@ -460,8 +461,8 @@ class TestCLAUDEmdConsistency:
         version = (ROOT / "VERSION").read_text().strip()
         assert version in self.content or "v1.0.0" in self.content or "VERSION" in self.content
 
-    def test_test_count_is_582(self):
-        assert "582" in self.content, "CLAUDE.md should mention 582 total tests"
+    def test_test_count_is_589(self):
+        assert "589" in self.content, "CLAUDE.md should mention 589 total tests"
 
     def test_mentions_structured_logging(self):
         assert "structured" in self.content.lower() or "json log" in self.content.lower()

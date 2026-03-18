@@ -15,7 +15,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Artwork**: iTunes Search API (client-side, cached in localStorage 24h TTL).
 - **Auth**: Token-based. PBKDF2 (260k iterations). Tokens in `localStorage`.
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
-- **Testing**: 582 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 284 skills/agents). See `.claude/rules/testing.md`.
+- **Testing**: 589 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 291 skills/agents). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
 - **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination.
 
@@ -121,7 +121,7 @@ make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 | `/add-dark-style` | Add dark mode for new components |
 | `/update-claude-md` | Refresh CLAUDE.md from codebase |
 
-## Custom Agents (9 total, all v1.0.0)
+## Custom Agents (10 total, all v1.0.0)
 
 Task-specific AI personalities in `.claude/agents/` with specialized knowledge and workflows.
 
@@ -136,12 +136,13 @@ Task-specific AI personalities in `.claude/agents/` with specialized knowledge a
 | Security Auditor | `security-auditor.md` | 6 security tools, OWASP top 10, vulnerability triage |
 | Performance Analyst | `performance-analyst.md` | Caching, CDN, pagination, resource optimization |
 | Documentation Writer | `documentation-writer.md` | Docs generation, cross-document consistency, Mermaid diagrams |
+| V&V Plan Updater | `vv-plan-updater.md` | Run all test suites, fill execution summary, detect coverage gaps |
 
 ## Claude Code Configuration
 
 - **Rules**: `.claude/rules/` — architecture, testing, database, style-guide, security-baseline (loaded on relevant topics)
 - **Settings**: `.claude/settings.json` — auto-approved commands, denied destructive ops, lint hooks
 - **Skills**: `.claude/skills/*/SKILL.md` — mirrored from commands for extended skill features
-- **Agents**: `.claude/agents/*.md` — 9 task-specific AI agents with specialized workflows
+- **Agents**: `.claude/agents/*.md` — 10 task-specific AI agents with specialized workflows
 - **Hooks**: auto-lint Python/JS on file edit, context reminder on compaction
 - **Ignore**: `.claudeignore` — excludes node_modules, venv, coverage, caches from context

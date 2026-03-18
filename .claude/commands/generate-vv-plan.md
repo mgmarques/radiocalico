@@ -143,9 +143,14 @@ Create/update `docs/vv-test-plan.md` with a complete V&V test plan written from 
     - For test cases NOT covered by automation, provide step-by-step manual procedures
     - Primarily audio playback (TC-101 to TC-106) — requires actual audio output
 
-14. **Test Execution Summary** (template)
-    - Table: TC ID | Status (Pass/Fail/Skip) | Date | Tester | Notes
-    - Leave as empty template for the tester to fill in
+14. **Test Execution Summary** — run all automated suites and fill in real results:
+    - Columns: TC ID | Category | Test Type | Executed By | Date | Status | Notes
+    - **Test Type** values: JS Unit · Python Unit · Integration · E2E · Browser · Skills · Manual (or combinations with `+`)
+    - **Executed By**: the test framework (Jest, pytest, Selenium, etc.)
+    - **Status**: Pass (automated passed) | Not Executed (manual-only) | Blocked (environment unavailable)
+    - Manual-only TCs (TC-102, TC-106, TC-902) always remain `Not Executed`
+    - Add a summary line above the table: "N automated tests across N suites — N Pass, N Fail"
+    - Table separator must use `| --- |` style (not `|---|`)
 
 ### Steps
 
@@ -155,4 +160,13 @@ Create/update `docs/vv-test-plan.md` with a complete V&V test plan written from 
 4. **Generate** all test cases with detailed user-perspective steps
 5. **Map** each test case to automated tests where they exist
 6. **Identify** gaps where manual testing is needed
-7. **Report** total test cases and automation coverage percentage
+7. **Run** all automated test suites:
+   - Start MySQL: `brew services start mysql@5.7`
+   - `make test` (Python unit + JS unit)
+   - `make test-integration`
+   - `make test-skills`
+   - `make docker-prod` then `make test-e2e` and `make test-browser`
+8. **Fill** section 14 with real pass/fail results from step 7
+9. **Report** total test cases, automation coverage percentage, and any failures
+
+> **Note**: Use the `/vv-plan-updater` agent to re-run steps 7–8 at any time without regenerating the full plan.
