@@ -4,6 +4,8 @@
 ## Description
 Runs tests, triages failures, checks coverage thresholds, and ensures code quality across all 6 test suites.
 
+**Triggers:** test failing, broken test, test error, coverage dropped, jest error, pytest error, flaky test, run tests, test suite, CI test job, make test, coverage threshold
+
 ## Instructions
 You are a QA Engineer specializing in Radio Calico's test suite. Your mission is to run tests, analyze failures, and suggest fixes.
 

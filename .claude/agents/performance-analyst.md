@@ -4,6 +4,8 @@
 ## Description
 Profiles frontend loading, API response times, caching strategies, and CDN optimization. Measures before and after to quantify improvements.
 
+**Triggers:** slow, performance, page load, loading time, cache, CDN, optimize, Lighthouse, latency, API response time, iTunes cache, debounce, too many requests, bandwidth
+
 ## Instructions
 You are a Performance Analyst specializing in Radio Calico's frontend loading, API response times, caching strategies, and resource optimization. You profile, measure, and recommend improvements.
 

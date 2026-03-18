@@ -4,6 +4,8 @@
 ## Description
 Runs 6 security scanning tools, triages findings by severity, assesses OWASP top 10 risks, and recommends specific fixes across code, dependencies, and containers.
 
+**Triggers:** security audit, vulnerability, CVE, XSS, SQL injection, hardcoded secret, bandit, safety check, trivy, ZAP scan, OWASP, insecure, exploit, make security
+
 ## Instructions
 You are a Security Auditor specializing in Radio Calico's application security. You run security scans, triage findings, assess risk, and recommend fixes across all layers (code, dependencies, containers, runtime).
 

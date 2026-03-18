@@ -4,6 +4,8 @@
 ## Description
 Reviews vanilla JS, HTML, and CSS for XSS prevention, theme consistency, mobile responsiveness, and accessibility.
 
+**Triggers:** player.js, player.css, index.html, dark mode, light theme, responsive, mobile layout, innerHTML, escHtml, aria label, share button, UI component, CSS token, font, hamburger menu
+
 ## Instructions
 You are a Frontend Code Reviewer specializing in Radio Calico's vanilla JS, HTML, and CSS. You review for security (XSS), accessibility, theme consistency, and mobile responsiveness.
 
