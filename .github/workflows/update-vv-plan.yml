@@ -1,11 +1,15 @@
 name: Update V&V Plan
 
-# Runs on every PR to main. Executes the four fast test suites (Python unit,
-# integration, JS unit, skills), updates section 13 of docs/vv-test-plan.md
-# with real pass/fail results, then commits the file back to the PR branch.
+# Runs on every PR to main. Executes all six test suites, updates section 13
+# of docs/vv-test-plan.md with real pass/fail results, then commits the file
+# back to the PR branch.
 #
-# E2E and Browser tests require a running Docker prod stack and are not
-# available in this environment — those TCs are marked 🚧 Blocked.
+# Fast suites (Python unit, integration, JS unit, skills) run against the
+# GitHub Actions MySQL service directly.
+#
+# E2E and Browser suites require a running Docker prod stack — the workflow
+# builds and starts the prod stack (nginx + gunicorn + MySQL 8.0) exactly as
+# the main CI pipeline does, then tears it down after tests finish.
 #
 # The bot commit uses [skip ci] to prevent an infinite trigger loop.
 
@@ -53,13 +57,20 @@ jobs:
           node-version: "20"
           cache: npm
 
+      # Chrome is installed early so it's available for the browser test step
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
       - name: Install Python dependencies
         run: pip install -r api/requirements.txt -r api/requirements-dev.txt
 
       - name: Install Node.js dependencies
         run: npm ci
 
-      # ── Run Python unit tests ──────────────────────────────────────────────
+      # ── Fast suites — run directly against the MySQL service ──────────────
+
       - name: Python unit tests
         id: python_unit
         working-directory: api
@@ -76,7 +87,6 @@ jobs:
           fi
         continue-on-error: true
 
-      # ── Run Python integration tests ───────────────────────────────────────
       - name: Python integration tests
         id: integration
         working-directory: api
@@ -93,7 +103,6 @@ jobs:
           fi
         continue-on-error: true
 
-      # ── Run JavaScript unit tests ──────────────────────────────────────────
       - name: JavaScript unit tests
         id: js
         run: |
@@ -104,7 +113,6 @@ jobs:
           fi
         continue-on-error: true
 
-      # ── Run Skills / agents validation tests ──────────────────────────────
       - name: Skills and agents tests
         id: skills
         run: |
@@ -115,7 +123,82 @@ jobs:
           fi
         continue-on-error: true
 
+      # ── Docker prod stack — required for E2E and Browser tests ────────────
+
+      - name: Create .env for Docker prod
+        run: |
+          cat > .env << 'ENVEOF'
+          MYSQL_ROOT_PASSWORD=vvroot
+          DB_HOST=db
+          DB_USER=vvuser
+          DB_PASSWORD=vvpass
+          DB_NAME=radiocalico
+          CORS_ORIGIN=*
+          APP_PORT=5050
+          ENVEOF
+
+      - name: Start production stack
+        run: docker compose --profile prod up --build -d
+
+      - name: Wait for prod stack to be healthy
+        id: stack_health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:5050/health > /dev/null 2>&1; then
+              echo "App is healthy"
+              exit 0
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 5
+          done
+          echo "Prod stack did not become healthy within 150s"
+          docker compose --profile prod logs
+          exit 1
+        continue-on-error: true
+
+      # ── E2E tests (HTTP against nginx → gunicorn → MySQL) ─────────────────
+
+      - name: E2E tests
+        id: e2e
+        if: steps.stack_health.outcome == 'success'
+        env:
+          E2E_BASE_URL: http://127.0.0.1:5050
+        run: |
+          pip install requests pytest
+          if pytest tests/test_e2e.py -q --tb=no; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+        continue-on-error: true
+
+      # ── Browser tests (Selenium + headless Chrome) ────────────────────────
+
+      - name: Browser tests
+        id: browser
+        if: steps.stack_health.outcome == 'success'
+        env:
+          E2E_BASE_URL: http://127.0.0.1:5050
+          BROWSER_HEADLESS: "true"
+        run: |
+          pip install pytest selenium webdriver-manager
+          if pytest tests/test_browser.py -q --tb=no; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+        continue-on-error: true
+
+      # ── Tear down the prod stack ───────────────────────────────────────────
+
+      - name: Stop production stack
+        if: always()
+        run: docker compose --profile prod down -v
+
       # ── Update section 13 of the V&V plan ─────────────────────────────────
+      # If E2E or Browser steps were skipped (stack failed to start), the
+      # output variable is empty and the || 'blocked' fallback applies.
+
       - name: Update V&V plan execution summary
         run: |
           python scripts/update_vv_plan.py \
@@ -123,10 +206,11 @@ jobs:
             --integration=${{ steps.integration.outputs.result }} \
             --js=${{ steps.js.outputs.result }} \
             --skills=${{ steps.skills.outputs.result }} \
-            --e2e=blocked \
-            --browser=blocked
+            --e2e="${{ steps.e2e.outputs.result || 'blocked' }}" \
+            --browser="${{ steps.browser.outputs.result || 'blocked' }}"
 
       # ── Commit the updated file back to the PR branch ─────────────────────
+
       - name: Commit updated V&V plan
         run: |
           git config user.name "github-actions[bot]"

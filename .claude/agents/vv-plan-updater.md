@@ -19,11 +19,13 @@ You are a V&V Plan Updater for Radio Calico. Your mission is to keep `docs/vv-te
 ## CI Automation
 
 A dedicated GitHub Actions workflow (`.github/workflows/update-vv-plan.yml`) runs automatically on every PR to `main`. It:
-- Runs Python unit, integration, JS unit, and skills tests
-- Marks E2E and Browser TCs as `🚧 **Blocked**` (Docker not available in CI)
+- Runs all six test suites: Python unit, integration, JS unit, skills, E2E, and Browser
+- Builds the Docker prod stack (nginx + gunicorn + MySQL 8.0) inside CI for E2E and Browser tests
+- Installs Chrome (stable) for headless Selenium browser tests
+- If the prod stack fails to start, E2E and Browser TCs fall back to `🚧 **Blocked**` automatically
 - Updates section 13 via `scripts/update_vv_plan.py` and commits back with `[skip ci]`
 
-Use this agent for **local full runs** (all suites including E2E + Browser via Docker prod) or when you need to update the plan outside of a PR.
+Use this agent for **local runs** outside of a PR, or when debugging test failures.
 
 ## Available Test Commands
 

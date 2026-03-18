@@ -1,0 +1,65 @@
+name: Update SBOM
+
+# Runs on every PR to main. Installs all Python and Node.js dependencies,
+# runs pip-audit + npm audit, generates SBOM.md, and commits the updated
+# file back to the PR branch.
+#
+# The bot commit uses [skip ci] to prevent an infinite trigger loop.
+#
+# SBOM.md is only committed if it actually changed (e.g. a new dependency
+# was added or a vulnerability was fixed / newly discovered).
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  update-sbom:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # needed to commit back to the PR branch
+
+    steps:
+      # ── Checkout the PR branch so we can push back ────────────────────────
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      # ── Install all Python dependencies + pip-audit ───────────────────────
+      - name: Install Python dependencies
+        run: |
+          pip install -r api/requirements.txt -r api/requirements-dev.txt
+          pip install pip-audit
+
+      # ── Install Node.js dependencies ──────────────────────────────────────
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      # ── Generate SBOM.md ──────────────────────────────────────────────────
+      - name: Generate SBOM
+        run: python scripts/generate_sbom.py
+
+      # ── Commit back if SBOM.md changed ────────────────────────────────────
+      - name: Commit updated SBOM
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet docs/SBOM.md; then
+            echo "No changes — docs/SBOM.md already up to date."
+          else
+            git add docs/SBOM.md
+            git commit -m "chore: update docs/SBOM.md [skip ci]"
+            git push
+          fi

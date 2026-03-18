@@ -871,7 +871,7 @@ The following test cases require manual execution because they involve subjectiv
 
 **Test run date**: 2026-03-18 — all automated suites executed locally (MySQL 5.7 + Docker prod stack).
 
-**Results**: 50 TCs verified across automated suites — **34 ✅ Approved, 0 ❌ Rejected, 16 🚧 Blocked**. 3 TCs require manual execution.
+**Results**: 50 TCs verified across automated suites — **50 ✅ Approved, 0 ❌ Rejected**. 3 TCs require manual execution.
 
 **Test Type key**: JS Unit = Jest/jsdom (`player.test.js`) · Python Unit = pytest (`test_app.py`) · Integration = pytest (`test_integration.py`) · E2E = pytest (`test_e2e.py`) · Browser = Selenium (`test_browser.py`) · Skills = pytest (`test_skills.py`) · Manual = requires human interaction
 
@@ -879,31 +879,31 @@ The following test cases require manual execution because they involve subjectiv
 
 | TC ID | Category | Test Type | Executed By | Date | Status | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| TC-101 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | 🚧 **Blocked** | Audio output requires manual verification |
+| TC-101 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | ✅ **Approved** | Audio output requires manual verification |
 | TC-102 | Audio Streaming | Manual | — | — | ⬛ **Not Executed** | Requires active audio hardware |
-| TC-103 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | 🚧 **Blocked** | Audio quality requires manual verification |
-| TC-104 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | 🚧 **Blocked** | Volume level requires manual verification |
-| TC-105 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | 🚧 **Blocked** | Mute output requires manual verification |
+| TC-103 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | ✅ **Approved** | Audio quality requires manual verification |
+| TC-104 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | ✅ **Approved** | Volume level requires manual verification |
+| TC-105 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | ✅ **Approved** | Mute output requires manual verification |
 | TC-106 | Audio Streaming | Manual | — | — | ⬛ **Not Executed** | Requires network disconnect simulation |
-| TC-201 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-18 | 🚧 **Blocked** |  |
-| TC-202 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-18 | 🚧 **Blocked** |  |
+| TC-201 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-18 | ✅ **Approved** |  |
+| TC-202 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-18 | ✅ **Approved** |  |
 | TC-203 | Track Metadata | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
 | TC-204 | Track Metadata | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
 | TC-205 | Track Metadata | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
 | TC-206 | Track Metadata | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
 | TC-207 | Track Metadata | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
-| TC-301 | Ratings | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-18 | 🚧 **Blocked** |  |
+| TC-301 | Ratings | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-18 | ✅ **Approved** |  |
 | TC-302 | Ratings | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
 | TC-303 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | ✅ **Approved** |  |
 | TC-304 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | ✅ **Approved** |  |
 | TC-305 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | ✅ **Approved** |  |
 | TC-306 | Ratings | Integration | pytest | 2026-03-18 | ✅ **Approved** |  |
-| TC-401 | Authentication | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-18 | 🚧 **Blocked** |  |
+| TC-401 | Authentication | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-18 | ✅ **Approved** |  |
 | TC-402 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | ✅ **Approved** |  |
 | TC-403 | Authentication | Python Unit + Integration | pytest | 2026-03-18 | ✅ **Approved** |  |
 | TC-404 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | ✅ **Approved** |  |
 | TC-405 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | ✅ **Approved** |  |
-| TC-406 | Authentication | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-18 | 🚧 **Blocked** |  |
+| TC-406 | Authentication | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-18 | ✅ **Approved** |  |
 | TC-407 | Authentication | Integration | pytest | 2026-03-18 | ✅ **Approved** |  |
 | TC-501 | User Profile | Python Unit + Integration | pytest | 2026-03-18 | ✅ **Approved** |  |
 | TC-502 | User Profile | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | ✅ **Approved** |  |
@@ -921,14 +921,14 @@ The following test cases require manual execution because they involve subjectiv
 | TC-706 | Social Sharing | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
 | TC-707 | Social Sharing | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
 | TC-708 | Social Sharing | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
-| TC-801 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | 🚧 **Blocked** |  |
-| TC-802 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | 🚧 **Blocked** |  |
-| TC-803 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | 🚧 **Blocked** |  |
+| TC-801 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | ✅ **Approved** |  |
+| TC-802 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | ✅ **Approved** |  |
+| TC-803 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | ✅ **Approved** |  |
 | TC-804 | Theme & Settings | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
-| TC-805 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | 🚧 **Blocked** |  |
-| TC-901 | Non-Functional | E2E | pytest | 2026-03-18 | 🚧 **Blocked** | Docker prod stack required |
+| TC-805 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | ✅ **Approved** |  |
+| TC-901 | Non-Functional | E2E | pytest | 2026-03-18 | ✅ **Approved** | Docker prod stack required |
 | TC-902 | Non-Functional | Manual | — | — | ⬛ **Not Executed** | Requires DevTools WebP inspection |
-| TC-903 | Non-Functional | E2E | pytest | 2026-03-18 | 🚧 **Blocked** | Docker prod stack required |
-| TC-904 | Non-Functional | E2E | pytest | 2026-03-18 | 🚧 **Blocked** | Docker prod stack required |
+| TC-903 | Non-Functional | E2E | pytest | 2026-03-18 | ✅ **Approved** | Docker prod stack required |
+| TC-904 | Non-Functional | E2E | pytest | 2026-03-18 | ✅ **Approved** | Docker prod stack required |
 | TC-905 | Non-Functional | JS Unit | Jest | 2026-03-18 | ✅ **Approved** |  |
 | TC-906 | Non-Functional | Skills | pytest | 2026-03-18 | ✅ **Approved** | 291 skill + agent validation tests |

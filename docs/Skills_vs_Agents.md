@@ -17,8 +17,8 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash
 | **Analogy** | A recipe card you follow once | A team member you consult repeatedly |
 | **Statefulness** | Stateless — each run is independent | Context-aware — remembers conversation history |
 | **Best for** | Repeatable automation (CI, PR, scaffolding) | Judgment calls (code review, architecture, triage) |
-| **Count** | 18 skills | 10 agents |
-| **Tests** | 291 tests (structure, versions, references) | included in 291 |
+| **Count** | 19 skills | 10 agents |
+| **Tests** | 297 tests (structure, versions, references) | included in 297 |
 | **Version header** | `<!-- Radio Calico Skill v1.0.0 -->` | `<!-- Radio Calico Agent v1.0.0 -->` |
 
 ### When to Use Which
@@ -37,7 +37,7 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash
 
 ---
 
-## Current Skills (18)
+## Current Skills (19)
 
 | Category | Skills | What they automate |
 |----------|--------|--------------------|
@@ -45,7 +45,7 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash
 | **Testing** | `/run-ci`, `/test-ratings`, `/test-browser` | Run test suites, report results |
 | **Deployment** | `/docker-verify`, `/create-pr` | Build, verify, ship |
 | **Scaffolding** | `/add-endpoint`, `/add-share-button`, `/add-dark-style` | Generate boilerplate + tests |
-| **Security** | `/security-audit` | Run 6 security scanning tools |
+| **Security** | `/security-audit`, `/generate-sbom` | Run 6 security scanning tools; generate SBOM with CVE triage |
 | **Documentation** | `/generate-diagrams`, `/generate-tech-spec`, `/generate-requirements`, `/generate-vv-plan`, `/update-readme-diagrams`, `/update-claude-md` | Generate/sync all docs |
 
 ### Future Improvements for Skills
@@ -180,11 +180,12 @@ Examples:
 
 **Status**: A dedicated GitHub Actions workflow (`.github/workflows/update-vv-plan.yml`) automatically updates `docs/vv-test-plan.md` section 13 on every PR to `main`.
 
-- Runs Python unit, integration, JS unit, and skills tests inside CI
-- E2E and Browser TCs are marked `🚧 **Blocked**` (Docker not available in CI)
+- Runs all six test suites: Python unit, integration, JS unit, skills, E2E, and Browser
+- Builds the Docker prod stack (nginx + gunicorn + MySQL 8.0) inside CI for E2E and Browser suites
+- Installs Chrome (stable) for headless Selenium tests
+- If the prod stack fails to start, E2E and Browser TCs fall back to `🚧 **Blocked**` automatically
 - `scripts/update_vv_plan.py` rewrites the execution summary with emoji+bold status values
 - Bot commits the updated file back with `[skip ci]` to avoid an infinite loop
-- Full local runs (all suites) remain accessible via the V&V Plan Updater agent
 
 #### 8. Agent Self-Testing
 

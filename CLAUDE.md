@@ -15,7 +15,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Artwork**: iTunes Search API (client-side, cached in localStorage 24h TTL).
 - **Auth**: Token-based. PBKDF2 (260k iterations). Tokens in `localStorage`.
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
-- **Testing**: 589 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 291 skills/agents). See `.claude/rules/testing.md`.
+- **Testing**: 595 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 297 skills/agents). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
 - **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination.
 
@@ -69,7 +69,7 @@ make lint          # All linters (Ruff + ESLint + Stylelint + HTMLHint)
 make ci            # Full pipeline: lint + coverage + security
 make test-integration  # 19 API integration tests
 make test-e2e          # 19 E2E tests (Docker prod required)
-make test-skills       # 284 skill + agent validation tests
+make test-skills       # 297 skill + agent validation tests
 make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 
 # Hard refresh after static file edits: Cmd+Shift+R
@@ -80,7 +80,7 @@ make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 - **Metadata from CloudFront JSON**, not ID3 tags. ID3 parser is fallback only.
 - **DB credentials from env vars** via python-dotenv (`api/.env.example`).
 - **Debug mode off by default**, controlled by `FLASK_DEBUG`.
-- **Run `make ci` before merging**. CI runs on push/PR (12 GitHub Actions jobs).
+- **Run `make ci` before merging**. CI runs on push/PR (13 GitHub Actions jobs).
 - **iTunes API cached** in localStorage (24h TTL) via `fetchItunesCached()`.
 - **Ratings are local only** — not sent to CloudFront host.
 - **Cache issues** — hard refresh (`Cmd+Shift+R`) after editing static files.
@@ -98,7 +98,7 @@ make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 7. **Emoji in URL encoding**: Use plain text `[N likes / N unlikes]`.
 8. **mailto: in `window.open`**: Use `window.location.href` instead.
 
-## Slash Commands (18 total, all v1.0.0)
+## Slash Commands (19 total, all v1.0.0)
 
 | Command | Purpose |
 | ------- | ------- |
@@ -120,6 +120,7 @@ make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 | `/add-share-button` | Add new share platform |
 | `/add-dark-style` | Add dark mode for new components |
 | `/update-claude-md` | Refresh CLAUDE.md from codebase |
+| `/generate-sbom` | Generate SBOM.md with all packages + CVE status |
 
 ## Custom Agents (10 total, all v1.0.0)
 
