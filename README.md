@@ -1,6 +1,6 @@
 # Radio Calico
 
-![Radio Calico Logo](RadioCalicoLogoTM.png)
+<img src="RadioCalicoLogoTM.png" alt="Radio Calico Logo" width="20%">
 
 A live audio streaming web player — Ad-free, subscription-free — 48 kHz FLAC lossless or AAC Hi-Fi 211 kbps via HLS
 
