@@ -869,60 +869,66 @@ The following test cases require manual execution because they involve subjectiv
 
 ## 13. Test Execution Summary
 
-| Test Case | Category           | Executed By | Date | Status | Notes |
-|-----------|--------------------|-------------|------|--------|-------|
-| TC-101    | Audio Streaming    |             |      |        |       |
-| TC-102    | Audio Streaming    |             |      |        |       |
-| TC-103    | Audio Streaming    |             |      |        |       |
-| TC-104    | Audio Streaming    |             |      |        |       |
-| TC-105    | Audio Streaming    |             |      |        |       |
-| TC-106    | Audio Streaming    |             |      |        |       |
-| TC-201    | Track Metadata     |             |      |        |       |
-| TC-202    | Track Metadata     |             |      |        |       |
-| TC-203    | Track Metadata     |             |      |        |       |
-| TC-204    | Track Metadata     |             |      |        |       |
-| TC-205    | Track Metadata     |             |      |        |       |
-| TC-206    | Track Metadata     |             |      |        |       |
-| TC-207    | Track Metadata     |             |      |        |       |
-| TC-301    | Ratings            |             |      |        |       |
-| TC-302    | Ratings            |             |      |        |       |
-| TC-303    | Ratings            |             |      |        |       |
-| TC-304    | Ratings            |             |      |        |       |
-| TC-305    | Ratings            |             |      |        |       |
-| TC-306    | Ratings            |             |      |        |       |
-| TC-401    | Authentication     |             |      |        |       |
-| TC-402    | Authentication     |             |      |        |       |
-| TC-403    | Authentication     |             |      |        |       |
-| TC-404    | Authentication     |             |      |        |       |
-| TC-405    | Authentication     |             |      |        |       |
-| TC-406    | Authentication     |             |      |        |       |
-| TC-407    | Authentication     |             |      |        |       |
-| TC-501    | User Profile       |             |      |        |       |
-| TC-502    | User Profile       |             |      |        |       |
-| TC-503    | User Profile       |             |      |        |       |
-| TC-504    | User Profile       |             |      |        |       |
-| TC-601    | Feedback           |             |      |        |       |
-| TC-602    | Feedback           |             |      |        |       |
-| TC-603    | Feedback           |             |      |        |       |
-| TC-604    | Feedback           |             |      |        |       |
-| TC-701    | Social Sharing     |             |      |        |       |
-| TC-702    | Social Sharing     |             |      |        |       |
-| TC-703    | Social Sharing     |             |      |        |       |
-| TC-704    | Social Sharing     |             |      |        |       |
-| TC-705    | Social Sharing     |             |      |        |       |
-| TC-706    | Social Sharing     |             |      |        |       |
-| TC-707    | Social Sharing     |             |      |        |       |
-| TC-708    | Social Sharing     |             |      |        |       |
-| TC-801    | Theme & Settings   |             |      |        |       |
-| TC-802    | Theme & Settings   |             |      |        |       |
-| TC-803    | Theme & Settings   |             |      |        |       |
-| TC-804    | Theme & Settings   |             |      |        |       |
-| TC-805    | Theme & Settings   |             |      |        |       |
-| TC-901    | Non-Functional     |             |      |        |       |
-| TC-902    | Non-Functional     |             |      |        |       |
-| TC-903    | Non-Functional     |             |      |        |       |
-| TC-904    | Non-Functional     |             |      |        |       |
-| TC-905    | Non-Functional     |             |      |        |       |
-| TC-906    | Non-Functional     |             |      |        |       |
+**Test run date**: 2026-03-18 — all automated suites executed locally (MySQL 5.7 + Docker prod stack).
+
+**Results**: 557 automated tests across 5 suites — **557 Pass, 0 Fail**. 3 test cases (TC-102, TC-106, TC-902) require manual execution.
+
+**Test Type key**: JS Unit = Jest/jsdom (`player.test.js`) · Python Unit = pytest (`test_app.py`) · Integration = pytest (`test_integration.py`) · E2E = pytest (`test_e2e.py`) · Browser = Selenium (`test_browser.py`) · Skills = pytest (`test_skills.py`) · Manual = requires human interaction
+
+| TC ID | Category | Test Type | Executed By | Date | Status | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| TC-101 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | Pass | Audio output requires manual verification |
+| TC-102 | Audio Streaming | Manual | — | — | Not Executed | Requires active audio hardware |
+| TC-103 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | Pass | Audio quality requires manual verification |
+| TC-104 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | Pass | Volume level requires manual verification |
+| TC-105 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-18 | Pass | Mute output requires manual verification |
+| TC-106 | Audio Streaming | Manual | — | — | Not Executed | Requires network disconnect simulation |
+| TC-201 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-18 | Pass | |
+| TC-202 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-18 | Pass | |
+| TC-203 | Track Metadata | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-204 | Track Metadata | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-205 | Track Metadata | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-206 | Track Metadata | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-207 | Track Metadata | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-301 | Ratings | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-18 | Pass | |
+| TC-302 | Ratings | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-303 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | Pass | |
+| TC-304 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | Pass | |
+| TC-305 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | Pass | |
+| TC-306 | Ratings | Integration | pytest | 2026-03-18 | Pass | |
+| TC-401 | Authentication | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-18 | Pass | |
+| TC-402 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | Pass | |
+| TC-403 | Authentication | Python Unit + Integration | pytest | 2026-03-18 | Pass | |
+| TC-404 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | Pass | |
+| TC-405 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | Pass | |
+| TC-406 | Authentication | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-18 | Pass | |
+| TC-407 | Authentication | Integration | pytest | 2026-03-18 | Pass | |
+| TC-501 | User Profile | Python Unit + Integration | pytest | 2026-03-18 | Pass | |
+| TC-502 | User Profile | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | Pass | |
+| TC-503 | User Profile | Python Unit + Integration | pytest | 2026-03-18 | Pass | |
+| TC-504 | User Profile | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-601 | Feedback | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | Pass | |
+| TC-602 | Feedback | JS Unit + Python Unit | Jest + pytest | 2026-03-18 | Pass | |
+| TC-603 | Feedback | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-604 | Feedback | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-701 | Social Sharing | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-702 | Social Sharing | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-703 | Social Sharing | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-704 | Social Sharing | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-705 | Social Sharing | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-706 | Social Sharing | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-707 | Social Sharing | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-708 | Social Sharing | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-801 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | Pass | |
+| TC-802 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | Pass | |
+| TC-803 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | Pass | |
+| TC-804 | Theme & Settings | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-805 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-18 | Pass | |
+| TC-901 | Non-Functional | E2E | pytest | 2026-03-18 | Pass | Docker prod stack required |
+| TC-902 | Non-Functional | Manual | — | — | Not Executed | Requires DevTools WebP inspection |
+| TC-903 | Non-Functional | E2E | pytest | 2026-03-18 | Pass | Docker prod stack required |
+| TC-904 | Non-Functional | E2E | pytest | 2026-03-18 | Pass | Docker prod stack required |
+| TC-905 | Non-Functional | JS Unit | Jest | 2026-03-18 | Pass | |
+| TC-906 | Non-Functional | Skills | pytest | 2026-03-18 | Pass | 284 skill + agent validation tests |
 
 **Status values**: Pass | Fail | Blocked | Skipped | Not Executed
