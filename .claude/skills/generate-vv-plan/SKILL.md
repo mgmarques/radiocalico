@@ -1,6 +1,10 @@
 <!-- Radio Calico Skill v1.0.0 -->
 Generate or update the Verification & Validation (V&V) test plan for Radio Calico.
 
+## Agent
+Delegate this entire skill to the **V&V Plan Updater** subagent (`vv-plan-updater`).
+The V&V Plan Updater has specialized knowledge of all test suites, test case coverage, and execution summary formatting. It will run all steps in an isolated context window and return only a summary to the main conversation.
+
 ### Output file
 
 Create/update `docs/vv-test-plan.md` with a complete V&V test plan written from the user's perspective.

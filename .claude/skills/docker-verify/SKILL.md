@@ -1,6 +1,10 @@
 <!-- Radio Calico Skill v1.0.0 -->
 Rebuild and verify the Docker production stack.
 
+## Agent
+Delegate this entire skill to the **DevOps** subagent (`devops`).
+The DevOps agent has specialized knowledge of Docker, nginx, CI/CD, and deployment troubleshooting. It will run all steps in an isolated context window and return only a summary to the main conversation.
+
 ### Steps
 
 1. **Stop existing stack**: `docker compose --profile prod down`

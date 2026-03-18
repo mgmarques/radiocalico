@@ -1,6 +1,10 @@
 <!-- Radio Calico Skill v1.0.0 -->
 Run all 6 security scanning tools and report findings with fix suggestions.
 
+## Agent
+Delegate this entire skill to the **Security Auditor** subagent (`security-auditor`).
+The Security Auditor has specialized knowledge of all 6 security tools, OWASP Top 10, and vulnerability triage. It will run all steps in an isolated context window and return only a summary to the main conversation.
+
 ### Steps
 
 1. **Run all scans** (in parallel where possible):

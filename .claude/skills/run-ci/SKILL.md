@@ -1,6 +1,10 @@
 <!-- Radio Calico Skill v1.0.0 -->
 Run the full Radio Calico CI pipeline (lint + tests + coverage + security).
 
+## Agent
+Delegate this entire skill to the **QA Engineer** subagent (`qa-engineer`).
+The QA Engineer has specialized knowledge of all 6 test suites, coverage thresholds, and the CI pipeline. It will run all steps in an isolated context window and return only a summary to the main conversation.
+
 1. Ensure MySQL is running: `brew services list | grep mysql`
 2. Run `make ci` from the project root
 3. Report results:

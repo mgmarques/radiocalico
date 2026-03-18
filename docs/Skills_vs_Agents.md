@@ -18,7 +18,7 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash
 | **Statefulness** | Stateless — each run is independent | Context-aware — remembers conversation history |
 | **Best for** | Repeatable automation (CI, PR, scaffolding) | Judgment calls (code review, architecture, triage) |
 | **Count** | 19 skills | 10 agents |
-| **Tests** | 297 tests (structure, versions, references) | included in 297 |
+| **Tests** | 333 tests (structure, versions, references, agent delegation) | included in 333 |
 | **Version header** | `<!-- Radio Calico Skill v1.0.0 -->` | `<!-- Radio Calico Agent v1.0.0 -->` |
 
 ### When to Use Which
@@ -39,14 +39,16 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash
 
 ## Current Skills (19)
 
-| Category | Skills | What they automate |
-|----------|--------|--------------------|
-| **Dev Environment** | `/start`, `/check-stream`, `/troubleshoot` | Launch, verify, diagnose |
-| **Testing** | `/run-ci`, `/test-ratings`, `/test-browser` | Run test suites, report results |
-| **Deployment** | `/docker-verify`, `/create-pr` | Build, verify, ship |
-| **Scaffolding** | `/add-endpoint`, `/add-share-button`, `/add-dark-style` | Generate boilerplate + tests |
-| **Security** | `/security-audit`, `/generate-sbom` | Run 6 security scanning tools; generate SBOM with CVE triage |
-| **Documentation** | `/generate-diagrams`, `/generate-tech-spec`, `/generate-requirements`, `/generate-vv-plan`, `/update-readme-diagrams`, `/update-claude-md` | Generate/sync all docs |
+9 of the 19 skills delegate their execution to a specialized agent subagent. This keeps verbose test output, scan results, and doc generation out of the main context window — only a concise summary returns.
+
+| Category | Skills | What they automate | Delegated To |
+|----------|---------|--------------------|--------------|
+| **Dev Environment** | `/start`, `/check-stream`, `/troubleshoot` | Launch, verify, diagnose | — |
+| **Testing** | `/run-ci`, `/test-ratings`, `/test-browser` | Run test suites, report results | QA Engineer (`run-ci`, `test-browser`) |
+| **Deployment** | `/docker-verify`, `/create-pr` | Build, verify, ship | DevOps (`docker-verify`) |
+| **Scaffolding** | `/add-endpoint`, `/add-share-button`, `/add-dark-style` | Generate boilerplate + tests | — |
+| **Security** | `/security-audit`, `/generate-sbom` | Run 6 security scanning tools; generate SBOM with CVE triage | Security Auditor (both) |
+| **Documentation** | `/generate-diagrams`, `/generate-tech-spec`, `/generate-requirements`, `/generate-vv-plan`, `/update-readme-diagrams`, `/update-claude-md` | Generate/sync all docs | Documentation Writer (`generate-diagrams`, `generate-tech-spec`, `generate-requirements`); V&V Plan Updater (`generate-vv-plan`) |
 
 ### Future Improvements for Skills
 
@@ -221,6 +223,7 @@ Examples:
 | **P0** | Memory-enabled agents | QA, Security, DBA, V&V Updater persist findings | ✅ Done |
 | **P0** | Automated agent selection | Keyword triggers in Description fields | ✅ Done |
 | **P0** | V&V Plan CI automation | PR-only workflow auto-fills execution summary | ✅ Done |
+| **P0** | Agent delegation for heavy skills | 9 skills delegate to specialized subagents (context isolation) | ✅ Done |
 | **P1** | Inter-agent collaboration | Agents produce richer, cross-domain advice | Planned |
 | **P1** | Chained skill pipelines | Complex workflows in one command | Planned |
 | **P1** | Agent self-testing | Validates reasoning quality, not just structure | Planned |
@@ -231,13 +234,80 @@ Examples:
 
 ---
 
+## Subagents in Claude Code
+
+Subagents are specialized AI assistants that run in **isolated context windows** with custom configurations. They are the underlying mechanism that powers both the built-in Claude Code agent types and custom agents like the 10 defined in `.claude/agents/`.
+
+### Main Benefit: Context Isolation
+
+The core problem subagents solve is **context-window pollution**. Every tool call, file read, test run, and search result consumes the main conversation context. When tasks like running 631 tests, exploring a large codebase, or parsing security scan output accumulate in the main thread, earlier context gets pushed out and eventually compacted. Subagents keep all that verbose output isolated — only a concise summary returns to the main conversation.
+
+### Subagents vs. the Default Agent
+
+| Aspect | Default Agent | Subagent |
+|---|---|---|
+| **Context scope** | Shared — all output accumulates in main conversation | Isolated — only a summary returns; verbose output stays separate |
+| **Compaction** | Main conversation compacts together | Independent auto-compaction; main conversation unaffected |
+| **System prompt** | Standard Claude Code prompt | Custom domain-specific prompt (persona, workflow, rules) |
+| **Focus** | General-purpose multi-task handling | Specialized for one domain (security, DB, QA, etc.) |
+| **Tool access** | All available tools | Can be restricted (e.g. read-only for reviewers) |
+| **Model** | Session-wide model | Each subagent can use a different model (e.g. Haiku for fast/cheap searches) |
+| **Reusability** | Session-only | Version-controlled in `.claude/agents/`, shared with team |
+| **Permission mode** | Session-wide | Can override per subagent (`acceptEdits`, `dontAsk`, `bypassPermissions`, `plan`) |
+
+### When Context Isolation Matters Most
+
+| Task | Without Subagent | With Subagent |
+|---|---|---|
+| Run all 631 tests | Test output fills main context | Only pass/fail summary returns |
+| Explore codebase for a pattern | Every file read accumulates | Search results stay isolated |
+| Parse security scan output | Hundreds of lines in main thread | Actionable findings only |
+| Generate architecture diagrams | Mermaid + file writes in main context | Clean summary + file paths |
+
+### Built-in Claude Code Subagents
+
+| Subagent | Model | Tools | Best For |
+|---|---|---|---|
+| **Explore** | Haiku (fast/cheap) | Read-only | Codebase searches, file pattern matching |
+| **Plan** | Same as main | Read-only | Pre-implementation research in plan mode |
+| **General-purpose** | Same as main | All | Complex multi-step tasks |
+
+The **Explore** subagent demonstrates cost optimization: it auto-selects Haiku (faster and cheaper than Sonnet/Opus) and restricts itself to read-only tools, making codebase searches fast and economical without polluting the main context.
+
+### How Radio Calico Agents Use These Capabilities
+
+The 10 custom agents in `.claude/agents/` leverage subagent features in several ways:
+
+| Feature | How Radio Calico Agents Use It |
+|---|---|
+| **Custom system prompt** | Each agent has a `## Instructions` persona + `## Workflow` + `## Rules` — injected as the subagent's system prompt |
+| **Domain tables** | Reference data (endpoints, tools, files) pre-loaded into context so the agent doesn't need to rediscover them |
+| **Confidence framework** | HIGH/MEDIUM/LOW levels map to `bypassPermissions` → `acceptEdits` → stop-and-ask behaviors |
+| **Security checklist** | References `.claude/rules/security-baseline.md` — enforced at the subagent level, not the main conversation |
+| **Memory section** | QA, Security, DBA, V&V Plan Updater write findings to `.claude/memory/` — persisted across subagent invocations |
+| **Trigger keywords** | `**Triggers:**` in each `## Description` enables auto-routing without explicit `@agent` mentions |
+
+### Subagent vs. Skill vs. Agent — The Full Picture
+
+| Dimension | Skill (`/command`) | Custom Agent (`.claude/agents/`) | Subagent (mechanism) |
+|---|---|---|---|
+| **What it is** | A prompt template with steps | A persona with domain expertise | The runtime that executes isolated tasks |
+| **Statefulness** | Stateless — one-off run | Context-aware — persists in session | Isolated context window per invocation |
+| **Invocation** | `/command-name` | `@agent-name` or auto-routed | Spawned by Claude Code internally |
+| **Output** | Report or file edits | Advice and actions | Summary returned to parent context |
+| **Analogy** | A recipe card | A team member | A private office where work happens |
+
+Skills invoke the default agent. Custom agents run **as** subagents — each invocation gets its own isolated context window with the agent's system prompt pre-loaded.
+
+---
+
 ## References
 
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
 - [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents)
 - Project agents: `.claude/agents/*.md` (10 files)
 - Project skills: `.claude/commands/*.md` (18 files) + `.claude/skills/*/SKILL.md` (mirrors)
-- Agent + skills tests: `tests/test_skills.py` (291 tests)
+- Agent + skills tests: `tests/test_skills.py` (333 tests)
 - V&V plan update script: `scripts/update_vv_plan.py`
 - V&V plan CI workflow: `.github/workflows/update-vv-plan.yml`
 - Bootstrap script: `scripts/init-claude-code.sh` (creates 3 starter agents + 3 skills)

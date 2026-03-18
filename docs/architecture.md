@@ -26,6 +26,7 @@
 6. [CI/CD Pipeline](#6-cicd-pipeline)
 7. [Database Schema](#7-database-schema)
 8. [Authentication Flow](#8-authentication-flow)
+9. [Claude Code — Skill to Agent Delegation](#9-claude-code--skill-to-agent-delegation)
 
 ---
 
@@ -461,4 +462,43 @@ sequenceDiagram
         A-->>C: 200 {message}
         C->>C: remove rc-token, rc-user from localStorage
     end
+```
+
+---
+
+## 9. Claude Code — Skill to Agent Delegation
+
+9 of the 19 slash commands delegate their execution to a specialized subagent. The subagent runs in an isolated context window, keeping verbose output (test logs, scan results, doc generation) out of the main conversation. Only a concise summary returns.
+
+```mermaid
+graph LR
+    subgraph Skills[".claude/commands/ (slash commands)"]
+        RC["/run-ci"]
+        TB["/test-browser"]
+        SA["/security-audit"]
+        GS["/generate-sbom"]
+        DV["/docker-verify"]
+        GD["/generate-diagrams"]
+        GT["/generate-tech-spec"]
+        GR["/generate-requirements"]
+        GV["/generate-vv-plan"]
+    end
+
+    subgraph Agents[".claude/agents/ (subagents)"]
+        QA["QA Engineer\n(qa-engineer)"]
+        SEC["Security Auditor\n(security-auditor)"]
+        OPS["DevOps\n(devops)"]
+        DOC["Documentation Writer\n(documentation-writer)"]
+        VV["V&V Plan Updater\n(vv-plan-updater)"]
+    end
+
+    RC -->|"delegate"| QA
+    TB -->|"delegate"| QA
+    SA -->|"delegate"| SEC
+    GS -->|"delegate"| SEC
+    DV -->|"delegate"| OPS
+    GD -->|"delegate"| DOC
+    GT -->|"delegate"| DOC
+    GR -->|"delegate"| DOC
+    GV -->|"delegate"| VV
 ```

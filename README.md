@@ -491,7 +491,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**595 total tests** across 6 suites:
+**631 total tests** across 6 suites:
 
 | Suite | Tests | Tool | Coverage |
 | --- | --- | --- | --- |
@@ -500,7 +500,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 | JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
 | E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
 | Browser (Selenium) | 37 | Selenium + headless Chrome | UI, themes, auth, playback |
-| Skills + Agents | 297 | pytest | 19 slash commands + 10 agents |
+| Skills + Agents | 333 | pytest | 19 slash commands + 10 agents + 9 agent delegations |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
 - **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`
@@ -522,7 +522,7 @@ graph LR
         python["python-tests\n61 unit · ≥95% coverage"]
         integration["integration-tests\n19 API chain tests"]
         js["js-tests\n162 Jest · ≥90% lines"]
-        skills["skills-tests\n291 commands + agents"]
+        skills["skills-tests\n333 commands + agents"]
     end
 
     subgraph E2E["🌐 E2E (need: python + js + integration)"]
@@ -823,22 +823,36 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 | **Auto-lint hook** | Runs Ruff/ESLint automatically after every file edit |
 | **Compaction reminder** | Re-injects critical rules when context gets compressed |
 | **`.claudeignore`** | Excludes node_modules, venv, coverage from context |
-| **297 skill + agent tests** | Validates 19 commands + 10 agents: structure, versions, references, consistency |
+| **333 skill + agent tests** | Validates 19 commands + 10 agents + 9 agent delegations: structure, versions, references, consistency |
 
 ### Command Examples
+
+9 heavy skills automatically delegate to a specialized subagent for context isolation (verbose output stays isolated — only a summary returns to the main conversation):
+
+| Skill | Delegated To |
+| --- | --- |
+| `/run-ci` | QA Engineer |
+| `/test-browser` | QA Engineer |
+| `/security-audit` | Security Auditor |
+| `/generate-sbom` | Security Auditor |
+| `/docker-verify` | DevOps |
+| `/generate-diagrams` | Documentation Writer |
+| `/generate-tech-spec` | Documentation Writer |
+| `/generate-requirements` | Documentation Writer |
+| `/generate-vv-plan` | V&V Plan Updater |
 
 ```bash
 # In Claude Code, type:
 /start                  # Launch dev environment (local or Docker)
-/run-ci                 # Run full CI pipeline before committing
+/run-ci                 # Run full CI pipeline before committing (→ QA Engineer)
 /create-pr              # Create a PR with summary and test plan
 /add-endpoint POST /api/favorites  # Scaffold new route + tests
-/docker-verify          # Rebuild prod stack + run E2E tests
-/security-audit         # Run Bandit, Safety, npm audit, Hadolint, Trivy, ZAP
-/generate-diagrams      # Generate 8 Mermaid architecture diagrams
-/generate-tech-spec     # Generate full technical specification
-/generate-requirements  # Generate 91 FR/NFR requirements
-/generate-vv-plan       # Generate 52 user test cases
+/docker-verify          # Rebuild prod stack + run E2E tests (→ DevOps)
+/security-audit         # Run Bandit, Safety, npm audit, Hadolint, Trivy, ZAP (→ Security Auditor)
+/generate-diagrams      # Generate 8 Mermaid architecture diagrams (→ Documentation Writer)
+/generate-tech-spec     # Generate full technical specification (→ Documentation Writer)
+/generate-requirements  # Generate 91 FR/NFR requirements (→ Documentation Writer)
+/generate-vv-plan       # Generate 52 user test cases (→ V&V Plan Updater)
 /troubleshoot           # Diagnose common issues
 ```
 
@@ -848,7 +862,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
 
 1. **Clone + setup**: `make install` (or `/start` in Claude Code)
 2. **Develop**: Claude reads CLAUDE.md automatically. Use `/add-endpoint` for new routes.
-3. **Test**: `/run-ci` runs lint + coverage + security. All 595 tests must pass.
+3. **Test**: `/run-ci` runs lint + coverage + security. All 631 tests must pass.
 4. **PR**: `/create-pr` creates a branch, commits, pushes, and opens a PR with summary.
 5. **Add skills**: Create `.claude/commands/your-skill.md` + `.claude/skills/your-skill/SKILL.md`, add to `tests/test_skills.py`.
 

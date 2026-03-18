@@ -15,7 +15,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Artwork**: iTunes Search API (client-side, cached in localStorage 24h TTL).
 - **Auth**: Token-based. PBKDF2 (260k iterations). Tokens in `localStorage`.
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
-- **Testing**: 595 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 297 skills/agents). See `.claude/rules/testing.md`.
+- **Testing**: 631 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 333 skills/agents). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
 - **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination.
 
@@ -100,27 +100,29 @@ make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 
 ## Slash Commands (19 total, all v1.0.0)
 
-| Command | Purpose |
-| ------- | ------- |
-| `/start` | Launch dev environment |
-| `/check-stream` | Check stream & server status |
-| `/troubleshoot` | Diagnose common issues |
-| `/test-ratings` | Test ratings API end-to-end |
-| `/run-ci` | Run full CI pipeline |
-| `/create-pr` | Branch, commit, push, create PR |
-| `/docker-verify` | Rebuild + verify Docker prod stack |
-| `/add-endpoint` | Scaffold new API route + tests |
-| `/security-audit` | Run all 6 security tools |
-| `/generate-diagrams` | Mermaid architecture diagrams |
-| `/generate-tech-spec` | Full technical specification |
-| `/generate-requirements` | Requirements documentation (FR/NFR) |
-| `/generate-vv-plan` | V&V test plan with user test cases |
-| `/update-readme-diagrams` | Sync diagrams to README |
-| `/test-browser` | Run 37 Selenium browser tests (headless Chrome) |
-| `/add-share-button` | Add new share platform |
-| `/add-dark-style` | Add dark mode for new components |
-| `/update-claude-md` | Refresh CLAUDE.md from codebase |
-| `/generate-sbom` | Generate SBOM.md with all packages + CVE status |
+9 heavy skills delegate to a specialized subagent (isolated context window).
+
+| Command | Purpose | Delegated To |
+| ------- | ------- | ------------ |
+| `/start` | Launch dev environment | — |
+| `/check-stream` | Check stream & server status | — |
+| `/troubleshoot` | Diagnose common issues | — |
+| `/test-ratings` | Test ratings API end-to-end | — |
+| `/run-ci` | Run full CI pipeline | QA Engineer |
+| `/create-pr` | Branch, commit, push, create PR | — |
+| `/docker-verify` | Rebuild + verify Docker prod stack | DevOps |
+| `/add-endpoint` | Scaffold new API route + tests | — |
+| `/security-audit` | Run all 6 security tools | Security Auditor |
+| `/generate-diagrams` | Mermaid architecture diagrams | Documentation Writer |
+| `/generate-tech-spec` | Full technical specification | Documentation Writer |
+| `/generate-requirements` | Requirements documentation (FR/NFR) | Documentation Writer |
+| `/generate-vv-plan` | V&V test plan with user test cases | V&V Plan Updater |
+| `/update-readme-diagrams` | Sync diagrams to README | — |
+| `/test-browser` | Run 37 Selenium browser tests (headless Chrome) | QA Engineer |
+| `/add-share-button` | Add new share platform | — |
+| `/add-dark-style` | Add dark mode for new components | — |
+| `/update-claude-md` | Refresh CLAUDE.md from codebase | — |
+| `/generate-sbom` | Generate SBOM.md with all packages + CVE status | Security Auditor |
 
 ## Custom Agents (10 total, all v1.0.0)
 

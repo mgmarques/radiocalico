@@ -1,6 +1,10 @@
 <!-- Radio Calico Skill v1.0.0 -->
 Generate system architecture diagrams in Mermaid format for Radio Calico.
 
+## Agent
+Delegate this entire skill to the **Documentation Writer** subagent (`documentation-writer`).
+The Documentation Writer has specialized knowledge of cross-document consistency, Mermaid diagrams, and all docs generation workflows. It will run all steps in an isolated context window and return only a summary to the main conversation.
+
 ### Document header
 
 Start `docs/architecture.md` with this exact header block (logo right, version table left, vertically centered):

@@ -462,8 +462,8 @@ class TestCLAUDEmdConsistency:
         version = (ROOT / "VERSION").read_text().strip()
         assert version in self.content or "v1.0.0" in self.content or "VERSION" in self.content
 
-    def test_test_count_is_595(self):
-        assert "595" in self.content, "CLAUDE.md should mention 595 total tests"
+    def test_test_count_is_631(self):
+        assert "631" in self.content, "CLAUDE.md should mention 631 total tests"
 
     def test_mentions_structured_logging(self):
         assert "structured" in self.content.lower() or "json log" in self.content.lower()
@@ -795,3 +795,54 @@ class TestDocumentationWriterAgent:
     def test_mentions_key_files(self):
         for f in ["README.md", "CLAUDE.md", "docs/architecture.md", "docs/tech-spec.md"]:
             assert f in self.content, f"Missing file reference: {f}"
+
+
+# ── Agent Delegation Tests ──────────────────────────────────────
+
+SKILLS_WITH_AGENT_DELEGATION = {
+    "run-ci": "qa-engineer",
+    "security-audit": "security-auditor",
+    "test-browser": "qa-engineer",
+    "generate-vv-plan": "vv-plan-updater",
+    "generate-tech-spec": "documentation-writer",
+    "generate-requirements": "documentation-writer",
+    "generate-diagrams": "documentation-writer",
+    "docker-verify": "devops",
+    "generate-sbom": "security-auditor",
+}
+
+
+class TestHeavySkillsAgentDelegation:
+    """Heavy skills must delegate to their matching agent subagent."""
+
+    @pytest.mark.parametrize("skill_name,agent_slug", SKILLS_WITH_AGENT_DELEGATION.items())
+    def test_command_has_agent_section(self, skill_name, agent_slug):
+        """Command file must contain ## Agent section."""
+        skill_path = COMMANDS_DIR / f"{skill_name}.md"
+        content = skill_path.read_text()
+        assert "## Agent" in content, f"{skill_name}: missing ## Agent section in command file"
+
+    @pytest.mark.parametrize("skill_name,agent_slug", SKILLS_WITH_AGENT_DELEGATION.items())
+    def test_command_references_agent_slug(self, skill_name, agent_slug):
+        """Command file must reference the correct agent slug."""
+        skill_path = COMMANDS_DIR / f"{skill_name}.md"
+        content = skill_path.read_text()
+        assert agent_slug in content, (
+            f"{skill_name}: missing agent slug '{agent_slug}' in command file"
+        )
+
+    @pytest.mark.parametrize("skill_name,agent_slug", SKILLS_WITH_AGENT_DELEGATION.items())
+    def test_skill_mirror_has_agent_section(self, skill_name, agent_slug):
+        """Skill mirror must also contain ## Agent section."""
+        skill_path = SKILLS_DIR / skill_name / "SKILL.md"
+        content = skill_path.read_text()
+        assert "## Agent" in content, f"{skill_name}: missing ## Agent section in SKILL.md mirror"
+
+    @pytest.mark.parametrize("skill_name,agent_slug", SKILLS_WITH_AGENT_DELEGATION.items())
+    def test_skill_mirror_references_agent_slug(self, skill_name, agent_slug):
+        """Skill mirror must reference the correct agent slug."""
+        skill_path = SKILLS_DIR / skill_name / "SKILL.md"
+        content = skill_path.read_text()
+        assert agent_slug in content, (
+            f"{skill_name}: missing agent slug '{agent_slug}' in SKILL.md mirror"
+        )

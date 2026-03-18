@@ -1,6 +1,10 @@
 <!-- Radio Calico Skill v1.0.0 -->
 # Generate SBOM
 
+## Agent
+Delegate this entire skill to the **Security Auditor** subagent (`security-auditor`).
+The Security Auditor has specialized knowledge of all 6 security tools, OWASP Top 10, and vulnerability triage. It will run all steps in an isolated context window and return only a summary to the main conversation.
+
 Generate `docs/SBOM.md` — a Software Bill of Materials listing every installed
 Python and Node.js package with its version and known vulnerability status.
 

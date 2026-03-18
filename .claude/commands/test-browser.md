@@ -1,6 +1,10 @@
 <!-- Radio Calico Skill v1.0.0 -->
 Run Selenium browser tests against the Docker production stack.
 
+## Agent
+Delegate this entire skill to the **QA Engineer** subagent (`qa-engineer`).
+The QA Engineer has specialized knowledge of all 6 test suites, coverage thresholds, and the CI pipeline. It will run all steps in an isolated context window and return only a summary to the main conversation.
+
 ### Steps
 
 1. **Check Docker prod is running**: `docker compose --profile prod ps`

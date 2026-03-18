@@ -1,6 +1,6 @@
 # Testing & CI/CD
 
-## Test Suite — 595 total tests across 6 suites
+## Test Suite — 631 total tests across 6 suites
 
 | Suite | File | Tests | Tool |
 |-------|------|-------|------|
@@ -9,7 +9,7 @@
 | JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom (90% line threshold) |
 | E2E | `tests/test_e2e.py` | 19 | pytest + requests (Docker prod stack) |
 | Browser | `tests/test_browser.py` | 37 | Selenium + headless Chrome (Docker prod) |
-| Skills + Agents | `tests/test_skills.py` | 297 | pytest (validates 19 commands + 10 agents) |
+| Skills + Agents | `tests/test_skills.py` | 333 | pytest (validates 19 commands + 10 agents + 9 agent delegations) |
 
 - Python unit tests use isolated `radiocalico_test` database (created/destroyed per test)
 - Python fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
