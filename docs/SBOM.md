@@ -8,15 +8,15 @@
 
 | Field | Value |
 | --- | --- |
-| **Total packages** | 98 (91 Python · 7 Node.js) |
-| **Vulnerabilities** | ⚠️ 11 detected (7 Python · 4 Node.js) |
+| **Total packages** | 88 (81 Python · 7 Node.js) |
+| **Vulnerabilities** | ⚠️ 4 detected (0 Python · 4 Node.js) |
 | **Python scanner** | `pip-audit` (GHSA / OSV database) |
 | **Node.js scanner** | `npm audit` (npm advisory database) |
 | **Scan date** | 2026-03-18 |
 
 ---
 
-## Python Packages (91)
+## Python Packages (81)
 
 Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scanner: `pip-audit`
 
@@ -25,7 +25,6 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `annotated-doc` | 0.0.4 | ✅ None |
 | `annotated-types` | 0.7.0 | ✅ None |
 | `anyio` | 4.12.1 | ✅ None |
-| `attrs` | 25.4.0 | ✅ None |
 | `Authlib` | 1.6.9 | ✅ None |
 | `bandit` | 1.9.4 | ✅ None |
 | `blinker` | 1.9.0 | ✅ None |
@@ -35,7 +34,7 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `cffi` | 2.0.0 | ✅ None |
 | `charset-normalizer` | 3.4.6 | ✅ None |
 | `click` | 8.3.1 | ✅ None |
-| `coverage` | 7.13.4 | ✅ None |
+| `coverage` | 7.13.5 | ✅ None |
 | `cryptography` | 46.0.5 | ✅ None |
 | `cyclonedx-python-lib` | 11.7.0 | ✅ None |
 | `defusedxml` | 0.7.1 | ✅ None |
@@ -62,10 +61,9 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `msgpack` | 1.1.2 | ✅ None |
 | `nltk` | 3.9.3 | ✅ None |
 | `ordered-set` | 4.1.0 | ✅ None |
-| `outcome` | 1.3.0.post0 | ✅ None |
 | `packageurl-python` | 0.17.6 | ✅ None |
 | `packaging` | 26.0 | ✅ None |
-| `pip` | 24.0 | ⚠️ `CVE-2025-8869`, `CVE-2026-1703` |
+| `pip` | 26.0.1 | ✅ None |
 | `pip-api` | 0.0.34 | ✅ None |
 | `pip-requirements-parser` | 32.0.1 | ✅ None |
 | `pip_audit` | 2.10.0 | ✅ None |
@@ -78,7 +76,6 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `Pygments` | 2.19.2 | ✅ None |
 | `PyMySQL` | 1.1.2 | ✅ None |
 | `pyparsing` | 3.3.2 | ✅ None |
-| `PySocks` | 1.7.1 | ✅ None |
 | `pytest` | 9.0.2 | ✅ None |
 | `pytest-cov` | 7.0.0 | ✅ None |
 | `python-dotenv` | 1.2.2 | ✅ None |
@@ -91,10 +88,8 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `ruff` | 0.15.6 | ✅ None |
 | `safety` | 3.7.0 | ✅ None |
 | `safety-schemas` | 0.0.16 | ✅ None |
-| `selenium` | 4.41.0 | ✅ None |
-| `setuptools` | 65.5.0 | ⚠️ `PYSEC-2022-43012`, `PYSEC-2022-43012` +3 more |
+| `setuptools` | 79.0.1 | ✅ None |
 | `shellingham` | 1.5.4 | ✅ None |
-| `sniffio` | 1.3.1 | ✅ None |
 | `sortedcontainers` | 2.4.0 | ✅ None |
 | `stevedore` | 5.7.0 | ✅ None |
 | `tenacity` | 9.1.4 | ✅ None |
@@ -102,17 +97,12 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `tomli_w` | 1.2.0 | ✅ None |
 | `tomlkit` | 0.14.0 | ✅ None |
 | `tqdm` | 4.67.3 | ✅ None |
-| `trio` | 0.33.0 | ✅ None |
-| `trio-websocket` | 0.12.2 | ✅ None |
 | `typer` | 0.24.1 | ✅ None |
 | `typing-inspection` | 0.4.2 | ✅ None |
 | `typing_extensions` | 4.15.0 | ✅ None |
 | `urllib3` | 2.6.3 | ✅ None |
-| `webdriver-manager` | 4.0.2 | ✅ None |
-| `websocket-client` | 1.9.0 | ✅ None |
 | `Werkzeug` | 3.1.6 | ✅ None |
 | `wrapt` | 2.1.2 | ✅ None |
-| `wsproto` | 1.3.2 | ✅ None |
 
 ---
 
@@ -133,18 +123,6 @@ Source: `package.json` &nbsp;·&nbsp; Scanner: `npm audit`
 ---
 
 ## Vulnerability Details
-
-### Python
-
-| Package | Vuln ID | Description |
-| --- | --- | --- |
-| `pip` | `CVE-2025-8869` | When extracting a tar archive pip may not check symbolic links point into the extraction directory if the tarfile module |
-| `pip` | `CVE-2026-1703` | When pip is installing and extracting a maliciously crafted wheel archive, files may be extracted outside the installati |
-| `setuptools` | `PYSEC-2022-43012` | Python Packaging Authority (PyPA)'s setuptools is a library designed to facilitate packaging Python projects. Setuptools |
-| `setuptools` | `PYSEC-2022-43012` | Python Packaging Authority (PyPA) setuptools before 65.5.1 allows remote attackers to cause a denial of service via HTML |
-| `setuptools` | `PYSEC-2025-49` | ### Summary  A path traversal vulnerability in `PackageIndex` was fixed in setuptools version 78.1.1  ### Details ```    |
-| `setuptools` | `PYSEC-2025-49` | setuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. A path tr |
-| `setuptools` | `CVE-2024-6345` | A vulnerability in the `package_index` module of pypa/setuptools versions up to 69.1.1 allows for remote code execution  |
 
 ### Node.js
 
