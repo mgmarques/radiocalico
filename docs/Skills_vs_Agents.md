@@ -87,12 +87,16 @@ Each agent follows a consistent format:
 <!-- Radio Calico Agent v1.0.0 -->
 # Agent Name
 
-## Description          — One-line summary
+## Description          — One-line summary + **Triggers:** keywords for auto-routing
 ## Instructions         — Persona definition ("You are a...")
 ## Domain Tables        — Reference data (endpoints, tools, files)
 ## Workflow             — Step-by-step process (5-6 steps)
 ## Key Files            — Files this agent works with
 ## Rules                — Hard constraints and conventions
+## Security Checklist   — Domain-scoped checks (references .claude/rules/security-baseline.md)
+## Confidence Framework — 3-level (HIGH/MEDIUM/LOW) decision criteria with escalation rules
+## Glossary             — 7-8 Radio Calico-specific term definitions
+## Memory               — (QA, Security, DBA) what to persist to .claude/memory/ between sessions
 ## Examples             — 2 input/output pairs with realistic scenarios
 ```
 
@@ -128,50 +132,44 @@ Input: sql (string) — parameterized query only
 
 **Why**: Formal tool definitions enable future integration with the Claude Agent SDK for programmatic agent orchestration.
 
-#### 3. Memory-Enabled Agents
+#### 3. Memory-Enabled Agents ✅ Implemented
 
-**Current**: Agents have no memory between sessions — every conversation starts fresh.
+**Status**: QA Engineer, Security Auditor, and DBA agents now have a `## Memory` section that instructs them to write findings to `.claude/memory/` files after each session.
 
-**Future**: Agents that build up project knowledge over time:
-- DBA remembers past schema migrations and their outcomes
-- QA Engineer tracks flaky tests and their root causes
-- Release Manager knows the cadence and patterns of past releases
+Each saves domain-specific findings:
 
-**How**: Agents write findings to `.claude/memory/` files that are loaded in future sessions.
+- **QA Engineer** → flaky tests, coverage gaps, recurring failures, environment quirks
+- **Security Auditor** → open vulnerabilities, accepted risks, pinned CVEs
+- **DBA** → pending migrations, slow queries, MySQL version quirks, schema rationale
 
-#### 4. Confidence Scoring
+All memory files follow the frontmatter format with `name`, `description`, and `type` fields, and are indexed in `MEMORY.md`.
 
-**Current**: Agents give recommendations without indicating certainty level.
+#### 4. Confidence Scoring ✅ Implemented
 
-**Future**: Agents that distinguish between:
-- **High confidence**: "This is a SQL injection — fix immediately" (based on clear pattern match)
-- **Medium confidence**: "This query may be slow with >10k rows — profile to confirm"
-- **Low confidence**: "Consider adding an index, but benchmark first"
+**Status**: All 9 agents now have a `## Confidence Framework` section with a 3-level table:
 
-**How**: Add a `## Confidence Framework` section with criteria for each level.
+| Level | Behavior |
+| --- | --- |
+| **HIGH** | All context verified — proceeds autonomously |
+| **MEDIUM** | Partial context or adjacent risk — proceeds but surfaces assumptions |
+| **LOW** | Irreversible or security-sensitive — stops and asks |
 
-#### 5. Security-First Agent Defaults
+Each agent's LOW criteria is anchored to its most dangerous action (e.g., Security Auditor stops if weakening a control; DBA stops on irreversible migrations).
 
-**Current**: Security rules are scattered across agents (XSS in Frontend, SQL injection in DBA, secrets in DevOps).
+#### 5. Security-First Agent Defaults ✅ Implemented
 
-**Future**: A shared security baseline that ALL agents enforce:
-- Every agent checks for hardcoded secrets in code they review
-- Every agent verifies parameterized queries in SQL they encounter
-- Every agent flags `innerHTML` without `escHtml()` in JS they see
-- Security Auditor becomes the escalation point, not the only line of defense
+**Status**: `.claude/rules/security-baseline.md` created with 10 non-negotiable rules (S-1 through S-10) covering XSS, SQL injection, secrets, containers, rate limiting, IP privacy, auth, and tabnapping. OWASP Top 10 mapping and secrets management policy included.
 
-**How**: Add a `.claude/rules/security-baseline.md` that all agents reference, plus a `## Security Checklist` section in each agent.
+All 9 agents have a `## Security Checklist` section with domain-specific checks that reference the baseline. The Security Auditor's checklist maps one item per S-rule with exact grep patterns.
 
-#### 6. Automated Agent Selection
+#### 6. Automated Agent Selection ✅ Implemented
 
-**Current**: Users must know which agent to consult for a given question.
+**Status**: All 9 agents have a `**Triggers:**` line in their `## Description` field listing natural-language keywords Claude Code uses for routing.
 
-**Future**: Claude Code automatically routes questions to the right agent:
-- "Why is this query slow?" → Performance Analyst + DBA
-- "Is this PR ready?" → Release Manager + QA Engineer
-- "Review this CSS change" → Frontend Reviewer
-
-**How**: Add keyword triggers in agent `## Description` fields that Claude Code uses for routing.
+Examples:
+- "test failing", "coverage dropped", "jest error" → QA Engineer
+- "502 Bad Gateway", "docker-compose", "pipeline failing" → DevOps
+- "ready to merge", "changelog", "version bump" → Release Manager
 
 #### 7. Agent Self-Testing
 
@@ -184,39 +182,34 @@ Input: sql (string) — parameterized query only
 
 **How**: Add `tests/test_agent_behavior.py` with prompt-response pairs that validate agent reasoning patterns.
 
-#### 8. Domain-Specific Glossaries
+#### 8. Domain-Specific Glossaries ✅ Implemented
 
-**Current**: Agents use project terms (e.g., "station", "pendingTrackUpdate") without defining them.
+**Status**: All 9 agents now have a `## Glossary` section with 7–8 Radio Calico-specific term definitions. Each term is project-specific or has a project-specific meaning — no generic dictionary definitions.
 
-**Future**: Each agent includes a `## Glossary` section with domain terms:
+Examples:
 
-```markdown
-## Glossary
-- **station**: `"Artist - Title"` string used as the unique key for ratings
-- **pendingTrackUpdate**: setTimeout ID that delays UI updates by hls.latency
-- **fetchItunesCached**: localStorage wrapper with 24h TTL for iTunes API calls
-```
-
-**Why**: Prevents misinterpretation when agents encounter project-specific terminology.
+- **QA Engineer** defines `radiocalico_test`, fixture, jsdom, coverage threshold, E2E vs browser vs skills suite
+- **Performance Analyst** defines `METADATA_DEBOUNCE_MS`, `pendingTrackUpdate`, `hls.latency`, FCP, `FRAG_CHANGED`
+- **DBA** defines station key, parameterized query, profile snapshot, score TINYINT
 
 ---
 
 ## Roadmap Priority
 
-| Priority | Improvement | Impact | Effort |
+| Priority | Improvement | Impact | Status |
 |----------|-------------|--------|--------|
-| **P0** | Security-first agent defaults | All agents enforce security baseline | Medium |
-| **P0** | Domain-specific glossaries | Reduces misinterpretation errors | Low |
-| **P1** | Inter-agent collaboration | Agents produce richer, cross-domain advice | High |
-| **P1** | Chained skill pipelines | Complex workflows in one command | Medium |
-| **P1** | Agent self-testing | Validates reasoning quality, not just structure | High |
-| **P2** | Tool-aware agents | Enables Agent SDK integration | Medium |
-| **P2** | Parameterized skills | Reduces scaffolding errors | Medium |
-| **P2** | Automated agent selection | Better UX — no need to know agent names | Medium |
-| **P3** | Memory-enabled agents | Agents learn from project history | High |
-| **P3** | Confidence scoring | Users know when to trust vs verify | Low |
-| **P3** | Skill output artifacts | Data flow between skills | Medium |
-| **P3** | Dry-run mode | Safe previews before execution | Low |
+| **P0** | Security-first agent defaults | All agents enforce security baseline | ✅ Done |
+| **P0** | Domain-specific glossaries | Reduces misinterpretation errors | ✅ Done |
+| **P0** | Confidence scoring | Agents signal when to trust vs verify | ✅ Done |
+| **P0** | Memory-enabled agents | QA, Security, DBA persist findings | ✅ Done |
+| **P0** | Automated agent selection | Keyword triggers in Description fields | ✅ Done |
+| **P1** | Inter-agent collaboration | Agents produce richer, cross-domain advice | Planned |
+| **P1** | Chained skill pipelines | Complex workflows in one command | Planned |
+| **P1** | Agent self-testing | Validates reasoning quality, not just structure | Planned |
+| **P2** | Tool-aware agents | Enables Agent SDK integration | Planned |
+| **P2** | Parameterized skills | Reduces scaffolding errors | Planned |
+| **P3** | Skill output artifacts | Data flow between skills | Planned |
+| **P3** | Dry-run mode | Safe previews before execution | Planned |
 
 ---
 

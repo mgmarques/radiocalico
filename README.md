@@ -748,7 +748,7 @@ Detailed project documentation is available in the [`docs/`](docs/) directory:
 | [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (582 tests across 6 suites), security measures, and performance optimizations. |
 | [Requirements](docs/requirements.md) | 91 requirements: 53 functional (FR-1xx to FR-8xx covering streaming, metadata, ratings, auth, profiles, feedback, sharing, and theme) and 38 non-functional (NFR-1xx to NFR-6xx covering performance, security, reliability, observability, maintainability, and compatibility). Includes traceability matrix linking each requirement to its implementation and tests. |
 | [V&V Test Plan](docs/vv-test-plan.md) | 52 user-perspective test cases (TC-1xx to TC-9xx) with step-by-step procedures, expected results, and automated test mapping. Includes manual test procedures for audio playback, automated coverage matrix across all 6 test suites, and an execution summary template. |
-| [Skills vs Agents](docs/Skills_vs_Agents.md) | Comparison of 18 slash commands (skills) vs 9 custom agents: when to use which, current structure, and future improvement roadmap (inter-agent collaboration, tool-aware agents, security-first defaults, chained pipelines, memory, self-testing). Includes prioritized P0–P3 roadmap. |
+| [Skills vs Agents](docs/Skills_vs_Agents.md) | Comparison of 18 slash commands (skills) vs 9 custom agents: when to use which, current structure, and improvement roadmap. 5 roadmap items now implemented (memory, confidence framework, security checklist, keyword routing triggers, glossaries). Remaining P1–P3 items tracked. |
 | [MCP Servers Reference](docs/mcp_servers_reference.md) | Guide to Model Context Protocol (MCP) server integration: 4 recommended project-level servers (Docker, Sentry, Brave Search, GitHub), setup instructions for `.mcp.json`, configuration examples (stdio and http types), security best practices for API keys, and troubleshooting guide. |
 | [Design Document](design.md) | Original architecture and design document from the initial prototype phase. |
 
@@ -768,7 +768,8 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 │   ├── architecture.md    # Player.js internals, metadata, events
 │   ├── testing.md         # 582 tests, 6 suites, CI/CD pipeline
 │   ├── database.md        # MySQL schema, 4 tables, constraints
-│   └── style-guide.md     # CSS tokens, code conventions, formats
+│   ├── style-guide.md     # CSS tokens, code conventions, formats
+│   └── security-baseline.md  # S-1–S-10 non-negotiable rules, OWASP mapping
 ├── agents/                # Custom agents (9 total, all v1.0.0)
 │   ├── qa-engineer.md     # QA — tests, coverage, triage
 │   ├── dba.md             # DBA — MySQL, queries, schema
