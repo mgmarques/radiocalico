@@ -325,8 +325,8 @@ graph LR
         trivy["trivy\nDocker image\nHIGH/CRITICAL"]
     end
 
-    subgraph VVPlan["📋 V&V Plan (PR only)"]
-        vv["update-vv-plan\nauto-fills section 13\n[skip ci] commit"]
+    subgraph VVPlan["📋 V&V Plan (PR only · all 6 suites)"]
+        vv["update-vv-plan\nbuilds Docker prod\nruns all suites\n[skip ci] commit"]
     end
 
     lint --> python

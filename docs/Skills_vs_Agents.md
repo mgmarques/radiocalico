@@ -180,11 +180,12 @@ Examples:
 
 **Status**: A dedicated GitHub Actions workflow (`.github/workflows/update-vv-plan.yml`) automatically updates `docs/vv-test-plan.md` section 13 on every PR to `main`.
 
-- Runs Python unit, integration, JS unit, and skills tests inside CI
-- E2E and Browser TCs are marked `🚧 **Blocked**` (Docker not available in CI)
+- Runs all six test suites: Python unit, integration, JS unit, skills, E2E, and Browser
+- Builds the Docker prod stack (nginx + gunicorn + MySQL 8.0) inside CI for E2E and Browser suites
+- Installs Chrome (stable) for headless Selenium tests
+- If the prod stack fails to start, E2E and Browser TCs fall back to `🚧 **Blocked**` automatically
 - `scripts/update_vv_plan.py` rewrites the execution summary with emoji+bold status values
 - Bot commits the updated file back with `[skip ci]` to avoid an infinite loop
-- Full local runs (all suites) remain accessible via the V&V Plan Updater agent
 
 #### 8. Agent Self-Testing
 
