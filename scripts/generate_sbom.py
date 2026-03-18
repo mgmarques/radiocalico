@@ -259,7 +259,7 @@ def generate_sbom(today: str) -> None:
         "or `package.json`, then run `make generate-sbom` to verify the fix.",
         "",
         "*Refresh: `make generate-sbom` locally, "
-        "or open a PR to main (CI auto-updates this file).*",
+        "or open a PR to main (CI auto-updates `docs/SBOM.md`).*",
         "",
     ]
 
@@ -267,7 +267,8 @@ def generate_sbom(today: str) -> None:
     if not content.endswith("\n"):
         content += "\n"
 
-    path = Path("SBOM.md")
+    path = Path("docs/SBOM.md")
+    path.parent.mkdir(exist_ok=True)
     path.write_text(content, encoding="utf-8")
     print(
         f"✅ Generated {path}: {total_pkgs} packages, "
