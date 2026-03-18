@@ -71,6 +71,18 @@ Parallel security: bandit, safety, npm-audit, hadolint, trivy
 - Structured JSON logging: Python (`python-json-logger`), nginx (JSON format)
 - X-Request-ID correlation across nginx → gunicorn → Flask
 
+## Security Checklist
+
+> Shared rules: `.claude/rules/security-baseline.md`. Verify before any Docker, nginx, or CI change.
+
+- [ ] **S-5**: `Dockerfile` has `USER appuser` — container does not run as root
+- [ ] **S-6**: `docker-compose.prod.yml` — MySQL `3306` not published to host (internal network only)
+- [ ] **S-3**: No secrets or API keys hardcoded in `docker-compose*.yml` — all via env vars or `.env`
+- [ ] nginx config does not expose `/api/` internals — only proxies to gunicorn, strips internal headers
+- [ ] `FLASK_DEBUG` is `false` in prod compose — debug mode must never reach production
+- [ ] CI pipeline changes (`.github/workflows/ci.yml`) do not skip security jobs (`bandit`, `trivy`, `zap`)
+- [ ] `.mcp.json` remains in `.gitignore` — MCP API keys never committed
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

@@ -139,7 +139,7 @@ Task-specific AI personalities in `.claude/agents/` with specialized knowledge a
 
 ## Claude Code Configuration
 
-- **Rules**: `.claude/rules/` — architecture, testing, database, style-guide (loaded on relevant topics)
+- **Rules**: `.claude/rules/` — architecture, testing, database, style-guide, security-baseline (loaded on relevant topics)
 - **Settings**: `.claude/settings.json` — auto-approved commands, denied destructive ops, lint hooks
 - **Skills**: `.claude/skills/*/SKILL.md` — mirrored from commands for extended skill features
 - **Agents**: `.claude/agents/*.md` — 9 task-specific AI agents with specialized workflows

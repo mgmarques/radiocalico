@@ -77,6 +77,17 @@ These values must match across all documents:
 - Keep `CLAUDE.md` concise — detailed info goes in `.claude/rules/` files
 - When updating test counts, update ALL documents that reference them
 
+## Security Checklist
+
+> Shared rules: `.claude/rules/security-baseline.md`. Documentation must never leak or misrepresent security posture.
+
+- [ ] No real credentials, tokens, API keys, or IP addresses appear in any generated doc
+- [ ] Code examples in docs use placeholder values (`YOUR_API_KEY`, `<token>`, `example.com`) — never real values
+- [ ] OWASP Top 10 coverage section in `docs/tech-spec.md` stays current — update if a new control is added or removed
+- [ ] `api/.env.example` is referenced as the credential template — never `api/.env`
+- [ ] Security tool list (`bandit`, `safety`, `npm audit`, `hadolint`, `trivy`, `zap`) stays accurate in all docs that mention it
+- [ ] `.mcp.json` is documented as gitignored — never shown as a file to commit
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

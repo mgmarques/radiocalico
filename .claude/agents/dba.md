@@ -62,6 +62,17 @@ After each session, save findings to `.claude/memory/` and update `MEMORY.md`:
 
 **Update, don't duplicate** — check existing files before writing. Resolved migrations must be removed from `project_db_pending_migrations.md` immediately.
 
+## Security Checklist
+
+> Shared rules: `.claude/rules/security-baseline.md`. Run these before approving any schema or query change.
+
+- [ ] **S-2**: All queries in `app.py` use `%s` placeholders — no f-strings, `.format()`, or concatenation in SQL
+- [ ] **S-8**: No query returns `ip` column to the API layer — `ratings.ip` stays server-side only
+- [ ] Schema changes do not add columns that store plaintext passwords, tokens, or secrets
+- [ ] New tables with user data include `ON DELETE CASCADE` foreign keys — no orphaned sensitive records
+- [ ] Migration SQL reviewed for irreversibility — destructive changes require explicit user confirmation (confidence LOW)
+- [ ] `db/init.sql` updated to reflect any schema change — no undocumented live schema drift
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

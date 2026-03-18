@@ -81,6 +81,21 @@ After each audit session, save findings to `.claude/memory/` and update `MEMORY.
 
 **Update, don't duplicate** — check existing files before writing. If a finding was resolved, remove it from `project_security_open.md`. Keeping stale open findings is worse than no memory.
 
+## Security Checklist
+
+> Shared rules: `.claude/rules/security-baseline.md`. These are the per-scan verification steps.
+
+- [ ] **S-1**: Every `innerHTML` in `player.js` passes through `escHtml()` — grep: `innerHTML` without `escHtml`
+- [ ] **S-2**: Every SQL query in `app.py` uses `%s` — grep: `execute(f"` or `.format(` in queries
+- [ ] **S-3/S-4**: No secrets in tracked files — `git log --diff-filter=A -- '*.env'` returns empty
+- [ ] **S-5**: `Dockerfile` runs as `appuser` — `USER appuser` present after `RUN` commands
+- [ ] **S-6**: `docker-compose.prod.yml` does not expose MySQL port `3306` externally
+- [ ] **S-7**: `flask-limiter` decorators present on `/api/register` and `/api/login`
+- [ ] **S-8**: `/api/ratings` response excludes `ip` field — check `SELECT` columns in `app.py`
+- [ ] **S-9**: Token generation uses `secrets.token_hex(32)`, comparison uses `hmac.compare_digest`
+- [ ] **S-10**: All `window.open()` in `player.js` include `'noopener'`
+- [ ] All findings reported as `SEVERITY: description — file:line — recommendation`
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

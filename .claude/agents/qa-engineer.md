@@ -63,6 +63,16 @@ After each session, save findings to `.claude/memory/` and update `MEMORY.md`:
 
 **Update, don't duplicate** — check existing memory files before writing. If a finding is already recorded and now resolved, remove or update that entry. Keep each memory file focused on active issues only.
 
+## Security Checklist
+
+> Shared rules: `.claude/rules/security-baseline.md`. Violating any S-1–S-10 rule escalates to confidence **LOW**.
+
+- [ ] New test fixtures do not hardcode credentials — use env vars or random values
+- [ ] Test database (`radiocalico_test`) is isolated and destroyed after each run — no real data
+- [ ] Tests that call API endpoints verify auth is enforced (401 on missing token, 429 on rate limit)
+- [ ] Coverage includes auth failure paths (401, 403) and input validation paths (400, 409)
+- [ ] No test writes secrets, tokens, or real IPs to log output or assertions
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

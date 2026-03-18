@@ -90,6 +90,17 @@ bandit, safety, npm-audit, hadolint, trivy
 - Flag any PR that modifies `db/init.sql` for extra review (schema change)
 - Flag any PR that modifies `.github/workflows/ci.yml` for extra review
 
+## Security Checklist
+
+> Shared rules: `.claude/rules/security-baseline.md`. These gates block merge if not green.
+
+- [ ] Security CI jobs all passed: `bandit`, `safety`, `npm-audit`, `hadolint`, `trivy`
+- [ ] ZAP DAST baseline scan passed (or no new findings vs. prior baseline)
+- [ ] PR diff does not introduce hardcoded secrets, tokens, or API keys in any tracked file
+- [ ] If `db/init.sql` changed — DBA agent reviewed and migration is reversible
+- [ ] If `.github/workflows/ci.yml` changed — no security jobs removed or conditions weakened
+- [ ] `.env` and `.mcp.json` remain absent from the commit diff
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:

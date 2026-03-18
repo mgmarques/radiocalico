@@ -63,6 +63,17 @@ You are a Frontend Code Reviewer specializing in Radio Calico's vanilla JS, HTML
 - Shazam URLs don't work (SPA) — use Spotify/YT Music/Amazon instead
 - Amazon Music uses `amazon.com/s` with digital-music filter (SPA workaround)
 
+## Security Checklist
+
+> Shared rules: `.claude/rules/security-baseline.md`. Run before approving any HTML/JS/CSS change.
+
+- [ ] **S-1**: Every `innerHTML` insertion uses `escHtml()` — covers track metadata, iTunes data, user profile fields
+- [ ] **S-10**: All `window.open()` calls include `'_blank', 'noopener'` — covers all share buttons
+- [ ] No user input from forms is rendered back to the DOM without escaping
+- [ ] Share URLs use `encodeURIComponent` on text content — no raw emoji that corrupt in transit
+- [ ] No new `localStorage` keys store sensitive data (only `rc-token`, `rc-user`, `rc-theme`, `rc-stream-quality`, `itunes-cache-*`)
+- [ ] Auth token (`rc-token`) is never sent in a URL param or logged to the console
+
 ## Confidence Framework
 
 Before acting, assess your confidence and adjust behavior accordingly:
