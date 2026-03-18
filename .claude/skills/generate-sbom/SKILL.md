@@ -11,7 +11,8 @@ Python and Node.js package with its version and known vulnerability status.
 - **Summary table** — total packages, vulnerability count, scanner names, scan date
 - **Python packages table** — all `pip list` packages with `pip-audit` CVE results
 - **Node.js packages table** — all `npm list --depth=0` packages with `npm audit` results
-- **Vulnerability details** — full detail rows for every flagged package (if any)
+- **Vulnerability details** — full detail rows with Published date (OSV.dev) and Fix Version
+- **Impact Analysis** — per-vuln deployment assessment: whether the vulnerable code path is actually reachable in Radio Calico's production environment
 
 ## Steps
 
@@ -35,17 +36,27 @@ Python and Node.js package with its version and known vulnerability status.
 3. **Review the output** — open `docs/SBOM.md` and check:
    - Are any packages flagged with 🔴 Critical or 🟠 High vulnerabilities?
    - Are the package counts correct (Python and Node.js)?
+   - Does the **Impact Analysis** section show any 🔴 High or 🟠 Moderate ratings?
+   - Are any new vulns marked ⚪ Unknown (no impact entry yet)?
 
-4. **Remediation** (if vulnerabilities found)
+4. **Update impact analysis** (if new vulns appear)
+   - Open `scripts/generate_sbom.py` and find the `_IMPACT` dict
+   - Add an entry keyed by vuln ID (CVE/PYSEC) or package name (npm advisory slugs)
+   - Rate it: 🟢 Not Applicable / 🟡 Low (build-time only) / 🟠 Moderate / 🔴 High
+   - Explain whether the vulnerable code path is reachable in Radio Calico's production environment
+   - Re-run `python scripts/generate_sbom.py` to confirm the entry renders correctly
+
+5. **Remediation** (if vulnerabilities found with 🔴 High or 🟠 Moderate impact)
    - For Python: update the version in `api/requirements.txt` or `api/requirements-dev.txt`
    - For Node.js: run `npm update <package>` or update `package.json`
    - Re-run `python scripts/generate_sbom.py` to confirm the vulnerability is resolved
    - Escalate complex findings to the **Security Auditor** agent for triage
 
-5. **Report** — summarise:
+6. **Report** — summarise:
    - Total packages scanned (Python + Node.js)
    - Number of vulnerabilities found (by severity)
-   - Any packages needing immediate attention
+   - Impact ratings from the Impact Analysis section
+   - Any packages needing immediate attention (🔴 High impact)
 
 ## Integration
 
@@ -72,3 +83,4 @@ Python and Node.js package with its version and known vulnerability status.
 - Do NOT hardcode versions in `docs/SBOM.md` — always regenerate from the actual installed state
 - Do NOT commit `docs/SBOM.md` with fabricated results — the script must run and produce real output
 - If `pip-audit` is unavailable in CI, the script prints a warning and skips Python CVEs (packages are still listed)
+- When a new vuln appears with ⚪ Unknown impact, add an entry to the `_IMPACT` dict in `scripts/generate_sbom.py` before merging
