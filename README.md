@@ -491,7 +491,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**589 total tests** across 6 suites:
+**595 total tests** across 6 suites:
 
 | Suite | Tests | Tool | Coverage |
 | --- | --- | --- | --- |
@@ -500,7 +500,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 | JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
 | E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
 | Browser (Selenium) | 37 | Selenium + headless Chrome | UI, themes, auth, playback |
-| Skills + Agents | 291 | pytest | 18 slash commands + 10 agents |
+| Skills + Agents | 297 | pytest | 19 slash commands + 10 agents |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
 - **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`
@@ -823,7 +823,7 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 | **Auto-lint hook** | Runs Ruff/ESLint automatically after every file edit |
 | **Compaction reminder** | Re-injects critical rules when context gets compressed |
 | **`.claudeignore`** | Excludes node_modules, venv, coverage from context |
-| **291 skill + agent tests** | Validates 18 commands + 10 agents: structure, versions, references, consistency |
+| **297 skill + agent tests** | Validates 19 commands + 10 agents: structure, versions, references, consistency |
 
 ### Command Examples
 
@@ -848,7 +848,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
 
 1. **Clone + setup**: `make install` (or `/start` in Claude Code)
 2. **Develop**: Claude reads CLAUDE.md automatically. Use `/add-endpoint` for new routes.
-3. **Test**: `/run-ci` runs lint + coverage + security. All 589 tests must pass.
+3. **Test**: `/run-ci` runs lint + coverage + security. All 595 tests must pass.
 4. **PR**: `/create-pr` creates a branch, commits, pushes, and opens a PR with summary.
 5. **Add skills**: Create `.claude/commands/your-skill.md` + `.claude/skills/your-skill/SKILL.md`, add to `tests/test_skills.py`.
 

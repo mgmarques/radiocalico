@@ -15,7 +15,8 @@ E2E_BASE_URL ?= http://127.0.0.1:5050
         lint lint-py lint-js lint-css lint-html fix-py \
         security security-all bandit safety audit-npm hadolint trivy zap \
         test-integration test-skills test-browser test-e2e docker-e2e \
-        docker-dev docker-prod docker-down docker-build docker-test docker-security
+        docker-dev docker-prod docker-down docker-build docker-test docker-security \
+        generate-sbom
 
 ## Install all dependencies (prod + dev)
 install:
@@ -127,6 +128,10 @@ zap:
 ## Run API integration tests (requires MySQL running)
 test-integration:
 	$(ACTIVATE) cd api && pytest test_integration.py -v
+
+## Generate SBOM.md with all Python + Node.js packages and CVE status
+generate-sbom:
+	$(ACTIVATE) pip install pip-audit -q && python scripts/generate_sbom.py
 
 ## Validate all Claude Code slash commands (structure, versions, references)
 test-skills:
