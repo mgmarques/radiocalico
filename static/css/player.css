@@ -776,7 +776,7 @@ h1, h2, h3 {
 .footer-icon {
     width: 18px;
     height: 18px;
-    fill: currentColor;
+    fill: currentcolor;
 }
 
 /* ── Dark Mode Overrides ──────────────────────────── */
