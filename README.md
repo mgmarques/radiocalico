@@ -1,17 +1,10 @@
-<p align="center">
-  <img src="RadioCalicoLogoTM.png" alt="Radio Calico Logo" width="160">
-</p>
+# Radio Calico
 
-<h1 align="center">Radio Calico</h1>
+![Radio Calico Logo](RadioCalicoLogoTM.png)
 
-<p align="center">
-  <strong>A live audio streaming web player</strong><br>
-  Ad-free, subscription-free — 48 kHz FLAC lossless or AAC Hi-Fi 211 kbps via HLS
-</p>
+A live audio streaming web player — Ad-free, subscription-free — 48 kHz FLAC lossless or AAC Hi-Fi 211 kbps via HLS
 
-<p align="center">
-  <em>Study Case: Claude Code — Building Faster with AI, from Prototype to Prod (2026)</em>
-</p>
+> Study Case: Claude Code — Building Faster with AI, from Prototype to Prod (2026)
 
 ---
 
@@ -38,65 +31,49 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 
 ### Light Mode
 
-<p align="center">
-  <img src="docs/1_LightMode.png" alt="Radio Calico Light Mode" width="525">
-</p>
+![Radio Calico Light Mode](docs/1_LightMode.png)
 
 *Light theme — Now Playing with album artwork, metadata, ratings, share buttons (WhatsApp, X, Telegram, Spotify, YouTube Music, Amazon), player bar, Recently Played with filters, and sticky footer.*
 
 ### Settings / Configurations
 
-<p align="center">
-  <img src="docs/2_Configurations.png" alt="Radio Calico Settings" width="525">
-</p>
+![Radio Calico Settings](docs/2_Configurations.png)
 
 *Settings dropdown — Light/Dark theme toggle and Stream Quality selection (FLAC Hi-Res lossless or AAC Hi-Fi).*
 
 ### Dark Mode (Default)
 
-<p align="center">
-  <img src="docs/3_DarkMode.png" alt="Radio Calico Dark Mode" width="525">
-</p>
+![Radio Calico Dark Mode](docs/3_DarkMode.png)
 
 *Dark theme — all colors adapt via CSS custom property overrides. Default theme on first visit.*
 
 ### Login / Register
 
-<p align="center">
-  <img src="docs/4_Loggin.png" alt="Radio Calico Login Drawer" width="525">
-</p>
+![Radio Calico Login Drawer](docs/4_Loggin.png)
 
 *Hamburger menu opens a slide-out drawer with Login/Register form.*
 
 ### User Profile
 
-<p align="center">
-  <img src="docs/5_Profile.png" alt="Radio Calico User Profile" width="525">
-</p>
+![Radio Calico User Profile](docs/5_Profile.png)
 
 *Logged-in view — profile with nickname, email, music genre preferences (tag-style checkboxes), and "About You" text area.*
 
 ### Feedback
 
-<p align="center">
-  <img src="docs/6_Feedback.png" alt="Radio Calico Feedback" width="350">
-</p>
+![Radio Calico Feedback](docs/6_Feedback.png)
 
 *Feedback form — submit via email (stored in DB), or post on X/Twitter or Telegram.*
 
 ### Docker Production Stack
 
-<p align="center">
-  <img src="docs/7_Docker_contanier.png" alt="Radio Calico Docker Containers" width="525">
-</p>
+![Radio Calico Docker Containers](docs/7_Docker_contanier.png)
 
 *Docker production deployment — nginx reverse proxy, gunicorn (4 workers), and MySQL 8.0 running as healthy containers.*
 
 ### CI/CD Pipeline (GitHub Actions)
 
-<p align="center">
-  <img src="docs/8_CiCD.png" alt="Radio Calico CI/CD Pipeline" width="525">
-</p>
+![Radio Calico CI/CD Pipeline](docs/8_CiCD.png)
 
 *GitHub Actions workflow — 13 parallel jobs: lint, unit tests (Python + JS), integration tests, E2E tests, browser tests, skills validation, and 6 security scans (Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP).*
 
@@ -360,7 +337,7 @@ source venv/bin/activate
 python app.py
 ```
 
-Open **http://127.0.0.1:5000** in your browser. For Docker: open **http://127.0.0.1:5050** instead.
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser. For Docker: open [http://127.0.0.1:5050](http://127.0.0.1:5050) instead.
 
 > **Note**: Flask serves both the frontend and API from port 5000. When running via Docker, the app is on port 5050 (configurable via `APP_PORT`). Debug mode defaults to off; set `FLASK_DEBUG=true` in your `.env` to enable it.
 
@@ -395,7 +372,7 @@ make docker-test
 ```
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `make docker-dev` | Start dev environment (Flask debug + hot reload) |
 | `make docker-prod` | Start production (nginx + gunicorn, detached) |
 | `make docker-down` | Stop all containers, remove volumes |
@@ -481,7 +458,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 **582 total tests** across 6 suites:
 
 | Suite | Tests | Tool | Coverage |
-|-------|-------|------|----------|
+| --- | --- | --- | --- |
 | Python unit | 61 | pytest + pytest-cov | 95% |
 | Python integration | 19 | pytest | Multi-step API workflows |
 | JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
@@ -553,7 +530,7 @@ graph LR
 ```
 
 | Job | What it does |
-|-----|-------------|
+| --- | --- |
 | `python-tests` | pytest + coverage (95% threshold) with MySQL service |
 | `js-tests` | Jest + coverage (90% lines threshold) |
 | `browser-tests` | Selenium + headless Chrome against Docker prod stack |
@@ -567,7 +544,7 @@ graph LR
 ### Security scanning
 
 | Tool | Type | What it scans | Makefile target |
-|------|------|---------------|-----------------|
+| --- | --- | --- | --- |
 | **Bandit** | SAST | Python code (`app.py`) for security issues | `make bandit` |
 | **Safety** | Dependency | Python `requirements.txt` for known CVEs | `make safety` |
 | **npm audit** | Dependency | Node.js `package.json` for known CVEs | `make audit-npm` |
@@ -576,6 +553,7 @@ graph LR
 | **OWASP ZAP** | DAST | Running app for web vulnerabilities (baseline scan) | `make zap` |
 
 Quick commands:
+
 - `make security` — core scans (Bandit + Safety + npm audit)
 - `make security-all` — all scans including Docker and DAST
 - `make docker-security` — Docker-specific (Hadolint + Trivy)
@@ -743,7 +721,7 @@ erDiagram
 Detailed project documentation is available in the [`docs/`](docs/) directory:
 
 | Document | Description |
-|----------|-------------|
+| --- | --- |
 | [Architecture Diagrams](docs/architecture.md) | 8 Mermaid diagrams: system architecture, request flow, data flow (playback & user interactions), event-driven architecture, CI/CD pipeline, database schema, and authentication flow. Visual reference for how all components connect across the Docker production stack. |
 | [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (582 tests across 6 suites), security measures, and performance optimizations. |
 | [Requirements](docs/requirements.md) | 91 requirements: 53 functional (FR-1xx to FR-8xx covering streaming, metadata, ratings, auth, profiles, feedback, sharing, and theme) and 38 non-functional (NFR-1xx to NFR-6xx covering performance, security, reliability, observability, maintainability, and compatibility). Includes traceability matrix linking each requirement to its implementation and tests. |
@@ -799,10 +777,10 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
         └── SKILL.md        # Same content as command
 ```
 
-### Key Features
+### Claude Code Features
 
 | Feature | What it does |
-|---------|-------------|
+| --- | --- |
 | **CLAUDE.md** (128 lines) | Project overview, endpoints, conventions — loaded every session |
 | **`.claude/rules/`** | Detailed domain knowledge — loaded only when relevant |
 | **`.claude/settings.json`** | Auto-approves safe commands (make, git, docker), blocks destructive ops |
@@ -860,6 +838,4 @@ This project is a study case for demonstrating AI-assisted software development 
 
 ---
 
-<p align="center">
-  Built with <a href="https://claude.ai/claude-code">Claude Code</a> by Anthropic
-</p>
+Built with [Claude Code](https://claude.ai/claude-code) by Anthropic
