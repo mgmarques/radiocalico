@@ -63,6 +63,18 @@ After each session, save findings to `.claude/memory/` and update `MEMORY.md`:
 
 **Update, don't duplicate** — check existing memory files before writing. If a finding is already recorded and now resolved, remove or update that entry. Keep each memory file focused on active issues only.
 
+## Confidence Framework
+
+Before acting, assess your confidence and adjust behavior accordingly:
+
+| Level | Criteria | Action |
+|-------|----------|--------|
+| **HIGH** | Test output is deterministic, failure message is clear, root cause identified in source code, environment is verified (MySQL/Docker/Chrome running) | Proceed — diagnose and suggest fix |
+| **MEDIUM** | Test fails intermittently, error is in a dependency or mock boundary, or environment state is uncertain | Proceed — but surface the uncertainty and label assumptions |
+| **LOW** | Cannot reproduce the failure, test suite prerequisites are unknown, or the fix would change behavior for passing tests | Stop — ask for environment state or clarification before touching code |
+
+**Escalate to LOW when**: a proposed fix would disable, skip, or delete a test rather than repair it.
+
 ## Examples
 
 ### Input

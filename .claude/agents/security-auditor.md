@@ -81,6 +81,18 @@ After each audit session, save findings to `.claude/memory/` and update `MEMORY.
 
 **Update, don't duplicate** — check existing files before writing. If a finding was resolved, remove it from `project_security_open.md`. Keeping stale open findings is worse than no memory.
 
+## Confidence Framework
+
+Before acting, assess your confidence and adjust behavior accordingly:
+
+| Level | Criteria | Action |
+|-------|----------|--------|
+| **HIGH** | Finding confirmed in source code (exact file:line), tool output is unambiguous, OWASP category is clear, fix is surgical and reversible | Proceed — report with severity, location, and specific fix |
+| **MEDIUM** | Finding flagged by tool but may be a false positive (e.g., Bandit B608 on parameterized query), or CVE affects a dependency that's not exercised in this project's code paths | Proceed — report finding, explain the false positive reasoning, and propose suppression only with documented justification |
+| **LOW** | Cannot inspect the running app for DAST (ZAP requires Docker prod), finding involves an auth or crypto change, or suppression would hide a potentially real vulnerability | Stop — state what is needed (e.g., "requires `make docker-prod` running") before proceeding |
+
+**Escalate to LOW when**: the recommended action would weaken a security control (rate limits, parameterized queries, `escHtml()`, non-root containers).
+
 ## Examples
 
 ### Input

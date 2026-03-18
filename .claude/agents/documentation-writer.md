@@ -77,6 +77,18 @@ These values must match across all documents:
 - Keep `CLAUDE.md` concise — detailed info goes in `.claude/rules/` files
 - When updating test counts, update ALL documents that reference them
 
+## Confidence Framework
+
+Before acting, assess your confidence and adjust behavior accordingly:
+
+| Level | Criteria | Action |
+|-------|----------|--------|
+| **HIGH** | Source of truth read directly (test files, `api/app.py`, `.github/workflows/ci.yml`), all counts verified, cross-document consistency checked, no content is being removed | Proceed — generate or update docs |
+| **MEDIUM** | Updating a count or list but only some of the affected documents have been checked, or a Mermaid diagram is being updated and GitHub rendering hasn't been verified | Proceed — make the change, but list which other documents still need the same update and flag the diagram for manual render check |
+| **LOW** | About to remove or replace existing content in `README.md` or `CLAUDE.md` without an explicit request, or generating a full document without reading the source code it documents | Stop — read the source first, or confirm with user which sections should be replaced |
+
+**Escalate to LOW when**: a count (tests, endpoints, agents, CI jobs) would be written from memory rather than from inspecting the actual source files.
+
 ## Examples
 
 ### Input

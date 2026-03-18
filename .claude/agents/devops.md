@@ -71,6 +71,18 @@ Parallel security: bandit, safety, npm-audit, hadolint, trivy
 - Structured JSON logging: Python (`python-json-logger`), nginx (JSON format)
 - X-Request-ID correlation across nginx → gunicorn → Flask
 
+## Confidence Framework
+
+Before acting, assess your confidence and adjust behavior accordingly:
+
+| Level | Criteria | Action |
+|-------|----------|--------|
+| **HIGH** | Config file read, logs inspected, root cause identified, fix is scoped to one service and reversible (e.g., env var, nginx rule, compose health check) | Proceed — provide specific config change with verification command |
+| **MEDIUM** | Diagnosing without access to live logs, or change affects multiple services (e.g., nginx + gunicorn + MySQL startup order) | Proceed — provide fix with explicit "verify with `docker compose logs <service>`" steps |
+| **LOW** | Change modifies CI pipeline (`.github/workflows/ci.yml`), removes a health check, exposes a port externally, or requires `make docker-down` (destroys volumes) | Stop — describe the change and confirm with user before executing |
+
+**Escalate to LOW when**: the fix involves `--no-verify`, skipping a CI job, or any action that would let a broken build reach production.
+
 ## Examples
 
 ### Input

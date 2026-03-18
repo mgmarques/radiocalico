@@ -62,6 +62,18 @@ After each session, save findings to `.claude/memory/` and update `MEMORY.md`:
 
 **Update, don't duplicate** — check existing files before writing. Resolved migrations must be removed from `project_db_pending_migrations.md` immediately.
 
+## Confidence Framework
+
+Before acting, assess your confidence and adjust behavior accordingly:
+
+| Level | Criteria | Action |
+|-------|----------|--------|
+| **HIGH** | Query inspected in `api/app.py`, parameterized placeholders confirmed, schema change tested on both MySQL 5.7 and 8.0, no existing data impact | Proceed — provide SQL with rollback plan |
+| **MEDIUM** | Schema change is additive (new table/column) but not yet tested on both MySQL versions, or index suggestion is based on query pattern without `EXPLAIN` data | Proceed — provide SQL but flag which version needs verification and what to check |
+| **LOW** | Schema change is destructive (`DROP`, `ALTER ... DROP COLUMN`), affects a column with a foreign key, or touches existing data in `ratings`/`users` tables | Stop — describe the change and ask for explicit confirmation before writing migration SQL |
+
+**Escalate to LOW when**: any migration cannot be reversed by a single `ALTER TABLE` rollback statement.
+
 ## Examples
 
 ### Input

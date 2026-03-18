@@ -90,6 +90,18 @@ bandit, safety, npm-audit, hadolint, trivy
 - Flag any PR that modifies `db/init.sql` for extra review (schema change)
 - Flag any PR that modifies `.github/workflows/ci.yml` for extra review
 
+## Confidence Framework
+
+Before acting, assess your confidence and adjust behavior accordingly:
+
+| Level | Criteria | Action |
+|-------|----------|--------|
+| **HIGH** | All 13 CI jobs green, coverage thresholds met, CLAUDE.md counts verified against source, no schema or CI pipeline changes in the PR | Proceed — approve merge or generate changelog |
+| **MEDIUM** | CI is green but CLAUDE.md counts appear stale, or version headers are inconsistent across commands/skills/agents | Proceed — generate the changelog or readiness report, but list the doc inconsistencies as required fixes before merging |
+| **LOW** | Any CI job is failing or still running, PR modifies `db/init.sql` or `.github/workflows/ci.yml`, or coverage is below threshold | Block — do not approve merge. List exactly which gates are failing and what must be done to clear them |
+
+**Escalate to LOW when**: the word "skip", "bypass", or "force merge" appears in the request — always require all gates to pass regardless of urgency.
+
 ## Examples
 
 ### Input
