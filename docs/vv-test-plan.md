@@ -1,12 +1,37 @@
+<table><tr>
+<td valign="middle">
+
 # Radio Calico - Verification & Validation Test Plan
 
-| Field         | Value                      |
-|---------------|----------------------------|
-| **Project**   | Radio Calico               |
-| **Version**   | 1.0.0                      |
-| **Date**      | 2026-03-17                 |
-| **Status**    | Draft                      |
-| **Author**    | QA Team                    |
+| Field | Value |
+| --- | --- |
+| **Project** | Radio Calico |
+| **Version** | 1.0.0 |
+| **Date** | 2026-03-17 |
+| **Status** | Draft |
+| **Author** | QA Team |
+
+</td>
+<td valign="middle" width="20%" align="right"><img src="../RadioCalicoLogoTM.png" alt="Radio Calico Logo" width="100%"></td>
+</tr></table>
+
+---
+
+## Table of Contents
+
+1. [Test Plan Overview](#1-test-plan-overview)
+2. [Test Cases - Audio Streaming](#2-test-cases---audio-streaming)
+3. [Test Cases - Track Metadata](#3-test-cases---track-metadata)
+4. [Test Cases - Ratings](#4-test-cases---ratings)
+5. [Test Cases - Authentication](#5-test-cases---authentication)
+6. [Test Cases - User Profile](#6-test-cases---user-profile)
+7. [Test Cases - Feedback](#7-test-cases---feedback)
+8. [Test Cases - Social Sharing](#8-test-cases---social-sharing)
+9. [Test Cases - Theme & Settings](#9-test-cases---theme--settings)
+10. [Test Cases - Non-Functional](#10-test-cases---non-functional)
+11. [Automated Test Coverage Matrix](#11-automated-test-coverage-matrix)
+12. [Manual Test Procedures](#12-manual-test-procedures)
+13. [Test Execution Summary](#13-test-execution-summary)
 
 ---
 

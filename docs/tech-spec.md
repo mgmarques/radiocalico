@@ -1,10 +1,18 @@
-# Radio Calico -- Technical Specification
+<table><tr>
+<td valign="middle">
 
-| Field   | Value          |
-|---------|----------------|
-| Version | 1.0.0          |
-| Date    | 2026-03-17     |
-| Status  | Living document |
+# Radio Calico — Technical Specification
+
+| Field | Value |
+| --- | --- |
+| **Project** | Radio Calico |
+| **Version** | 1.0.0 |
+| **Date** | 2026-03-17 |
+| **Status** | Living document |
+
+</td>
+<td valign="middle" width="20%" align="right"><img src="../RadioCalicoLogoTM.png" alt="Radio Calico Logo" width="100%"></td>
+</tr></table>
 
 ---
 

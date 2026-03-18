@@ -1,11 +1,28 @@
+<table><tr>
+<td valign="middle">
+
 # Radio Calico - Requirements Documentation
 
-| Field         | Value                      |
-|---------------|----------------------------|
-| **Project**   | Radio Calico               |
-| **Version**   | 1.0.0                      |
-| **Date**      | 2026-03-17                 |
-| **Status**    | Approved                   |
+| Field | Value |
+| --- | --- |
+| **Project** | Radio Calico |
+| **Version** | 1.0.0 |
+| **Date** | 2026-03-17 |
+| **Status** | Approved |
+
+</td>
+<td valign="middle" width="20%" align="right"><img src="../RadioCalicoLogoTM.png" alt="Radio Calico Logo" width="100%"></td>
+</tr></table>
+
+---
+
+## Table of Contents
+
+1. [Purpose & Scope](#1-purpose--scope)
+2. [Stakeholders](#2-stakeholders)
+3. [Functional Requirements](#3-functional-requirements)
+4. [Non-Functional Requirements](#4-non-functional-requirements)
+5. [Traceability Matrix](#5-traceability-matrix)
 
 ---
 
