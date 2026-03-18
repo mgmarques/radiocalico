@@ -38,8 +38,9 @@ Start Docker prod with `make docker-prod` before E2E and browser tests.
 2. **Run all suites** — `make test`, `make test-integration`, `make test-skills`, then `make test-e2e` and `make test-browser` if Docker is available
 3. **Collect results** — parse passed/failed counts per suite; list any failing tests by name
 4. **Read current section 13** — open `docs/vv-test-plan.md`, read the summary table
-5. **Fill results** — for each TC: set `Executed By` (Jest / pytest / Selenium / etc.), `Date` (today), `Status` (Pass / Fail / Not Executed for manual)
-6. **Update run summary line** — update "N automated tests … N Pass, N Fail" header line above the table
+5. **Fill results** — for each TC: set `Executed By` (Jest / pytest / Selenium / etc.), `Date` (today), `Status` using the standard emoji+bold format:
+   - `✅ **Approved**` — tests passed &nbsp; `❌ **Rejected**` — tests failed &nbsp; `🚧 **Blocked**` — environment unavailable &nbsp; `🔕 **Ignored**` — skipped by design &nbsp; `⬛ **Not Executed**` — manual-only
+6. **Update run summary line** — update "N automated tests … N ✅ Approved, N ❌ Rejected" header line above the table
 7. **Save** — write the updated section 13 back to the file
 
 ### Task B — Detect New Tests Without TC Entries
@@ -72,12 +73,12 @@ Start Docker prod with `make docker-prod` before E2E and browser tests.
 
 - Always run tests before updating section 13 — never invent results from memory
 - Use today's actual date in the `Date` column, not a hardcoded date
-- Manual-only TCs (TC-102, TC-106, TC-902) always remain `Not Executed` unless the user confirms they ran them
+- Manual-only TCs (TC-102, TC-106, TC-902) always remain `⬛ **Not Executed**` unless the user confirms they ran them
 - When adding a new TC, assign the next sequential ID in the appropriate range (e.g., TC-109 if TC-108 is the last audio streaming TC)
 - Table separator must use `| --- |` style (not `|---|`) to pass MD060 lint
 - After any edit, update the "N automated tests" summary line to reflect the new counts
 - Do NOT add TCs for internal implementation details — only for user-facing behaviors
-- If E2E / browser tests cannot run (Docker unavailable), record status as `Blocked` with note "Docker prod unavailable"
+- If E2E / browser tests cannot run (Docker unavailable), record status as `🚧 **Blocked**` with note "Docker prod unavailable"
 
 ## Glossary
 
@@ -119,7 +120,7 @@ Before acting, assess your confidence and adjust behavior accordingly:
 | Level | Criteria | Action |
 |-------|----------|--------|
 | **HIGH** | All required test suites ran successfully, pass/fail counts are clear, TC-to-test mapping is unambiguous, today's date is used | Proceed — fill section 13 and update coverage matrix |
-| **MEDIUM** | Some suites couldn't run (e.g., Docker unavailable), or a new test's TC mapping is uncertain | Proceed — fill what's known, mark blocked suites as `Blocked`, flag uncertain mappings |
+| **MEDIUM** | Some suites couldn't run (e.g., Docker unavailable), or a new test's TC mapping is uncertain | Proceed — fill what's known, mark blocked suites as `🚧 **Blocked**`, flag uncertain mappings |
 | **LOW** | Cannot run any tests due to environment issues, or a proposed new TC would conflict with an existing one | Stop — report environment status and ask user to confirm before editing the plan |
 
 **Escalate to LOW when**: about to overwrite existing Pass entries with new results without having actually run the tests.
@@ -139,7 +140,7 @@ Running all suites:
 6. `make test-browser` → 37 Pass
 7. `make test-skills` → 284 Pass
 
-**Result**: 582 / 582 Pass. Updated section 13 date to 2026-03-18. TC-102, TC-106, TC-902 remain Not Executed (manual-only). Summary line updated to "582 Pass, 0 Fail".
+**Result**: 582 / 582 ✅ Approved. Updated section 13 date to 2026-03-18. TC-102, TC-106, TC-902 remain ⬛ **Not Executed** (manual-only). Summary line updated to "582 ✅ Approved, 0 ❌ Rejected".
 
 ### Input
 I added a new `escapeHtml` test in `player.test.js`. Does it need a TC?

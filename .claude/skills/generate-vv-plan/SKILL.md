@@ -147,9 +147,13 @@ Create/update `docs/vv-test-plan.md` with a complete V&V test plan written from 
     - Columns: TC ID | Category | Test Type | Executed By | Date | Status | Notes
     - **Test Type** values: JS Unit · Python Unit · Integration · E2E · Browser · Skills · Manual (or combinations with `+`)
     - **Executed By**: the test framework (Jest, pytest, Selenium, etc.)
-    - **Status**: Pass (automated passed) | Not Executed (manual-only) | Blocked (environment unavailable)
-    - Manual-only TCs (TC-102, TC-106, TC-902) always remain `Not Executed`
-    - Add a summary line above the table: "N automated tests across N suites — N Pass, N Fail"
+    - **Status** (emoji + bold in each table cell):
+      - `✅ **Approved**` — tests passed (dark green) &nbsp;&nbsp; `❌ **Rejected**` — tests failed (dark red)
+      - `🚧 **Blocked**` — environment unavailable (dark yellow) &nbsp;&nbsp; `🔕 **Ignored**` — skipped by design (dark gray)
+      - `⬛ **Not Executed**` — manual-only, not yet run (dark black)
+    - Add a **Status legend** line above the table using `&nbsp;` spacers between entries
+    - Manual-only TCs (TC-102, TC-106, TC-902) always use `⬛ **Not Executed**`
+    - Add a summary line above the table: "N automated tests across N suites — N ✅ Approved, N ❌ Rejected"
     - Table separator must use `| --- |` style (not `|---|`)
 
 ### Steps
