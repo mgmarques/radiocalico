@@ -7,9 +7,32 @@ Create/update `docs/tech-spec.md` with a comprehensive technical specification.
 
 ### Specification layout
 
-1. **Title & Metadata**
-   - Project name, version (from VERSION file), date, authors
-   - Status: Production / Draft / Deprecated
+1. **Title & Metadata** — use this exact header layout (logo right, version table left, vertically centered). Read version from `VERSION` file; set date to today:
+
+   ```html
+   <table><tr>
+   <td valign="middle">
+
+   # Radio Calico — Technical Specification
+
+   | Field | Value |
+   | --- | --- |
+   | **Project** | Radio Calico |
+   | **Version** | 1.0.0 |
+   | **Date** | YYYY-MM-DD |
+   | **Status** | Living document |
+
+   </td>
+   <td valign="middle" width="20%" align="right"><img src="../RadioCalicoLogoTM.png" alt="Radio Calico Logo" width="100%"></td>
+   </tr></table>
+
+   ---
+
+   ## Table of Contents
+   ...
+
+   ---
+   ```
 
 2. **Executive Summary**
    - One paragraph describing what the system does and who it serves

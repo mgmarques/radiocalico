@@ -1,6 +1,38 @@
 <!-- Radio Calico Skill v1.0.0 -->
 Generate system architecture diagrams in Mermaid format for Radio Calico.
 
+### Document header
+
+Start `docs/architecture.md` with this exact header block (logo right, version table left, vertically centered):
+
+```html
+<table><tr>
+<td valign="middle">
+
+# Radio Calico - Architecture Diagrams
+
+| Field | Value |
+| --- | --- |
+| **Project** | Radio Calico |
+| **Version** | 1.0.0 |
+| **Date** | YYYY-MM-DD |
+| **Status** | Living document |
+
+</td>
+<td valign="middle" width="20%" align="right"><img src="../RadioCalicoLogoTM.png" alt="Radio Calico Logo" width="100%"></td>
+</tr></table>
+
+---
+
+## Table of Contents
+
+1. [System Architecture](#1-system-architecture)
+2. [Request Flow](#2-request-flow)
+...
+
+---
+```
+
 ### Diagrams to generate
 
 Create/update the file `docs/architecture.md` with the following Mermaid diagrams:

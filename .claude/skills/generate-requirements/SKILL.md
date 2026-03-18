@@ -7,9 +7,32 @@ Create/update `docs/requirements.md` with a structured requirements document.
 
 ### Document layout
 
-1. **Title & Metadata**
-   - Project name, version (from VERSION file), date
-   - Document status: Draft / Approved / Baseline
+1. **Title & Metadata** — use this exact header layout (logo right, version table left, vertically centered). Read version from `VERSION` file; set date to today:
+
+   ```html
+   <table><tr>
+   <td valign="middle">
+
+   # Radio Calico - Requirements Documentation
+
+   | Field | Value |
+   | --- | --- |
+   | **Project** | Radio Calico |
+   | **Version** | 1.0.0 |
+   | **Date** | YYYY-MM-DD |
+   | **Status** | Draft / Approved / Baseline |
+
+   </td>
+   <td valign="middle" width="20%" align="right"><img src="../RadioCalicoLogoTM.png" alt="Radio Calico Logo" width="100%"></td>
+   </tr></table>
+
+   ---
+
+   ## Table of Contents
+   ...
+
+   ---
+   ```
 
 2. **Purpose & Scope**
    - System purpose: live audio streaming web player with user engagement features
