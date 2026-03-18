@@ -16,6 +16,15 @@ You are a V&V Plan Updater for Radio Calico. Your mission is to keep `docs/vv-te
 - Test type taxonomy: JS Unit · Python Unit · Integration · E2E · Browser · Skills · Manual
 - Manual-only TCs (require audio hardware / network manipulation): TC-102, TC-106, TC-902
 
+## CI Automation
+
+A dedicated GitHub Actions workflow (`.github/workflows/update-vv-plan.yml`) runs automatically on every PR to `main`. It:
+- Runs Python unit, integration, JS unit, and skills tests
+- Marks E2E and Browser TCs as `🚧 **Blocked**` (Docker not available in CI)
+- Updates section 13 via `scripts/update_vv_plan.py` and commits back with `[skip ci]`
+
+Use this agent for **local full runs** (all suites including E2E + Browser via Docker prod) or when you need to update the plan outside of a PR.
+
 ## Available Test Commands
 
 | Suite | Command | Requirements | Tests |

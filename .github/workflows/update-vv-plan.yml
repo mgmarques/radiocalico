@@ -1,0 +1,140 @@
+name: Update V&V Plan
+
+# Runs on every PR to main. Executes the four fast test suites (Python unit,
+# integration, JS unit, skills), updates section 13 of docs/vv-test-plan.md
+# with real pass/fail results, then commits the file back to the PR branch.
+#
+# E2E and Browser tests require a running Docker prod stack and are not
+# available in this environment — those TCs are marked 🚧 Blocked.
+#
+# The bot commit uses [skip ci] to prevent an infinite trigger loop.
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  update-vv-plan:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # needed to commit back to the PR branch
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testroot
+          MYSQL_DATABASE: radiocalico_test
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      # ── Checkout the PR branch (not the merge commit) so we can push back ──
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Python dependencies
+        run: pip install -r api/requirements.txt -r api/requirements-dev.txt
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      # ── Run Python unit tests ──────────────────────────────────────────────
+      - name: Python unit tests
+        id: python_unit
+        working-directory: api
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: testuser
+          DB_PASSWORD: testpass
+          DB_NAME: radiocalico_test
+        run: |
+          if pytest test_app.py -q --tb=no; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+        continue-on-error: true
+
+      # ── Run Python integration tests ───────────────────────────────────────
+      - name: Python integration tests
+        id: integration
+        working-directory: api
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: testuser
+          DB_PASSWORD: testpass
+          DB_NAME: radiocalico_test
+        run: |
+          if pytest test_integration.py -q --tb=no; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+        continue-on-error: true
+
+      # ── Run JavaScript unit tests ──────────────────────────────────────────
+      - name: JavaScript unit tests
+        id: js
+        run: |
+          if npx jest --no-coverage --silent; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+        continue-on-error: true
+
+      # ── Run Skills / agents validation tests ──────────────────────────────
+      - name: Skills and agents tests
+        id: skills
+        run: |
+          if pytest tests/test_skills.py -q --tb=no; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+        continue-on-error: true
+
+      # ── Update section 13 of the V&V plan ─────────────────────────────────
+      - name: Update V&V plan execution summary
+        run: |
+          python scripts/update_vv_plan.py \
+            --python-unit=${{ steps.python_unit.outputs.result }} \
+            --integration=${{ steps.integration.outputs.result }} \
+            --js=${{ steps.js.outputs.result }} \
+            --skills=${{ steps.skills.outputs.result }} \
+            --e2e=blocked \
+            --browser=blocked
+
+      # ── Commit the updated file back to the PR branch ─────────────────────
+      - name: Commit updated V&V plan
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet docs/vv-test-plan.md; then
+            echo "No changes — V&V plan already up to date."
+          else
+            git add docs/vv-test-plan.md
+            git commit -m "chore: update V&V plan execution summary [skip ci]"
+            git push
+          fi
