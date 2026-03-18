@@ -91,109 +91,135 @@ High-level overview of all components and how they connect in the Docker product
 
 ```mermaid
 graph TD
-    Browser["Browser<br/>(HLS.js + player.js)"]
+    Browser["🌐 Client Browser\n(player.js · HLS.js · CSS)"]
 
-    subgraph CloudFront["AWS CloudFront CDN"]
-        HLS["HLS Stream<br/>live.m3u8<br/>(FLAC + AAC)"]
-        Meta["Metadata JSON<br/>metadatav2.json"]
+    subgraph CDN["☁️ CloudFront CDN"]
+        HLS["HLS Stream\nlive.m3u8\n(FLAC / AAC)"]
+        Meta["metadatav2.json\n(current + 5 prev tracks)"]
     end
 
-    subgraph Docker["Docker Production Stack"]
-        nginx["nginx:alpine<br/>:80"]
-        gunicorn["gunicorn + Flask<br/>:5000 (internal)"]
-        MySQL["MySQL 8.0<br/>:3306 (internal)"]
+    subgraph Docker["🐳 Docker (prod: :5050 | dev: :5050)"]
+        nginx["nginx\n(reverse proxy + static files)"]
+        gunicorn["gunicorn\n(4 workers · Flask API :5000)"]
+        mysql["MySQL 8.0\n(ratings · users · profiles · feedback)"]
     end
 
-    iTunes["iTunes Search API<br/>Artwork + Duration"]
-    GoogleFonts["Google Fonts<br/>Montserrat + Open Sans"]
+    subgraph External["🔌 External APIs"]
+        iTunes["iTunes Search API\n(artwork · duration)"]
+        Fonts["Google Fonts\n(Montserrat · Open Sans)"]
+    end
 
-    Browser -- "HLS stream (FLAC/AAC)" --> HLS
-    Browser -- "GET metadatav2.json" --> Meta
-    Browser -- "Static files (HTML/CSS/JS)" --> nginx
-    Browser -- "/api/* requests" --> nginx
-    Browser -- "Song search (artwork, duration)" --> iTunes
-    Browser -- "Font loading" --> GoogleFonts
-
-    nginx -- "Serves static files" --> nginx
-    nginx -- "proxy_pass /api/" --> gunicorn
-    gunicorn -- "PyMySQL queries" --> MySQL
-
-    style Browser fill:#D8F2D5,stroke:#1F4E23,color:#231F20
-    style nginx fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
-    style gunicorn fill:#1F4E23,stroke:#231F20,color:#FFFFFF
-    style MySQL fill:#EFA63C,stroke:#231F20,color:#231F20
-    style HLS fill:#f5f5f5,stroke:#38A29D,color:#231F20
-    style Meta fill:#f5f5f5,stroke:#38A29D,color:#231F20
-    style iTunes fill:#f5f5f5,stroke:#999,color:#231F20
-    style GoogleFonts fill:#f5f5f5,stroke:#999,color:#231F20
+    Browser -->|"HLS segments"| HLS
+    Browser -->|"metadata poll\n(FRAG_CHANGED)"| Meta
+    Browser -->|"artwork search\n(localStorage 24h TTL)"| iTunes
+    Browser -->|"fonts"| Fonts
+    Browser -->|"static files\n(HTML · JS · CSS · images)"| nginx
+    Browser -->|"API calls\n(/api/*)"| nginx
+    nginx -->|"proxy_pass /api/"| gunicorn
+    gunicorn -->|"PyMySQL queries\n(parameterized)"| mysql
 ```
 
 ### Data Flow — Playback & Metadata
 
 ```mermaid
 graph TD
-    Load["Page Load"] --> FM["fetchMetadata()"]
-    FM --> CF["CloudFront<br/>metadatav2.json"]
-    CF --> Delay["Latency delay<br/>(hls.latency or 6s)"]
-    Delay --> UT["updateTrack(artist, title, album)"]
+    PageLoad["Page Load"]
+    FetchMeta["fetchMetadata()"]
+    FRAG["HLS.js: FRAG_CHANGED event"]
+    TriggerDebounce["triggerMetadataFetch()\n(3s debounce via METADATA_DEBOUNCE_MS)"]
+    CFJson["GET CloudFront\nmetadatav2.json"]
+    PendingKey["pendingTrackKey check\n(skip if same track)"]
+    LatencyDelay["setTimeout(\nhls.latency || 6s\n)"]
+    UpdateTrack["updateTrack(artist, title, album)"]
 
-    UT --> DOM["Update DOM<br/>(artist, title, album)"]
-    UT --> Timer["songStartTime<br/>= Date.now()"]
-    UT --> FA["fetchArtwork()"]
-    UT --> RUI["updateRatingUI()"]
-    UT --> PH["pushHistory()"]
+    FetchArtwork["fetchArtwork()"]
+    FetchCached["fetchItunesCached()\ncheck localStorage"]
+    LocalStorage["localStorage\n(24h TTL per track)"]
+    iTunesAPI["iTunes Search API\n(artwork · duration · album)"]
 
-    FA --> Cache["fetchItunesCached()<br/>(localStorage 24h TTL)"]
-    Cache --> iTunes["iTunes Search API<br/>(artwork + duration)"]
+    UpdateRating["updateRatingUI()"]
+    CheckRated["GET /api/ratings/check\n?station=Artist-Title"]
+    FetchRatings["GET /api/ratings/summary"]
 
-    Play["User clicks Play"] --> HLS["HLS.js loads stream"]
-    HLS --> Audio["Audio plays"]
-    HLS --> FC["FRAG_CHANGED event"]
-    FC --> TMF["triggerMetadataFetch()<br/>(3s debounce)"]
-    TMF --> FM
+    PushHistory["pushHistory()\n(dedup · max 20 entries)"]
+    RenderHistory["renderHistory()\n(sliced to historyLimit: 5/10/15/20)"]
+    ElapsedTimer["timeupdate event\nDate.now() - songStartTime\n(not audio.currentTime)"]
 
-    style Load fill:#D8F2D5,stroke:#1F4E23
-    style Play fill:#D8F2D5,stroke:#1F4E23
-    style UT fill:#38A29D,stroke:#1F4E23,color:#FFF
-    style Cache fill:#EFA63C,stroke:#231F20
+    PageLoad -->|"initial boot"| FetchMeta
+    FRAG --> TriggerDebounce
+    TriggerDebounce --> FetchMeta
+    FetchMeta --> CFJson
+    CFJson --> PendingKey
+    PendingKey -->|"new track"| LatencyDelay
+    LatencyDelay --> UpdateTrack
+
+    UpdateTrack --> FetchArtwork
+    FetchArtwork --> FetchCached
+    FetchCached -->|"cache hit"| UpdateTrack
+    FetchCached -->|"cache miss"| iTunesAPI
+    iTunesAPI --> LocalStorage
+    LocalStorage --> UpdateTrack
+
+    UpdateTrack --> UpdateRating
+    UpdateRating --> CheckRated
+    UpdateRating --> FetchRatings
+
+    UpdateTrack --> PushHistory
+    PushHistory --> RenderHistory
+    UpdateTrack --> ElapsedTimer
 ```
 
 ### Data Flow — Authentication & Profile
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant JS as player.js
-    participant API as Flask API
+    participant C as Client Browser
+    participant A as Flask API
     participant DB as MySQL
 
-    Note over U,DB: Register
-    U->>JS: Fill username + password, click Register
-    JS->>API: POST /api/register {username, password}
-    API->>API: PBKDF2 hash (260k iterations + random salt)
-    API->>DB: INSERT INTO users
-    DB-->>API: OK
-    API-->>JS: 201 Created
+    rect rgb(230, 245, 230)
+        Note over C,DB: Registration
+        C->>A: POST /api/register {username, password}
+        A->>A: rate limit check (5/min)
+        A->>A: hash_password() PBKDF2 260k iterations + random salt
+        A->>DB: INSERT users (username, password_hash, salt)
+        DB-->>A: OK / 409 username taken
+        A-->>C: 201 {message} / 409 error
+    end
 
-    Note over U,DB: Login
-    U->>JS: Fill credentials, submit form
-    JS->>API: POST /api/login {username, password}
-    API->>DB: SELECT password_hash, salt
-    API->>API: Verify (timing-safe hmac.compare_digest)
-    API->>DB: UPDATE users SET token = random_hex
-    API-->>JS: {token, username}
-    JS->>JS: localStorage.setItem(rc-token, rc-user)
+    rect rgb(230, 235, 250)
+        Note over C,DB: Login
+        C->>A: POST /api/login {username, password}
+        A->>A: rate limit check (5/min)
+        A->>DB: SELECT user WHERE username=?
+        DB-->>A: user row (hash, salt)
+        A->>A: verify_password() hmac.compare_digest()
+        A->>A: token = secrets.token_hex(32)
+        A->>DB: UPDATE users SET token=?
+        DB-->>A: OK
+        A-->>C: 200 {token, username}
+        C->>C: localStorage rc-token, rc-user
+    end
 
-    Note over U,DB: Profile & Feedback
-    U->>JS: Update profile fields
-    JS->>API: PUT /api/profile (Bearer token)
-    API->>DB: UPSERT profiles
-    API-->>JS: 200 OK
+    rect rgb(250, 240, 220)
+        Note over C,DB: Authenticated Requests (Profile / Feedback)
+        C->>A: GET/PUT /api/profile\nAuthorization: Bearer <token>
+        A->>A: require_auth() → get_user_from_token()
+        A->>DB: SELECT user WHERE token=?
+        DB-->>A: user row
+        A->>DB: SELECT/UPSERT profiles WHERE user_id=?
+        DB-->>A: profile data
+        A-->>C: 200 {profile} / 200 {message}
+    end
 
-    U->>JS: Submit feedback message
-    JS->>API: POST /api/feedback (Bearer token)
-    API->>DB: INSERT feedback (message + profile snapshot)
-    API-->>JS: 201 Created
+    rect rgb(250, 230, 230)
+        Note over C,DB: Logout
+        C->>A: POST /api/logout\nAuthorization: Bearer <token>
+        A->>DB: UPDATE users SET token=NULL
+        DB-->>A: OK
+        A-->>C: 200 {message}
+        C->>C: remove rc-token, rc-user from localStorage
+    end
 ```
 
 ---
@@ -400,42 +426,46 @@ Sequence diagram showing the four main request types: static file serving, API c
 
 ```mermaid
 sequenceDiagram
-    participant B as Browser
-    participant N as nginx
-    participant G as gunicorn/Flask
+    participant C as Client Browser
+    participant N as nginx :5050
+    participant G as gunicorn :5000
     participant DB as MySQL
-    participant CF as CloudFront
+    participant CF as CloudFront CDN
     participant IT as iTunes API
 
-    Note over B,N: Static File Request
-    B->>N: GET /index.html
-    N-->>B: 200 index.html (from /usr/share/nginx/html)
+    rect rgb(230, 245, 230)
+        Note over C,N: Static File Request
+        C->>N: GET /index.html (or /static/js/player.js)
+        N->>C: 200 + static file (7d cache for assets)
+    end
 
-    Note over B,N: Cached Static Asset
-    B->>N: GET /css/player.css
-    N-->>B: 200 player.css (Cache-Control: 7d, immutable)
+    rect rgb(230, 235, 250)
+        Note over C,G: API Request (e.g. POST /api/ratings)
+        C->>N: POST /api/ratings {station, score}
+        N->>G: proxy_pass + X-Forwarded-For
+        G->>DB: INSERT ratings (parameterized %s)
+        DB-->>G: OK / 409 Duplicate
+        G-->>N: 201 / 409 JSON
+        N-->>C: response + X-Request-ID
+    end
 
-    Note over B,DB: API Request (e.g., submit rating)
-    B->>N: POST /api/ratings {station, score}
-    N->>G: proxy_pass + X-Forwarded-For + X-Request-ID
-    G->>DB: INSERT INTO ratings (station, score, ip)
-    DB-->>G: OK / IntegrityError (duplicate)
-    G-->>N: 201 {"status":"ok"} / 409 {"error":"already rated"}
-    N-->>B: Response + X-Request-ID header
+    rect rgb(250, 240, 220)
+        Note over C,CF: HLS Streaming
+        C->>CF: GET /hls/live.m3u8
+        CF-->>C: master playlist (FLAC + AAC levels)
+        C->>CF: GET /hls/live*.ts (HLS segments, continuous)
+        CF-->>C: audio segments
+    end
 
-    Note over B,CF: HLS Audio Streaming
-    B->>CF: GET /hls/live.m3u8
-    CF-->>B: HLS master playlist (FLAC level 0, AAC level 1)
-    B->>CF: GET /hls/segment_NNN.ts
-    CF-->>B: Audio segment (decoded by HLS.js or native)
-
-    Note over B,CF: Metadata Fetch (on FRAG_CHANGED)
-    B->>CF: GET /metadatav2.json
-    CF-->>B: {current_artist, current_title, prev_artist_1..5, ...}
-
-    Note over B,IT: Artwork + Duration Lookup
-    B->>IT: GET /search?term=Artist+Title&entity=song&limit=1
-    IT-->>B: {artworkUrl100, trackTimeMillis, collectionName}
+    rect rgb(250, 230, 230)
+        Note over C,IT: Metadata + Artwork
+        C->>CF: GET /metadatav2.json
+        CF-->>C: {current_artist, current_title, prev_artist_1…5}
+        C->>C: check localStorage (24h TTL)
+        C->>IT: GET /search?term=Artist+Title&entity=song
+        IT-->>C: {artworkUrl100, trackTimeMillis, collectionName}
+        C->>C: cache artwork URL in localStorage
+    end
 ```
 
 ---
@@ -461,7 +491,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**582 total tests** across 6 suites:
+**589 total tests** across 6 suites:
 
 | Suite | Tests | Tool | Coverage |
 | --- | --- | --- | --- |
@@ -470,7 +500,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 | JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
 | E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
 | Browser (Selenium) | 37 | Selenium + headless Chrome | UI, themes, auth, playback |
-| Skills + Agents | 284 | pytest | 18 slash commands + 9 agents |
+| Skills + Agents | 291 | pytest | 18 slash commands + 10 agents |
 
 - **Python tests** use an isolated `radiocalico_test` database (auto-created/destroyed per test)
 - **JavaScript tests** use jsdom for DOM simulation, with mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`
@@ -484,55 +514,54 @@ GitHub Actions workflow: lint runs first, then test jobs in parallel, with secur
 
 ```mermaid
 graph LR
-    Push["Push / PR<br/>to main"] --> lint
-
-    subgraph Linting
-        lint["lint<br/>ruff + ESLint<br/>+ Stylelint + HTMLHint"]
+    subgraph Lint["🔍 Lint"]
+        lint["lint\nRuff · ESLint\nStylelint · HTMLHint"]
     end
 
-    lint --> python-tests["python-tests<br/>pytest + coverage<br/>(95% threshold)"]
-    lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
-    lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
-    lint --> skills-tests["skills-tests<br/>pytest<br/>18 commands + 9 agents"]
-
-    python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]
-    js-tests --> e2e-tests
-    integration-tests --> e2e-tests
-
-    python-tests --> browser-tests["browser-tests<br/>Selenium<br/>headless Chrome"]
-    js-tests --> browser-tests
-    integration-tests --> browser-tests
-
-    python-tests --> zap["zap<br/>OWASP ZAP<br/>DAST baseline"]
-    js-tests --> zap
-
-    subgraph "Security Scans (no dependencies)"
-        bandit["bandit<br/>Python SAST"]
-        safety["safety<br/>Python deps"]
-        npm-audit["npm-audit<br/>JS deps"]
-        hadolint["hadolint<br/>Dockerfile lint"]
-        trivy["trivy<br/>Docker image<br/>vuln scan"]
+    subgraph Tests["🧪 Tests (need: lint)"]
+        python["python-tests\n61 unit · ≥95% coverage"]
+        integration["integration-tests\n19 API chain tests"]
+        js["js-tests\n162 Jest · ≥90% lines"]
+        skills["skills-tests\n291 commands + agents"]
     end
 
-    Push --> bandit
-    Push --> safety
-    Push --> npm-audit
-    Push --> hadolint
-    Push --> trivy
+    subgraph E2E["🌐 E2E (need: python + js + integration)"]
+        e2e["e2e-tests\n19 HTTP · nginx→gunicorn→MySQL"]
+        browser["browser-tests\n37 Selenium headless Chrome"]
+    end
 
-    style lint fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
-    style python-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
-    style integration-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
-    style js-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
-    style skills-tests fill:#1F4E23,stroke:#231F20,color:#FFFFFF
-    style e2e-tests fill:#EFA63C,stroke:#231F20,color:#231F20
-    style browser-tests fill:#EFA63C,stroke:#231F20,color:#231F20
-    style zap fill:#EFA63C,stroke:#231F20,color:#231F20
-    style bandit fill:#D8F2D5,stroke:#1F4E23,color:#231F20
-    style safety fill:#D8F2D5,stroke:#1F4E23,color:#231F20
-    style npm-audit fill:#D8F2D5,stroke:#1F4E23,color:#231F20
-    style hadolint fill:#D8F2D5,stroke:#1F4E23,color:#231F20
-    style trivy fill:#D8F2D5,stroke:#1F4E23,color:#231F20
+    subgraph DAST["🛡️ DAST (need: python + js)"]
+        zap["zap\nOWASP ZAP baseline"]
+    end
+
+    subgraph Security["🔒 Security (parallel, no deps)"]
+        bandit["bandit\nPython SAST"]
+        safety["safety\nPython CVEs"]
+        npm_audit["npm-audit\nJS CVEs"]
+        hadolint["hadolint\nDockerfile"]
+        trivy["trivy\nDocker image\nHIGH/CRITICAL"]
+    end
+
+    subgraph VVPlan["📋 V&V Plan (PR only)"]
+        vv["update-vv-plan\nauto-fills section 13\n[skip ci] commit"]
+    end
+
+    lint --> python
+    lint --> integration
+    lint --> js
+    lint --> skills
+    python --> e2e
+    js --> e2e
+    integration --> e2e
+    python --> browser
+    js --> browser
+    integration --> browser
+    python --> zap
+    js --> zap
+    python -.->|"PR to main only"| vv
+    js -.->|"PR to main only"| vv
+    integration -.->|"PR to main only"| vv
+    skills -.->|"PR to main only"| vv
 ```
 
 | Job | What it does |
@@ -640,47 +669,47 @@ Entity-relationship diagram of the four MySQL tables showing relationships betwe
 
 ```mermaid
 erDiagram
-    users {
-        INT id PK "AUTO_INCREMENT"
-        VARCHAR(50) username UK "NOT NULL, UNIQUE"
-        VARCHAR(64) password_hash "NOT NULL"
-        VARCHAR(32) salt "NOT NULL"
-        VARCHAR(64) token "NULL (set on login)"
-        TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
+    RATINGS {
+        int id PK
+        varchar station
+        tinyint score
+        varchar ip
+        timestamp created_at
     }
 
-    profiles {
-        INT id PK "AUTO_INCREMENT"
-        INT user_id FK "NOT NULL, UNIQUE"
-        VARCHAR(100) nickname "DEFAULT ''"
-        VARCHAR(255) email "DEFAULT ''"
-        VARCHAR(500) genres "DEFAULT ''"
-        TEXT about "NULL"
-        TIMESTAMP updated_at "ON UPDATE CURRENT_TIMESTAMP"
+    USERS {
+        int id PK
+        varchar username
+        varchar password_hash
+        varchar salt
+        varchar token
+        timestamp created_at
     }
 
-    feedback {
-        INT id PK "AUTO_INCREMENT"
-        VARCHAR(255) email "DEFAULT ''"
-        TEXT message "NOT NULL"
-        VARCHAR(45) ip "DEFAULT ''"
-        VARCHAR(50) username "DEFAULT ''"
-        VARCHAR(100) nickname "DEFAULT ''"
-        VARCHAR(500) genres "DEFAULT ''"
-        TEXT about "NULL"
-        TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
+    PROFILES {
+        int id PK
+        int user_id FK
+        varchar nickname
+        varchar email
+        varchar genres
+        text about
+        timestamp updated_at
     }
 
-    ratings {
-        INT id PK "AUTO_INCREMENT"
-        VARCHAR(255) station "NOT NULL"
-        TINYINT score "NOT NULL (0 or 1)"
-        VARCHAR(45) ip "NOT NULL"
-        TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
+    FEEDBACK {
+        int id PK
+        varchar email
+        text message
+        varchar ip
+        varchar username
+        varchar nickname
+        varchar genres
+        text about
+        timestamp created_at
     }
 
-    users ||--o| profiles : "has (ON DELETE CASCADE)"
-    users ||--o{ feedback : "submits (denormalized snapshot)"
+    USERS ||--o| PROFILES : "has one"
+    USERS ||--o{ FEEDBACK : "submits"
 ```
 
 | DB Driver | PyMySQL | Python-MySQL connector |
@@ -732,7 +761,7 @@ Detailed project documentation is available in the [`docs/`](docs/) directory:
 | [Technical Specification](docs/tech-spec.md) | Comprehensive 13-section technical spec covering API reference (10 endpoints), deployment architecture, observability (structured JSON logging with X-Request-ID correlation), testing strategy (582 tests across 6 suites), security measures, and performance optimizations. |
 | [Requirements](docs/requirements.md) | 91 requirements: 53 functional (FR-1xx to FR-8xx covering streaming, metadata, ratings, auth, profiles, feedback, sharing, and theme) and 38 non-functional (NFR-1xx to NFR-6xx covering performance, security, reliability, observability, maintainability, and compatibility). Includes traceability matrix linking each requirement to its implementation and tests. |
 | [V&V Test Plan](docs/vv-test-plan.md) | 52 user-perspective test cases (TC-1xx to TC-9xx) with step-by-step procedures, expected results, and automated test mapping. Includes manual test procedures for audio playback, automated coverage matrix across all 6 test suites, and an execution summary template. |
-| [Skills vs Agents](docs/Skills_vs_Agents.md) | Comparison of 18 slash commands (skills) vs 9 custom agents: when to use which, current structure, and improvement roadmap. 5 roadmap items now implemented (memory, confidence framework, security checklist, keyword routing triggers, glossaries). Remaining P1–P3 items tracked. |
+| [Skills vs Agents](docs/Skills_vs_Agents.md) | Comparison of 18 slash commands (skills) vs 10 custom agents: when to use which, current structure, and improvement roadmap. 6 P0 roadmap items now implemented (memory, confidence framework, security checklist, keyword routing triggers, glossaries, V&V CI automation). Remaining P1–P3 items tracked. |
 | [MCP Servers Reference](docs/mcp_servers_reference.md) | Guide to Model Context Protocol (MCP) server integration: 4 recommended project-level servers (Docker, Sentry, Brave Search, GitHub), setup instructions for `.mcp.json`, configuration examples (stdio and http types), security best practices for API keys, and troubleshooting guide. |
 | [Design Document](design.md) | Original architecture and design document from the initial prototype phase. |
 
@@ -754,7 +783,7 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 │   ├── database.md        # MySQL schema, 4 tables, constraints
 │   ├── style-guide.md     # CSS tokens, code conventions, formats
 │   └── security-baseline.md  # S-1–S-10 non-negotiable rules, OWASP mapping
-├── agents/                # Custom agents (9 total, all v1.0.0)
+├── agents/                # Custom agents (10 total, all v1.0.0)
 │   ├── qa-engineer.md     # QA — tests, coverage, triage
 │   ├── dba.md             # DBA — MySQL, queries, schema
 │   ├── frontend-reviewer.md  # Frontend — XSS, theme, a11y
@@ -763,7 +792,8 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 │   ├── release-manager.md # Release — PRs, CI, versions
 │   ├── security-auditor.md   # Security — 6 tools, OWASP
 │   ├── performance-analyst.md # Perf — caching, CDN, optimization
-│   └── documentation-writer.md # Docs — generation, consistency
+│   ├── documentation-writer.md # Docs — generation, consistency
+│   └── vv-plan-updater.md # V&V — run tests, fill section 13, detect gaps
 ├── commands/              # Slash commands (18 total, all v1.0.0)
 │   ├── start.md           # /start — launch dev environment
 │   ├── run-ci.md          # /run-ci — lint + tests + security
@@ -793,7 +823,7 @@ This project is fully optimized for [Claude Code](https://claude.ai/claude-code)
 | **Auto-lint hook** | Runs Ruff/ESLint automatically after every file edit |
 | **Compaction reminder** | Re-injects critical rules when context gets compressed |
 | **`.claudeignore`** | Excludes node_modules, venv, coverage from context |
-| **284 skill + agent tests** | Validates 18 commands + 9 agents: structure, versions, references, consistency |
+| **291 skill + agent tests** | Validates 18 commands + 10 agents: structure, versions, references, consistency |
 
 ### Command Examples
 
@@ -818,7 +848,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
 
 1. **Clone + setup**: `make install` (or `/start` in Claude Code)
 2. **Develop**: Claude reads CLAUDE.md automatically. Use `/add-endpoint` for new routes.
-3. **Test**: `/run-ci` runs lint + coverage + security. All 582 tests must pass.
+3. **Test**: `/run-ci` runs lint + coverage + security. All 589 tests must pass.
 4. **PR**: `/create-pr` creates a branch, commits, pushes, and opens a PR with summary.
 5. **Add skills**: Create `.claude/commands/your-skill.md` + `.claude/skills/your-skill/SKILL.md`, add to `tests/test_skills.py`.
 

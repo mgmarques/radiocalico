@@ -69,7 +69,7 @@ make lint          # All linters (Ruff + ESLint + Stylelint + HTMLHint)
 make ci            # Full pipeline: lint + coverage + security
 make test-integration  # 19 API integration tests
 make test-e2e          # 19 E2E tests (Docker prod required)
-make test-skills       # 284 skill + agent validation tests
+make test-skills       # 291 skill + agent validation tests
 make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 
 # Hard refresh after static file edits: Cmd+Shift+R
@@ -80,7 +80,7 @@ make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 - **Metadata from CloudFront JSON**, not ID3 tags. ID3 parser is fallback only.
 - **DB credentials from env vars** via python-dotenv (`api/.env.example`).
 - **Debug mode off by default**, controlled by `FLASK_DEBUG`.
-- **Run `make ci` before merging**. CI runs on push/PR (12 GitHub Actions jobs).
+- **Run `make ci` before merging**. CI runs on push/PR (13 GitHub Actions jobs).
 - **iTunes API cached** in localStorage (24h TTL) via `fetchItunesCached()`.
 - **Ratings are local only** — not sent to CloudFront host.
 - **Cache issues** — hard refresh (`Cmd+Shift+R`) after editing static files.
