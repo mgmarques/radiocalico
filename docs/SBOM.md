@@ -9,15 +9,15 @@
 | Field | Value |
 | --- | --- |
 | **Project** | radiocalico |
-| **Total packages** | 98 (91 Python · 7 Node.js) |
-| **Vulnerabilities** | ⚠️ 15 detected (10 Python · 5 Node.js) |
+| **Total packages** | 88 (81 Python · 7 Node.js) |
+| **Vulnerabilities** | ⚠️ 8 detected (3 Python · 5 Node.js) |
 | **Python scanner** | `pip-audit` (GHSA / OSV database) |
 | **Node.js scanner** | `npm audit` (npm advisory database) |
 | **Scan date** | 2026-03-20 |
 
 ---
 
-## Python Packages (91)
+## Python Packages (81)
 
 Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scanner: `pip-audit`
 
@@ -26,7 +26,6 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `annotated-doc` | 0.0.4 | ✅ None |
 | `annotated-types` | 0.7.0 | ✅ None |
 | `anyio` | 4.12.1 | ✅ None |
-| `attrs` | 25.4.0 | ✅ None |
 | `Authlib` | 1.6.9 | ✅ None |
 | `bandit` | 1.9.4 | ✅ None |
 | `blinker` | 1.9.0 | ✅ None |
@@ -36,7 +35,7 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `cffi` | 2.0.0 | ✅ None |
 | `charset-normalizer` | 3.4.6 | ✅ None |
 | `click` | 8.3.1 | ✅ None |
-| `coverage` | 7.13.4 | ✅ None |
+| `coverage` | 7.13.5 | ✅ None |
 | `cryptography` | 46.0.5 | ✅ None |
 | `cyclonedx-python-lib` | 11.7.0 | ✅ None |
 | `defusedxml` | 0.7.1 | ✅ None |
@@ -63,10 +62,9 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `msgpack` | 1.1.2 | ✅ None |
 | `nltk` | 3.9.3 | ⚠️ `GHSA-rf74-v2fm-23pw`, `CVE-2026-33230` +1 more |
 | `ordered-set` | 4.1.0 | ✅ None |
-| `outcome` | 1.3.0.post0 | ✅ None |
 | `packageurl-python` | 0.17.6 | ✅ None |
 | `packaging` | 26.0 | ✅ None |
-| `pip` | 24.0 | ⚠️ `CVE-2025-8869`, `CVE-2026-1703` |
+| `pip` | 26.0.1 | ✅ None |
 | `pip-api` | 0.0.34 | ✅ None |
 | `pip-requirements-parser` | 32.0.1 | ✅ None |
 | `pip_audit` | 2.10.0 | ✅ None |
@@ -79,7 +77,6 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `Pygments` | 2.19.2 | ✅ None |
 | `PyMySQL` | 1.1.2 | ✅ None |
 | `pyparsing` | 3.3.2 | ✅ None |
-| `PySocks` | 1.7.1 | ✅ None |
 | `pytest` | 9.0.2 | ✅ None |
 | `pytest-cov` | 7.0.0 | ✅ None |
 | `python-dotenv` | 1.2.2 | ✅ None |
@@ -89,13 +86,11 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `requests` | 2.32.5 | ✅ None |
 | `rich` | 14.3.3 | ✅ None |
 | `ruamel.yaml` | 0.19.1 | ✅ None |
-| `ruff` | 0.15.6 | ✅ None |
+| `ruff` | 0.15.7 | ✅ None |
 | `safety` | 3.7.0 | ✅ None |
 | `safety-schemas` | 0.0.16 | ✅ None |
-| `selenium` | 4.41.0 | ✅ None |
-| `setuptools` | 65.5.0 | ⚠️ `PYSEC-2022-43012`, `PYSEC-2022-43012` +3 more |
+| `setuptools` | 79.0.1 | ✅ None |
 | `shellingham` | 1.5.4 | ✅ None |
-| `sniffio` | 1.3.1 | ✅ None |
 | `sortedcontainers` | 2.4.0 | ✅ None |
 | `stevedore` | 5.7.0 | ✅ None |
 | `tenacity` | 9.1.4 | ✅ None |
@@ -103,17 +98,12 @@ Source: `api/requirements.txt` + `api/requirements-dev.txt` &nbsp;·&nbsp; Scann
 | `tomli_w` | 1.2.0 | ✅ None |
 | `tomlkit` | 0.14.0 | ✅ None |
 | `tqdm` | 4.67.3 | ✅ None |
-| `trio` | 0.33.0 | ✅ None |
-| `trio-websocket` | 0.12.2 | ✅ None |
 | `typer` | 0.24.1 | ✅ None |
 | `typing-inspection` | 0.4.2 | ✅ None |
 | `typing_extensions` | 4.15.0 | ✅ None |
 | `urllib3` | 2.6.3 | ✅ None |
-| `webdriver-manager` | 4.0.2 | ✅ None |
-| `websocket-client` | 1.9.0 | ✅ None |
 | `Werkzeug` | 3.1.6 | ✅ None |
 | `wrapt` | 2.1.2 | ✅ None |
-| `wsproto` | 1.3.2 | ✅ None |
 
 ---
 
@@ -142,13 +132,6 @@ Source: `package.json` &nbsp;·&nbsp; Scanner: `npm audit`
 | `nltk` | `GHSA-rf74-v2fm-23pw` | — | 2026-03-18 | 2026-03-18 | — | [Details](https://github.com/nltk/nltk/security/advisories/GHSA-rf74-v2fm-23pw) | ### Summary `JSONTaggedDecoder.decode_obj()` in `nltk/jsontags.py` calls itself  recursively without any depth limit. A  |
 | `nltk` | `CVE-2026-33230` | — | — | — | — | — | ### Summary `nltk.app.wordnet_app` contains a reflected cross-site scripting issue in the `lookup_...` route. A crafted  |
 | `nltk` | `CVE-2026-33231` | — | — | — | — | — | ### Summary `nltk.app.wordnet_app` allows unauthenticated remote shutdown of the local WordNet Browser HTTP server when  |
-| `pip` | `CVE-2025-8869` | — | 2025-09-24 | 2026-03-14 | 25.3 | [Details](https://mail.python.org/archives/list/security-announce@python.org/thread/IF5A3GCJY3VH7BVHJKOWOJFKTW7VFQEN/) | When extracting a tar archive pip may not check symbolic links point into the extraction directory if the tarfile module |
-| `pip` | `CVE-2026-1703` | — | 2026-02-02 | 2026-03-15 | 26.0 | [Details](https://mail.python.org/archives/list/security-announce@python.org/thread/WIEA34D4TABF2UNQJAOMXKCICSPBE2DJ/) | When pip is installing and extracting a maliciously crafted wheel archive, files may be extracted outside the installati |
-| `setuptools` | `PYSEC-2022-43012` | 5.9 (Medium) | 2022-12-23 | 2023-12-06 | 65.5.1 | [Details](https://github.com/pypa/setuptools/blob/fe8a98e696241487ba6ac9f91faa38ade939ec5d/setuptools/package_index.py#L200) | Python Packaging Authority (PyPA)'s setuptools is a library designed to facilitate packaging Python projects. Setuptools |
-| `setuptools` | `PYSEC-2022-43012` | 5.9 (Medium) | 2022-12-23 | 2023-12-06 | 65.5.1 | [Details](https://github.com/pypa/setuptools/blob/fe8a98e696241487ba6ac9f91faa38ade939ec5d/setuptools/package_index.py#L200) | Python Packaging Authority (PyPA) setuptools before 65.5.1 allows remote attackers to cause a denial of service via HTML |
-| `setuptools` | `PYSEC-2025-49` | 8.8 (High) | 2025-05-17 | 2025-06-13 | 78.1.1 | [Details](https://github.com/pypa/setuptools/blob/6ead555c5fb29bc57fe6105b1bffc163f56fd558/setuptools/package_index.py#L810C1-L825C88) | ### Summary  A path traversal vulnerability in `PackageIndex` was fixed in setuptools version 78.1.1  ### Details ```    |
-| `setuptools` | `PYSEC-2025-49` | 8.8 (High) | 2025-05-17 | 2025-06-13 | 78.1.1 | [Details](https://github.com/pypa/setuptools/blob/6ead555c5fb29bc57fe6105b1bffc163f56fd558/setuptools/package_index.py#L810C1-L825C88) | setuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. A path tr |
-| `setuptools` | `CVE-2024-6345` | 8.8 (High) | 2024-07-15 | 2026-03-15 | 70.0.0 | [Details](https://huntr.com/bounties/d6362117-ad57-4e83-951f-b8141c6e7ca5) | A vulnerability in the `package_index` module of pypa/setuptools versions up to 69.1.1 allows for remote code execution  |
 
 ### Node.js
 
@@ -181,13 +164,6 @@ Source: `package.json` &nbsp;·&nbsp; Scanner: `npm audit`
 | `nltk` | `GHSA-rf74-v2fm-23pw` | ⚪ Unknown | No impact analysis available — review manually against the radiocalico codebase. |
 | `nltk` | `CVE-2026-33230` | ⚪ Unknown | No impact analysis available — review manually against the radiocalico codebase. |
 | `nltk` | `CVE-2026-33231` | ⚪ Unknown | No impact analysis available — review manually against the radiocalico codebase. |
-| `pip` | `CVE-2025-8869` | 🟢 Not Applicable | pip is only invoked during Docker image builds and local `pip install` runs. The production container (gunicorn + nginx) never calls pip. Exploitation requires supplying a maliciously crafted tar archive to the pip process during installation — not reachable through normal application traffic. |
-| `pip` | `CVE-2026-1703` | 🟢 Not Applicable | Same build-time-only scope as CVE-2025-8869. Wheel extraction happens only during `pip install`; no wheel archives are processed at runtime. Risk is limited to supply-chain compromise of a dependency during CI/CD. |
-| `setuptools` | `PYSEC-2022-43012` | 🟢 Not Applicable | setuptools is used only during package installation. The Flask application (`api/app.py`) never imports or invokes setuptools at runtime. This ReDoS/HTML-injection vuln requires feeding maliciously crafted package metadata to setuptools during `pip install` — not possible via app traffic. |
-| `setuptools` | `PYSEC-2022-43012` | 🟢 Not Applicable | setuptools is used only during package installation. The Flask application (`api/app.py`) never imports or invokes setuptools at runtime. This ReDoS/HTML-injection vuln requires feeding maliciously crafted package metadata to setuptools during `pip install` — not possible via app traffic. |
-| `setuptools` | `PYSEC-2025-49` | 🟢 Not Applicable | `PackageIndex` is the setuptools feature for downloading packages from PyPI. Radio Calico never calls PackageIndex at runtime; it is only exercised during dependency installation in CI or dev. Production containers do not run pip or setuptools after the image is built. |
-| `setuptools` | `PYSEC-2025-49` | 🟢 Not Applicable | `PackageIndex` is the setuptools feature for downloading packages from PyPI. Radio Calico never calls PackageIndex at runtime; it is only exercised during dependency installation in CI or dev. Production containers do not run pip or setuptools after the image is built. |
-| `setuptools` | `CVE-2024-6345` | 🟡 Low (build-time only) | The most severe setuptools vuln: RCE if `package_index` fetches from a compromised source. The production Flask app never invokes `package_index`, so runtime risk is zero. However, the attack surface exists during CI `pip install` if a dependency index is compromised. Recommend upgrading setuptools to ≥ 70.0.0 in the dev venv to close this gap. |
 | `@tootallnate/once` | `@tootallnate/once` | 🟢 Not Applicable | Transitive dependency of Jest (dev tooling only). Not installed in the production Docker image. No production code path touches `@tootallnate/once`. Exploitation would require control over the test environment itself. |
 | `flatted` | `flatted` | ⚪ Unknown | No impact analysis available — review manually against the radiocalico codebase. |
 | `http-proxy-agent` | `http-proxy-agent` | 🟢 Not Applicable | Transitive test dependency pulled in by Jest → jsdom → http-proxy-agent. Radio Calico does not use HTTP proxying anywhere — all external requests (CloudFront, iTunes API) use standard `fetch()` or `httpx`. Not present in the production runtime environment. |
@@ -203,8 +179,8 @@ Source: `package.json` &nbsp;·&nbsp; Scanner: `npm audit`
 | Rule | Status | Details |
 | --- | --- | --- |
 | Rejected packages in use | ✅ Pass | None found |
-| License violations | ⚠️ 18 violations | `shellingham` (ISC License), `outcome` (MIT OR Apache-2.0), `defusedxml` (PSFL), `pysocks` (BSD), `tenacity` (Apache 2.0), `python-json-logger` (BSD-2-Clause License), `sniffio` (MIT OR Apache-2.0), `nltk` (Apache License, Version 2.0), `sortedcontainers` (Apache 2.0), `tqdm` (MPL-2.0 AND MIT) ... |
-| Unfixed critical/high CVEs with available fix | ⚠️ 4 actionable | `PYSEC-2025-49` (setuptools) — fix: 78.1.1, `PYSEC-2025-49` (setuptools) — fix: 78.1.1, `CVE-2024-6345` (setuptools) — fix: 70.0.0, `flatted` (flatted) — fix: Available |
+| License violations | ⚠️ 15 violations | `shellingham` (ISC License), `nltk` (Apache License, Version 2.0), `tenacity` (Apache 2.0), `defusedxml` (PSFL), `python-json-logger` (BSD-2-Clause License), `tqdm` (MPL-2.0 AND MIT), `sortedcontainers` (Apache 2.0), `mdn-data` (CC0-1.0), `caniuse-lite` (CC-BY-4.0), `type-fest` ((MIT OR CC0-1.0)) ... |
+| Unfixed critical/high CVEs with available fix | ⚠️ 1 actionable | `flatted` (flatted) — fix: Available |
 
 ---
 
