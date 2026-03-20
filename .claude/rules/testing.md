@@ -1,6 +1,6 @@
 # Testing & CI/CD
 
-## Test Suite — 631 total tests across 6 suites
+## Test Suite — 670 total tests across 7 suites
 
 | Suite | File | Tests | Tool |
 |-------|------|-------|------|
@@ -10,6 +10,7 @@
 | E2E | `tests/test_e2e.py` | 19 | pytest + requests (Docker prod stack) |
 | Browser | `tests/test_browser.py` | 37 | Selenium + headless Chrome (Docker prod) |
 | Skills + Agents | `tests/test_skills.py` | 333 | pytest (validates 19 commands + 10 agents + 9 agent delegations) |
+| Script unit | `tests/test_generate_sbom.py` | 39 | pytest (SBOM enrichment, policy compliance, OSV cache, multi-project, DB persistence) |
 
 - Python unit tests use isolated `radiocalico_test` database (created/destroyed per test)
 - Python fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`
@@ -32,7 +33,8 @@ Parallel security: `bandit, safety, npm-audit, hadolint, trivy`
 
 | Target | Description |
 | ------ | ----------- |
-| `make test` | Run all tests (Python + JavaScript) |
+| `make test` | Run all tests (Python + JavaScript + scripts) |
+| `make test-scripts` | Script unit tests (generate_sbom ecosystem functions) |
 | `make coverage` | Python tests + coverage (fails if <95%) |
 | `make coverage-js` | JS tests + coverage (fails if <90% lines) |
 | `make lint` | Run all linters (Ruff + ESLint + Stylelint + HTMLHint) |

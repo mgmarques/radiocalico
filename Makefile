@@ -11,7 +11,7 @@ IMAGE_NAME := radiocalico-app
 ZAP_TARGET ?= http://host.docker.internal:5050
 E2E_BASE_URL ?= http://127.0.0.1:5050
 
-.PHONY: install test test-py test-js coverage coverage-js ci clean \
+.PHONY: install test test-py test-js test-scripts coverage coverage-js ci clean \
         lint lint-py lint-js lint-css lint-html fix-py \
         security security-all bandit safety audit-npm hadolint trivy zap \
         test-integration test-skills test-browser test-e2e docker-e2e \
@@ -25,8 +25,8 @@ install:
 
 ## ── Unit tests ────────────────────────────────────────────────
 
-## Run all unit tests (Python + JavaScript)
-test: test-py test-js
+## Run all unit tests (Python + JavaScript + scripts)
+test: test-py test-js test-scripts
 
 ## Run Python unit tests
 test-py:
@@ -136,6 +136,10 @@ generate-sbom:
 ## Validate all Claude Code slash commands (structure, versions, references)
 test-skills:
 	$(ACTIVATE) pytest tests/test_skills.py -v
+
+## Run script unit tests (generate_sbom, etc.)
+test-scripts:
+	$(ACTIVATE) pytest tests/test_generate_sbom.py -v
 
 ## Run Selenium browser tests (requires Docker prod + Chrome)
 test-browser:

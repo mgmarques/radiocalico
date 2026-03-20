@@ -15,7 +15,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Artwork**: iTunes Search API (client-side, cached in localStorage 24h TTL).
 - **Auth**: Token-based. PBKDF2 (260k iterations). Tokens in `localStorage`.
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
-- **Testing**: 631 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 333 skills/agents). See `.claude/rules/testing.md`.
+- **Testing**: 670 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 333 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
 - **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination.
 
@@ -149,3 +149,10 @@ Task-specific AI personalities in `.claude/agents/` with specialized knowledge a
 - **Agents**: `.claude/agents/*.md` — 10 task-specific AI agents with specialized workflows
 - **Hooks**: auto-lint Python/JS on file edit, context reminder on compaction
 - **Ignore**: `.claudeignore` — excludes node_modules, venv, coverage, caches from context
+
+## Strict Accuracy Policy
+
+- Only reference code, APIs, and patterns that are **verified to exist** in this codebase or well-known stable libraries.
+- When referencing external libraries, only use features from their **official, versioned documentation**.
+- If a solution is uncertain, say: "I'm not sure this exists — please verify."
+- Never fabricate function names, config keys, or CLI flags.
