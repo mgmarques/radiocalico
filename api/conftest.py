@@ -73,9 +73,16 @@ class MockCursor:
         table = self._extract_table_insert(sql)
         cols = self._extract_insert_cols(sql)
         row = dict(zip(cols, args, strict=False))
+        is_upsert = "ON DUPLICATE KEY UPDATE" in sql.upper()
 
-        # Check unique constraints
-        self._check_unique(table, row)
+        # Check unique constraints — on upsert, update instead of raising
+        try:
+            self._check_unique(table, row)
+        except pymysql.err.IntegrityError:
+            if is_upsert:
+                self._do_upsert(table, row)
+                return
+            raise
 
         row_id = self._db.next_id(table)
         row["id"] = row_id
@@ -84,6 +91,29 @@ class MockCursor:
             row["updated_at"] = row["created_at"]
         self._db.tables[table].append(row)
         self.lastrowid = row_id
+
+    def _do_upsert(self, table, row):
+        """Handle ON DUPLICATE KEY UPDATE by updating the matching row."""
+        for existing in self._db.tables[table]:
+            match = False
+            if table == "profiles" and existing.get("user_id") == row.get("user_id"):
+                match = True
+            elif (
+                table == "ratings"
+                and existing.get("station") == row.get("station")
+                and existing.get("ip") == row.get("ip")
+            ):
+                match = True
+            elif table == "users" and existing.get("username") == row.get("username"):
+                match = True
+            if match:
+                for k, v in row.items():
+                    if k != "id" and k != "created_at":
+                        existing[k] = v
+                if table == "profiles":
+                    existing["updated_at"] = datetime.now(tz=timezone.utc).isoformat()
+                self.lastrowid = existing.get("id", 0)
+                return
 
     def _check_unique(self, table, row):
         """Raise IntegrityError on duplicate unique key violations."""

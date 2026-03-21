@@ -26,6 +26,28 @@ logger = logging.getLogger("radiocalico.llm")
 CACHE_DIR = Path(os.environ.get("LLM_CACHE_DIR", "/tmp/radiocalico-llm-cache"))
 CACHE_TTL_SECONDS = int(os.environ.get("LLM_CACHE_TTL", 86400))  # 24 h
 
+
+def _cleanup_expired_cache():
+    """Remove expired cache files on startup to prevent filesystem bloat."""
+    if not CACHE_DIR.exists():
+        return
+    now = time.time()
+    removed = 0
+    for f in CACHE_DIR.glob("*.json"):
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+            if now - data.get("ts", 0) > CACHE_TTL_SECONDS:
+                f.unlink(missing_ok=True)
+                removed += 1
+        except Exception:
+            f.unlink(missing_ok=True)
+            removed += 1
+    if removed:
+        logger.info("cache_cleanup", extra={"removed": removed})
+
+
+_cleanup_expired_cache()
+
 # ── LLM generation parameters ────────────────────────────────────────────────
 _MAX_TOKENS = 800  # keep responses concise and fast
 _TEMPERATURE = 0.5  # lower = faster + more focused

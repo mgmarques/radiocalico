@@ -323,6 +323,8 @@ describe('getFilteredHistory', () => {
         player.prevFilter = 'all';
         player.historyLimit = 5;
         player.lastSummary = {};
+        // Reset ratings cache so each test gets fresh data
+        if (player.renderHistory) player.renderHistory._cacheTime = 0;
     });
 
     test('returns empty array when history is empty', () => {
@@ -417,6 +419,8 @@ describe('getRecentlyPlayedText', () => {
         player.prevFilter = 'all';
         player.historyLimit = 5;
         player.lastSummary = {};
+        // Reset ratings cache so each test gets fresh data
+        if (player.renderHistory) player.renderHistory._cacheTime = 0;
     });
 
     test('returns empty string when no history', () => {
@@ -828,6 +832,8 @@ describe('renderHistory', () => {
 
     test('renders rating badges when summary available', async () => {
         player.history.push({ artist: 'A', title: 'T', album: '' });
+        // Reset ratings cache so renderHistory fetches fresh data
+        player.renderHistory._cacheTime = 0;
         global.fetch = jest.fn(() =>
             Promise.resolve({
                 ok: true,
@@ -1037,6 +1043,7 @@ describe('fetchMetadata', () => {
         player.currentTrack = null;
         player.history.length = 0;
         player.lastSummary = {};
+        if (player.renderHistory) player.renderHistory._cacheTime = 0;
         jest.useFakeTimers();
     });
 

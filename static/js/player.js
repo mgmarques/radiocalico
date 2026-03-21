@@ -361,11 +361,14 @@ async function renderHistory() {
         return;
     }
 
-    // Fetch ratings summary, fall back to cached
-    try {
-        const res = await fetch('/api/ratings/summary');
-        if (res.ok) lastSummary = await res.json();
-    } catch (e) { log.warn('ratings_summary_failed', { error: e.message }); }
+    // Fetch ratings summary with 10s cache to avoid redundant calls
+    const now = Date.now();
+    if (!renderHistory._cacheTime || now - renderHistory._cacheTime > 10000) {
+        try {
+            const res = await fetch('/api/ratings/summary');
+            if (res.ok) { lastSummary = await res.json(); renderHistory._cacheTime = now; }
+        } catch (e) { log.warn('ratings_summary_failed', { error: e.message }); }
+    }
 
     const filtered = getFilteredHistory();
 
@@ -616,9 +619,13 @@ function formatTime(s) {
 
 audio.addEventListener('playing', () => showPlayIcon('pause'));
 audio.addEventListener('waiting', () => { if (playing) showPlayIcon('spinner'); });
+let _lastTimeUpdate = 0;
 audio.addEventListener('timeupdate', () => {
+    const now = Date.now();
+    if (now - _lastTimeUpdate < 500) return; // Throttle to 500ms
+    _lastTimeUpdate = now;
     if (playing && songStartTime) {
-        const elapsed = (Date.now() - songStartTime) / 1000;
+        const elapsed = (now - songStartTime) / 1000;
         const total = trackDuration ? formatTime(trackDuration) : 'Live';
         barTime.textContent = `${formatTime(elapsed)} / ${total}`;
     }
@@ -688,11 +695,14 @@ async function updateRatingUI() {
     rateFb.textContent = '';
 
     const station = `${artistEl.textContent} - ${trackEl.textContent}`;
-    const alreadyRated = await checkIfRated(station);
+    // Parallelize: check if rated + fetch counts simultaneously
+    const [alreadyRated] = await Promise.all([
+        checkIfRated(station),
+        fetchTrackRatings(station),
+    ]);
     rateUp.classList.toggle('rated', alreadyRated);
     rateDown.classList.toggle('rated', alreadyRated);
     rateFb.textContent = alreadyRated ? 'You rated this track' : '';
-    fetchTrackRatings(station);
 }
 
 /**
@@ -850,7 +860,7 @@ let lastMetadataFetch = 0;
  */
 async function fetchMetadata() {
     try {
-        const res = await fetch(METADATA_URL, { cache: 'no-store' });
+        const res = await fetch(METADATA_URL);
         if (!res.ok) return;
         const m = await res.json();
         const artist = m.artist || null;
@@ -908,17 +918,21 @@ async function fetchMetadata() {
             kept.forEach(t => history.push(t));
             while (history.length > MAX_HISTORY) history.pop();
             renderHistory();
-            // Fetch album names from iTunes for entries missing album
-            history.forEach(async (t, idx) => {
-                if (t.album) return;
-                try {
-                    const data = await fetchItunesCached(`${t.artist} ${t.title}`);
-                    if (data.results && data.results.length > 0 && history[idx]) {
-                        history[idx].album = data.results[0].collectionName || '';
-                        renderHistory();
-                    }
-                } catch (e) { log.warn('album_fetch_failed', { error: e.message }); }
-            });
+            // Fetch album names from iTunes for entries missing album (batch render)
+            const needAlbum = history.map((t, i) => t.album ? null : i).filter(i => i !== null);
+            if (needAlbum.length) {
+                let remaining = needAlbum.length;
+                needAlbum.forEach(async (idx) => {
+                    try {
+                        const data = await fetchItunesCached(`${history[idx].artist} ${history[idx].title}`);
+                        if (data.results && data.results.length > 0 && history[idx]) {
+                            history[idx].album = data.results[0].collectionName || '';
+                        }
+                    } catch (e) { log.warn('album_fetch_failed', { error: e.message }); }
+                    remaining--;
+                    if (remaining === 0) renderHistory(); // Single render when all done
+                });
+            }
         }
 
         // Show audio quality from metadata
