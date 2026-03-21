@@ -47,7 +47,35 @@
         "hooks": [
           {
             "type": "command",
-            "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\"; if [ -n \"$file\" ]; then case \"$file\" in *.py) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && source api/venv/bin/activate && ruff check \"$file\" --quiet 2>&1 || true ;; *.js) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && npx eslint \"$file\" --quiet 2>&1 || true ;; esac; fi"
+            "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\"; if [ -n \"$file\" ]; then case \"$file\" in *.py) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && source api/venv/bin/activate && ruff check \"$file\" --quiet 2>&1 || true ;; *.js) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && npx eslint \"$file\" --quiet 2>&1 || true ;; *.css) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && npx stylelint \"$file\" --quiet 2>&1 || true ;; *.html) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && npx htmlhint \"$file\" 2>&1 || true ;; esac; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\"; if [ -n \"$file\" ]; then case \"$file\" in *static/*) echo '{\"systemMessage\": \"⚠️  Static file changed — hard refresh required: Cmd+Shift+R in the browser\"}' ;; esac; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\"; if [ -n \"$file\" ]; then case \"$file\" in *requirements.txt|*requirements-dev.txt|*package.json) echo '{\"systemMessage\": \"📦 Dependency file changed — run: make generate-sbom to update docs/SBOM.md\"}' ;; esac; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"systemMessage\": \"Reminder: make ci before merging · make lint if code changed · Cmd+Shift+R if static files changed\"}'"
           }
         ]
       }

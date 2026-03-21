@@ -1,0 +1,13 @@
+{
+  "allowed_licenses": [
+    "MIT", "MIT License",
+    "Apache-2.0", "Apache Software License",
+    "BSD-2-Clause", "BSD-3-Clause", "BSD License",
+    "ISC", "PSF-2.0", "Python Software Foundation License",
+    "Python-2.0", "0BSD", "Unlicense", "WTFPL",
+    "Artistic-2.0", "Zlib", "MPL-2.0", "Mozilla Public License 2.0"
+  ],
+  "rejected_packages": [],
+  "max_versions_per_package": 1,
+  "require_fix_for_severity": ["critical", "high"]
+}

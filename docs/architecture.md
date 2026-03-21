@@ -7,7 +7,8 @@
 | --- | --- |
 | **Project** | Radio Calico |
 | **Version** | 1.0.0 |
-| **Date** | 2026-03-18 |
+| **Date** | 2026-03-19 |
+| **Diagrams** | 10 |
 | **Status** | Living document |
 
 </td>
@@ -27,6 +28,7 @@
 7. [Database Schema](#7-database-schema)
 8. [Authentication Flow](#8-authentication-flow)
 9. [Claude Code — Skill to Agent Delegation](#9-claude-code--skill-to-agent-delegation)
+10. [Claude Code — Full Agent & Skill Hierarchy](#10-claude-code--full-agent--skill-hierarchy)
 
 ---
 
@@ -501,4 +503,76 @@ graph LR
     GT -->|"delegate"| DOC
     GR -->|"delegate"| DOC
     GV -->|"delegate"| VV
+```
+
+---
+
+## 10. Claude Code — Full Agent & Skill Hierarchy
+
+All 19 slash commands and all 10 custom agents in one view. Each agent shows its file name and keyword triggers used for auto-routing. Direct skills route through the default agent; heavy skills delegate to a specialized subagent (isolated context window — only a summary returns to the main thread). Conversational agents are invoked via `@agent` mention or keyword auto-routing.
+
+```mermaid
+graph LR
+    User(["👤 User"])
+
+    subgraph Direct["📋 Direct Skills (10) — .claude/commands/"]
+        S1["/start"]
+        S2["/check-stream"]
+        S3["/troubleshoot"]
+        S4["/test-ratings"]
+        S5["/create-pr"]
+        S6["/add-endpoint"]
+        S7["/add-share-button"]
+        S8["/add-dark-style"]
+        S9["/update-claude-md"]
+        S10["/update-readme-diagrams"]
+    end
+
+    subgraph Delegated["⚡ Delegated Skills (9) — isolated context window"]
+        D1["/run-ci"]
+        D2["/test-browser"]
+        D3["/security-audit"]
+        D4["/generate-sbom"]
+        D5["/docker-verify"]
+        D6["/generate-diagrams"]
+        D7["/generate-tech-spec"]
+        D8["/generate-requirements"]
+        D9["/generate-vv-plan"]
+    end
+
+    Main["⚙️ Default Agent\nmain thread"]
+
+    subgraph SubAgents["🤖 Delegation-Target Subagents (5) — .claude/agents/"]
+        QA["🧪 QA Engineer\nqa-engineer.md\ntest failing · coverage · jest error"]
+        SEC["🔒 Security Auditor\nsecurity-auditor.md\nCVE · vulnerability · OWASP"]
+        OPS["⚙️ DevOps\ndevops.md\n502 · docker-compose · pipeline"]
+        DOC["📝 Documentation Writer\ndocumentation-writer.md\ndiagram · spec · requirements"]
+        VV["✅ V&V Plan Updater\nvv-plan-updater.md\nupdate V&V · TC missing · coverage gap"]
+    end
+
+    subgraph ConvAgents["💬 Conversational Agents (5) — @mention or auto-route"]
+        DBA["🗄️ DBA\ndba.md\nschema · migration · query · index"]
+        FR["🎨 Frontend Reviewer\nfrontend-reviewer.md\nXSS · CSS · responsive · a11y"]
+        API["🔌 API Designer\napi-designer.md\nendpoint · REST · rate limit · auth"]
+        RM["📦 Release Manager\nrelease-manager.md\nready to merge · changelog · semver"]
+        PA["⚡ Performance Analyst\nperformance-analyst.md\nslow · caching · CDN · debounce"]
+    end
+
+    subgraph Tools["🛠️ Tools"]
+        T["Bash · Read · Write · Edit\nGlob · Grep · WebSearch · WebFetch · Agent"]
+    end
+
+    User -->|"/command"| Direct
+    User -->|"/command (heavy)"| Delegated
+    User -->|"@agent or keyword"| ConvAgents
+    Direct --> Main
+    Main --> Tools
+    D1 & D2 -->|"delegate"| QA
+    D3 & D4 -->|"delegate"| SEC
+    D5 -->|"delegate"| OPS
+    D6 & D7 & D8 -->|"delegate"| DOC
+    D9 -->|"delegate"| VV
+    QA & SEC & OPS & DOC & VV -.->|"summary only"| Main
+    SubAgents --> Tools
+    ConvAgents --> Tools
 ```

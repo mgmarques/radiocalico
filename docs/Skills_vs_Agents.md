@@ -2,7 +2,7 @@
 
 ## Overview
 
-Radio Calico uses two complementary Claude Code extension mechanisms: **18 slash commands (skills)** for task automation and **10 custom agents** for persistent expert personas. This document explains the differences, current implementation, and future improvement roadmap.
+Radio Calico uses two complementary Claude Code extension mechanisms: **19 slash commands (skills)** for task automation and **10 custom agents** for persistent expert personas. This document explains the differences, current implementation, and future improvement roadmap.
 
 ---
 
@@ -189,7 +189,38 @@ Examples:
 - `scripts/update_vv_plan.py` rewrites the execution summary with emoji+bold status values
 - Bot commits the updated file back with `[skip ci]` to avoid an infinite loop
 
-#### 8. Agent Self-Testing
+#### 8. Multi-Ecosystem SBOM ✅ Implemented
+
+**Status**: `/generate-sbom` now auto-detects and scans four package ecosystems in a single run.
+
+| Ecosystem | Project file | Package listing | CVE scanner |
+| --- | --- | --- | --- |
+| **Python** | `requirements.txt` | `pip list --format=json` | `pip-audit` (GHSA / OSV) |
+| **Node.js** | `package.json` | `npm list --depth=0 --json` | `npm audit` (npm advisory DB) |
+| **.NET / C#** | `*.csproj` / `*.sln` | `dotnet list package --format json` | `dotnet list package --vulnerable --include-transitive` (built-in, requires .NET CLI) |
+| **Java (Maven)** | `pom.xml` | `mvn dependency:list -q` | OWASP Dependency-Check Maven plugin (`mvn org.owasp:dependency-check-maven:check`) |
+| **Java (Gradle)** | `build.gradle` / `build.gradle.kts` | `gradle dependencies --configuration runtimeClasspath` | OWASP Dependency-Check Gradle plugin (`gradle dependencyCheckAnalyze`) |
+
+Each ecosystem section is **auto-detected** — it only appears in `docs/SBOM.md` if the corresponding project file exists. Sections are silently skipped for ecosystems not present in the project.
+
+**Key difference**: .NET vulnerability scanning is built into the CLI (`--vulnerable` flag, no extra tools). Java requires the OWASP Dependency-Check plugin (Maven or Gradle); if the plugin is not configured, packages are listed but CVEs are skipped with a warning.
+
+#### 8b. SBOM Enrichment Features ✅ Implemented
+
+**Status**: `/generate-sbom` now produces enriched output with several new capabilities:
+
+| Feature | Description |
+| --- | --- |
+| **Enriched vulnerability details** | CVSS scores, CVSS vectors, created/modified dates, and reference links from OSV.dev |
+| **Policy Compliance** | Checked against `sbom-policy.json` thresholds (max critical/high vulns, blocked licenses, minimum scan age) |
+| **`--project NAME` flag** | Multi-project support — set a project name for scans (default: auto-detected from directory name) |
+| **`--save-db` flag** | Persist scan results to MySQL via 4 SBOM history tables (created by `api/migrations/sbom_tables.sql`) |
+| **Parallel scanning** | Python + Node.js scans run concurrently via ThreadPoolExecutor; .NET/Maven/Gradle skipped early if no project files |
+| **OSV.dev file cache** | Vulnerability metadata cached in `.sbom-cache.json` (7-day TTL) — eliminates repeated HTTP fetches |
+
+The 4 SBOM database tables (`sbom_scans`, `sbom_packages`, `sbom_vulnerabilities`, `sbom_impact_analysis`) enable historical tracking of dependency health across scan runs. See `.claude/rules/database.md` for schema details.
+
+#### 9. Agent Self-Testing
 
 **Current**: Tests validate agent file structure (headings, versions, key sections).
 
@@ -224,6 +255,8 @@ Examples:
 | **P0** | Automated agent selection | Keyword triggers in Description fields | ✅ Done |
 | **P0** | V&V Plan CI automation | PR-only workflow auto-fills execution summary | ✅ Done |
 | **P0** | Agent delegation for heavy skills | 9 skills delegate to specialized subagents (context isolation) | ✅ Done |
+| **P0** | Multi-ecosystem SBOM (.NET + Java) | Single `/generate-sbom` scans all 4 ecosystems | ✅ Done |
+| **P0** | SBOM enrichment (CVSS, policy, DB) | Enriched vuln details, policy compliance, parallel scanning, OSV cache, `--project`/`--save-db` flags | ✅ Done |
 | **P1** | Inter-agent collaboration | Agents produce richer, cross-domain advice | Planned |
 | **P1** | Chained skill pipelines | Complex workflows in one command | Planned |
 | **P1** | Agent self-testing | Validates reasoning quality, not just structure | Planned |
@@ -240,7 +273,7 @@ Subagents are specialized AI assistants that run in **isolated context windows**
 
 ### Main Benefit: Context Isolation
 
-The core problem subagents solve is **context-window pollution**. Every tool call, file read, test run, and search result consumes the main conversation context. When tasks like running 631 tests, exploring a large codebase, or parsing security scan output accumulate in the main thread, earlier context gets pushed out and eventually compacted. Subagents keep all that verbose output isolated — only a concise summary returns to the main conversation.
+The core problem subagents solve is **context-window pollution**. Every tool call, file read, test run, and search result consumes the main conversation context. When tasks like running 670 tests, exploring a large codebase, or parsing security scan output accumulate in the main thread, earlier context gets pushed out and eventually compacted. Subagents keep all that verbose output isolated — only a concise summary returns to the main conversation.
 
 ### Subagents vs. the Default Agent
 
@@ -259,7 +292,7 @@ The core problem subagents solve is **context-window pollution**. Every tool cal
 
 | Task | Without Subagent | With Subagent |
 |---|---|---|
-| Run all 631 tests | Test output fills main context | Only pass/fail summary returns |
+| Run all 670 tests | Test output fills main context | Only pass/fail summary returns |
 | Explore codebase for a pattern | Every file read accumulates | Search results stay isolated |
 | Parse security scan output | Hundreds of lines in main thread | Actionable findings only |
 | Generate architecture diagrams | Mermaid + file writes in main context | Clean summary + file paths |
@@ -306,7 +339,7 @@ Skills invoke the default agent. Custom agents run **as** subagents — each inv
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
 - [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents)
 - Project agents: `.claude/agents/*.md` (10 files)
-- Project skills: `.claude/commands/*.md` (18 files) + `.claude/skills/*/SKILL.md` (mirrors)
+- Project skills: `.claude/commands/*.md` (19 files) + `.claude/skills/*/SKILL.md` (mirrors)
 - Agent + skills tests: `tests/test_skills.py` (333 tests)
 - V&V plan update script: `scripts/update_vv_plan.py`
 - V&V plan CI workflow: `.github/workflows/update-vv-plan.yml`

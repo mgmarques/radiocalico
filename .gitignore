@@ -18,5 +18,8 @@ node_modules/
 .vscode/
 *.swp
 
+# SBOM cache
+.sbom-cache.json
+
 # macOS
 .DS_Store

@@ -6,7 +6,9 @@ Delegate this entire skill to the **Security Auditor** subagent (`security-audit
 The Security Auditor has specialized knowledge of all 6 security tools, OWASP Top 10, and vulnerability triage. It will run all steps in an isolated context window and return only a summary to the main conversation.
 
 Generate `docs/SBOM.md` — a Software Bill of Materials listing every installed
-Python and Node.js package with its version and known vulnerability status.
+Python, Node.js, .NET (NuGet), and Java (Maven/Gradle) package with its version
+and known vulnerability status. Each ecosystem section is auto-detected from
+project files — sections are silently skipped for ecosystems not present.
 
 ## What it produces
 
@@ -15,7 +17,11 @@ Python and Node.js package with its version and known vulnerability status.
 - **Summary table** — total packages, vulnerability count, scanner names, scan date
 - **Python packages table** — all `pip list` packages with `pip-audit` CVE results
 - **Node.js packages table** — all `npm list --depth=0` packages with `npm audit` results
-- **Vulnerability details** — full detail rows with Published date (OSV.dev) and Fix Version
+- **`.NET` packages table** (if `*.csproj`/`*.sln` detected) — NuGet packages with `dotnet list package --vulnerable` CVE results
+- **Java/Maven packages table** (if `pom.xml` detected) — dependencies from `mvn dependency:list` with OWASP Dependency-Check CVEs
+- **Java/Gradle packages table** (if `build.gradle` detected) — dependencies from `gradle dependencies` with OWASP Dependency-Check CVEs
+- **Vulnerability details** — enriched rows with CVSS scores, CVSS vectors, created/modified dates, and reference links (OSV.dev)
+- **Policy Compliance section** — checked against `sbom-policy.json` thresholds (max critical/high vulns, blocked licenses, minimum scan age)
 - **Impact Analysis** — per-vuln deployment assessment: whether the vulnerable code path is actually reachable in Radio Calico's production environment
 
 ## Steps
@@ -31,11 +37,21 @@ Python and Node.js package with its version and known vulnerability status.
    python scripts/generate_sbom.py
    ```
 
-   This runs four scans in sequence:
+   Optional flags:
+   - `--project NAME` — set a project name for multi-project support (default: auto-detected from directory)
+   - `--save-db` — persist scan results to MySQL (requires SBOM tables from `api/migrations/sbom_tables.sql`)
+
+   This runs scans for all auto-detected ecosystems in sequence:
    - `pip list --format=json` — collect Python package inventory
    - `pip-audit --format=json` — scan for Python CVEs (GHSA / OSV database)
    - `npm list --json --depth=0` — collect Node.js direct dependencies
    - `npm audit --json` — scan for Node.js CVEs (npm advisory database)
+   - `dotnet list package --format json` — collect NuGet packages (if `*.csproj`/`*.sln` found)
+   - `dotnet list package --vulnerable --include-transitive` — scan .NET CVEs (built-in CLI)
+   - `mvn dependency:list -q` — collect Maven dependencies (if `pom.xml` found)
+   - `mvn org.owasp:dependency-check-maven:check` — scan Maven CVEs via OWASP plugin
+   - `gradle dependencies --configuration runtimeClasspath` — collect Gradle dependencies (if `build.gradle` found)
+   - `gradle dependencyCheckAnalyze` — scan Gradle CVEs via OWASP plugin
 
 3. **Review the output** — open `docs/SBOM.md` and check:
    - Are any packages flagged with 🔴 Critical or 🟠 High vulnerabilities?
@@ -88,3 +104,7 @@ Python and Node.js package with its version and known vulnerability status.
 - Do NOT commit `docs/SBOM.md` with fabricated results — the script must run and produce real output
 - If `pip-audit` is unavailable in CI, the script prints a warning and skips Python CVEs (packages are still listed)
 - When a new vuln appears with ⚪ Unknown impact, add an entry to the `_IMPACT` dict in `scripts/generate_sbom.py` before merging
+- `.NET`, Maven, and Gradle sections are only generated if the corresponding project files exist — Radio Calico has none, so these sections are skipped
+- For Java CVE scanning, the OWASP Dependency-Check plugin must be configured in `pom.xml` or `build.gradle`; otherwise packages are listed without CVE data
+- Policy thresholds are configured in `sbom-policy.json` (max critical/high vulns, blocked licenses, minimum scan age) — edit this file to adjust compliance rules
+- To enable `--save-db`, first run `mysql -u root -p radiocalico < api/migrations/sbom_tables.sql` to create the 4 SBOM history tables (sbom_scans, sbom_packages, sbom_vulnerabilities, sbom_impact_analysis)
