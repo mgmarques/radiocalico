@@ -19,7 +19,7 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **19 slash
 | **Best for** | Repeatable automation (CI, PR, scaffolding) | Judgment calls (code review, architecture, triage) |
 | **Count** | 19 skills | 10 agents |
 | **Tests** | 333 tests (structure, versions, references, agent delegation) | included in 333 |
-| **Version header** | `<!-- Radio Calico Skill v1.0.0 -->` | `<!-- Radio Calico Agent v1.0.0 -->` |
+| **Version header** | `<!-- Radio Calico Skill v2.0.0 -->` | `<!-- Radio Calico Agent v2.0.0 -->` |
 
 ### When to Use Which
 
@@ -88,7 +88,7 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **19 slash
 Each agent follows a consistent format:
 
 ```markdown
-<!-- Radio Calico Agent v1.0.0 -->
+<!-- Radio Calico Agent v2.0.0 -->
 # Agent Name
 
 ## Description          — One-line summary + **Triggers:** keywords for auto-routing

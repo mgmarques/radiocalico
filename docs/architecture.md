@@ -49,6 +49,7 @@ graph TD
         nginx["nginx\n(reverse proxy + static files)"]
         gunicorn["gunicorn\n(4 workers · Flask API :5000)"]
         mysql["MySQL 8.0\n(ratings · users · profiles · feedback)"]
+        ollama["Ollama\n(Llama 3.2 · song info · quiz)"]
     end
 
     subgraph External["🔌 External APIs"]
@@ -64,6 +65,7 @@ graph TD
     Browser -->|"API calls\n(/api/*)"| nginx
     nginx -->|"proxy_pass /api/"| gunicorn
     gunicorn -->|"PyMySQL queries\n(parameterized)"| mysql
+    gunicorn -->|"OpenAI SDK\n(song info · quiz)"| ollama
 ```
 
 ---
@@ -218,8 +220,24 @@ graph TD
     subgraph Preferences["⚙️ Settings"]
         ThemeToggle["theme radio button\napplyTheme()\ndata-theme attr + localStorage rc-theme"]
         QualityToggle["quality radio button\napplyStreamQuality()\ninitHls() + localStorage rc-stream-quality"]
+        LangToggle["language radio button\napplyLanguage()\nlocalStorage rc-lang"]
         ThemeToggle -->|"light / dark"| HTMLAttr["html[data-theme]"]
         QualityToggle -->|"FLAC level 0 / AAC level 1"| HLSLevel["hls.currentLevel\nhls.loadLevel"]
+        LangToggle -->|"en / pt-BR / es"| i18n["translate data-i18n elements\nre-fetch active AI content"]
+    end
+
+    subgraph SongInfo["🎵 Song Info (LLM)"]
+        RetroBtn["retro radio buttons\n(Lyrics · Details · Facts\nMerchandise · Jokes · Everything)"]
+        InfoPanel["expanding info panel\nPOST /api/song-info\n(Ollama + Llama 3.2)"]
+        InfoShare["share AI content\nWhatsApp · X · Telegram"]
+        RetroBtn --> InfoPanel --> InfoShare
+    end
+
+    subgraph QuizGame["🎮 Quiz"]
+        QuizBtn["Quiz button\nPOST /api/quiz/start"]
+        QuizChat["chat-style 5 questions\nPOST /api/quiz/answer"]
+        QuizScore["score summary\n(-5 to +5 per question)"]
+        QuizBtn --> QuizChat --> QuizScore
     end
 ```
 
@@ -354,7 +372,7 @@ graph LR
 
 ## 7. Database Schema
 
-Entity-relationship diagram for all four tables.
+Entity-relationship diagram for all 8 tables (4 app + 4 SBOM).
 
 ```mermaid
 erDiagram
@@ -397,8 +415,55 @@ erDiagram
         timestamp created_at
     }
 
+    SBOM_SCANS {
+        int id PK
+        varchar project
+        date scan_date
+        int total_packages
+        int total_vulns
+        timestamp created_at
+    }
+
+    SBOM_PACKAGES {
+        int id PK
+        int scan_id FK
+        enum ecosystem
+        varchar name
+        varchar version
+        varchar license
+        varchar latest_version
+    }
+
+    SBOM_VULNERABILITIES {
+        int id PK
+        int scan_id FK
+        varchar package_name
+        enum ecosystem
+        varchar vuln_id
+        varchar severity
+        decimal cvss_score
+        varchar cvss_vector
+        date published_date
+        date modified_date
+        varchar fix_version
+        varchar reference_url
+        varchar description
+    }
+
+    SBOM_IMPACT_ANALYSIS {
+        int id PK
+        int scan_id FK
+        varchar vuln_id
+        varchar package_name
+        varchar rating
+        text analysis
+    }
+
     USERS ||--o| PROFILES : "has one"
     USERS ||--o{ FEEDBACK : "submits"
+    SBOM_SCANS ||--o{ SBOM_PACKAGES : "contains"
+    SBOM_SCANS ||--o{ SBOM_VULNERABILITIES : "reports"
+    SBOM_SCANS ||--o{ SBOM_IMPACT_ANALYSIS : "analyzes"
 ```
 
 Notes:

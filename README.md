@@ -36,53 +36,59 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 
 ## Screenshots
 
-### Light Mode
+### 1. Light Mode
 
-![Radio Calico Light Mode](docs/1_LightMode.png)
+![Radio Calico Light Mode](docs/1_Light.png)
 
-*Light theme — Now Playing with album artwork, metadata, ratings, share buttons (WhatsApp, X, Telegram, Spotify, YouTube Music, Amazon), player bar, Recently Played with filters, and sticky footer.*
+*Light theme — Now Playing with album artwork, metadata, ratings, retro radio buttons (Lyrics, Details, Facts, Merchandise, Jokes, Everything About, Quiz), share buttons, player bar, and Recently Played with filters.*
 
-### Settings / Configurations
+### 2. Settings / Configurations
 
-![Radio Calico Settings](docs/2_Configurations.png)
+![Radio Calico Settings](docs/2_config.png)
 
-*Settings dropdown — Light/Dark theme toggle and Stream Quality selection (FLAC Hi-Res lossless or AAC Hi-Fi).*
+*Settings dropdown — Light/Dark theme toggle, Stream Quality selection (FLAC Hi-Res / AAC Hi-Fi), and Language selector (English, Brazilian Portuguese, Spanish).*
 
-### Dark Mode (Default)
+### 3. AI-Powered Song Information
 
-![Radio Calico Dark Mode](docs/3_DarkMode.png)
+![Radio Calico AI Action](docs/3_AI_Action.png)
 
-*Dark theme — all colors adapt via CSS custom property overrides. Default theme on first visit.*
+*Retro radio buttons in action — pressing "Details" or any button queries the LLM (Ollama + Llama 3.2) and displays song information in an expanding scrollable panel. Results include song meaning, genre, album tracklist, and more.*
 
-### Login / Register
+### 4. Share AI Content
 
-![Radio Calico Login Drawer](docs/4_Loggin.png)
+![Radio Calico Share](docs/4_Share.png)
 
-*Hamburger menu opens a slide-out drawer with Login/Register form.*
+*Share AI-generated content via WhatsApp (up to 4000 chars), X/Twitter (280 chars), or Telegram (4000 chars). Share buttons appear at the bottom of each AI result panel.*
 
-### User Profile
+### 5. Multi-Language Support
 
-![Radio Calico User Profile](docs/5_Profile.png)
+![Radio Calico Multi-Language](docs/5_Mult_Languages.png)
 
-*Logged-in view — profile with nickname, email, music genre preferences (tag-style checkboxes), and "About You" text area.*
+*i18n support — UI labels translated to Brazilian Portuguese and Spanish. Song metadata (artist, track, album) always stays in its original language. AI responses are generated in the selected language.*
 
-### Feedback
+### 6. Dark Mode (Default)
 
-![Radio Calico Feedback](docs/6_Feedback.png)
+![Radio Calico Dark Mode](docs/6_Dark.png)
 
-*Feedback form — submit via email (stored in DB), or post on X/Twitter or Telegram.*
+*Dark theme — all colors adapt via CSS custom property overrides. Retro buttons, info panel, and quiz chat all support dark mode. Default theme on first visit.*
 
-### Docker Production Stack
+### 7. Login / Register
 
-![Radio Calico Docker Containers](docs/7_Docker_contanier.png)
+![Radio Calico Login Drawer](docs/7_Login.png)
 
-*Docker production deployment — nginx reverse proxy, gunicorn (4 workers), and MySQL 8.0 running as healthy containers.*
+*Hamburger menu opens a slide-out drawer with Login/Register form, user profile (nickname, email, genre tags), and feedback submission.*
 
-### CI/CD Pipeline (GitHub Actions)
+### 8. Interactive Song Quiz
 
-![Radio Calico CI/CD Pipeline](docs/8_CiCD.png)
+![Radio Calico Quiz](docs/8_Quiz.png)
 
-*GitHub Actions workflow — 13 parallel jobs: lint, unit tests (Python + JS), integration tests, E2E tests, browser tests, skills validation, and 6 security scans (Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP).*
+*Quiz mode — 5-question interactive chat game powered by the LLM. Sarcastic scoring from -5 to +5 points per question. Chat-style UI with user answers and AI responses. Share your score via WhatsApp, X, or Telegram.*
+
+### 9. CI/CD Pipeline (GitHub Actions)
+
+![Radio Calico CI/CD Pipeline](docs/9_CiCD.png)
+
+*GitHub Actions workflow — 13+ parallel jobs: lint, unit tests (Python + JS), integration tests, E2E tests, browser tests, skills validation, security scans, SBOM generation, and V&V plan updates.*
 
 ---
 
@@ -671,7 +677,7 @@ radiocalico/
 
 ### Database Schema
 
-Entity-relationship diagram of the four MySQL tables showing relationships between users, profiles, feedback, and ratings.
+Entity-relationship diagram of all 8 MySQL tables (4 app + 4 SBOM) with relationships.
 
 ```mermaid
 erDiagram
@@ -714,8 +720,55 @@ erDiagram
         timestamp created_at
     }
 
+    SBOM_SCANS {
+        int id PK
+        varchar project
+        date scan_date
+        int total_packages
+        int total_vulns
+        timestamp created_at
+    }
+
+    SBOM_PACKAGES {
+        int id PK
+        int scan_id FK
+        enum ecosystem
+        varchar name
+        varchar version
+        varchar license
+        varchar latest_version
+    }
+
+    SBOM_VULNERABILITIES {
+        int id PK
+        int scan_id FK
+        varchar package_name
+        enum ecosystem
+        varchar vuln_id
+        varchar severity
+        decimal cvss_score
+        varchar cvss_vector
+        date published_date
+        date modified_date
+        varchar fix_version
+        varchar reference_url
+        varchar description
+    }
+
+    SBOM_IMPACT_ANALYSIS {
+        int id PK
+        int scan_id FK
+        varchar vuln_id
+        varchar package_name
+        varchar rating
+        text analysis
+    }
+
     USERS ||--o| PROFILES : "has one"
     USERS ||--o{ FEEDBACK : "submits"
+    SBOM_SCANS ||--o{ SBOM_PACKAGES : "contains"
+    SBOM_SCANS ||--o{ SBOM_VULNERABILITIES : "reports"
+    SBOM_SCANS ||--o{ SBOM_IMPACT_ANALYSIS : "analyzes"
 ```
 
 | DB Driver | PyMySQL | Python-MySQL connector |

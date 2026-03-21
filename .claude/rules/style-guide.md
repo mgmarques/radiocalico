@@ -25,6 +25,31 @@
 - **Linting**: `make lint` must pass before committing. `make fix-py` auto-fixes Python
 - **Testing**: All new API routes need tests in `test_app.py`. New JS functions need tests in `player.test.js`
 
+## Retro Radio Buttons
+
+- 7 vintage-styled 3D buttons: Lyrics, Details, Interesting Facts, Merchandise, Jokes, Everything About, Quiz
+- Per-button color gradients (warm earth tones — beige, cream, gold, red, teal, olive, crimson)
+- Pressed state: `translateY(3px)` + inverted gradient + `color: var(--orange)`
+- Dark mode: `filter: brightness()` adjustments
+- Single row: `flex-wrap: nowrap` with `overflow-x: auto` on mobile
+- Quiz button: circular, crimson, fixed label "Quiz" (never translated)
+
+## Info Panel
+
+- Expanding panel below retro buttons: `display: none` → `display: block` on `.open`
+- Max height: `60vh` with `overflow-y: auto` (scrollable, never hides behind Recently Played)
+- Content rendered from LLM Markdown → HTML via `markdownToHtml()`
+- Share row at bottom: WhatsApp (4000 chars), X (280 chars), Telegram (4000 chars)
+- Quiz chat: bubble-style messages, user answers right-aligned (teal), AI responses left-aligned
+
+## i18n
+
+- 3 languages: English (default), Brazilian Portuguese (`pt-BR`), Spanish (`es`)
+- Translate UI labels via `data-i18n` attributes + `t(key)` helper
+- **Never translate**: song titles, artist names, album names, any music metadata
+- Quiz button label is always "Quiz" in all languages
+- Language change re-fetches active AI content in the new language
+
 ## Recently Played Display Format
 
 - List: `"Title" by Artist (Album) 👍 N 👎 N` (emoji via HTML entities)

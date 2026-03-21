@@ -168,6 +168,8 @@ const _TRANSLATIONS = {
 const _LANG_TO_LLM = { en: 'English', 'pt-BR': 'Brazilian Portuguese', es: 'Spanish' };
 
 let currentLang = localStorage.getItem('rc-lang') || 'en';
+let activeQuery = null;
+let quizState = null; // { questions, current, scores, total }
 
 function t(key) {
     return (_TRANSLATIONS[currentLang] || _TRANSLATIONS.en)[key]
@@ -177,7 +179,7 @@ function t(key) {
 function applyLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('rc-lang', lang);
-    // Translate all static data-i18n elements
+    // Translate all static data-i18n elements (NEVER touches song metadata — artist, track, album have no data-i18n)
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.dataset.i18n;
         const text = t(key);
@@ -189,6 +191,11 @@ function applyLanguage(lang) {
     // Refresh dynamic content that contains translatable strings
     if (typeof updateStreamQualityDisplay === 'function') updateStreamQualityDisplay();
     if (typeof renderHistory === 'function') renderHistory();
+    // Re-fetch active AI content in the new language (guard: activeQuery declared later in script)
+    if (typeof activeQuery !== 'undefined' && activeQuery) {
+        const activeBtn = document.querySelector(`.retro-btn[data-query="${activeQuery}"]`);
+        if (activeBtn) handleRetroButton(activeBtn);
+    }
 }
 
 // ── Elements ────────────────────────────────────────────────
@@ -1275,7 +1282,6 @@ if (Hls.isSupported()) {
 const retroButtons = document.querySelectorAll('.retro-btn');
 const infoPanel = document.getElementById('info-panel');
 const infoPanelContent = document.getElementById('info-panel-content');
-let activeQuery = null;
 
 /**
  * Synthesize a mechanical click sound using the Web Audio API.
@@ -1516,7 +1522,6 @@ function handleRetroButton(btn) {
 }
 
 // ── Quiz Interactive Game ────────────────────────────────────
-let quizState = null; // { questions, current, scores, total }
 
 function startQuiz() {
     const artist = artistEl ? artistEl.textContent : '';
@@ -1680,8 +1685,7 @@ retroButtons.forEach(btn => {
 // ── Test exports (Node.js only) ──────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory, markdownToHtml, buildInfoShareRow, _buildShareText, _infoShareMeta, handleRetroButton, playMechanicalClick, applyLanguage, t, _TRANSLATIONS,
-        wireInfoShareButtons, startQuiz, submitQuizAnswer, renderQuizQuestion, renderQuizSummary, setupMetadataTextTracks,
+        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory, markdownToHtml, buildInfoShareRow, _buildShareText, _infoShareMeta, wireInfoShareButtons, handleRetroButton, playMechanicalClick, applyLanguage, t, _TRANSLATIONS, startQuiz, submitQuizAnswer, renderQuizQuestion, renderQuizSummary, setupMetadataTextTracks,
         getShareText, getRecentlyPlayedText, getArtworkUrl,
         showPlayIcon, updateTrack, pushHistory, renderHistory,
         fetchArtwork, handleMetadataFields, togglePlay,
