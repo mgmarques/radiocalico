@@ -15,9 +15,11 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Artwork**: iTunes Search API (client-side, cached in localStorage 24h TTL).
 - **Auth**: Token-based. PBKDF2 (260k iterations). Tokens in `localStorage`.
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
-- **Testing**: 670 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 333 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
+- **LLM**: Ollama (Llama 3.2) via OpenAI SDK for song info (lyrics, details, facts, merchandise, jokes, quiz). Docker service with host GPU fallback. Response cache (24h TTL).
+- **i18n**: English (default), Brazilian Portuguese, Spanish. UI labels translated; song metadata always in original language.
+- **Testing**: 735 tests (70 unit + 15 LLM + 19 integration + 187 JS + 24 E2E + 47 browser + 333 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
-- **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination.
+- **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination, LLM response cache (24h TTL).
 
 ## Key URLs & Endpoints
 
@@ -46,6 +48,10 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 
 **Feedback** (requires Bearer token):
 - `POST /api/feedback` — submit `{ message }` (stores with profile snapshot)
+
+**Song Info** (LLM, rate-limited 10/min):
+- `POST /api/song-info` — `{ query_type, artist, track, album?, artwork_url? }` → `{ ok, content }` (Markdown)
+- `GET /api/song-info/health` — check Ollama + model availability
 
 **Health** (nginx only): `GET /health` → `200 "ok"`
 

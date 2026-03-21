@@ -1126,10 +1126,180 @@ if (Hls.isSupported()) {
     barTime.textContent = 'HLS not supported';
 }
 
+// ── Retro Radio Buttons (Song Info) ─────────────────────────
+const retroButtons = document.querySelectorAll('.retro-btn');
+const infoPanel = document.getElementById('info-panel');
+const infoPanelContent = document.getElementById('info-panel-content');
+let activeQuery = null;
+
+/**
+ * Synthesize a mechanical click sound using the Web Audio API.
+ * No external audio file needed — generates a short percussive "click".
+ */
+function playMechanicalClick() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        // Short noise burst for the "click"
+        const bufferSize = ctx.sampleRate * 0.03; // 30ms
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            // Decaying white noise
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 8);
+        }
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+
+        // Band-pass filter for that mechanical feel
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 2500;
+        filter.Q.value = 1.2;
+
+        const gain = ctx.createGain();
+        gain.gain.value = 0.4;
+
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        source.start();
+
+        // Cleanup
+        source.onended = () => ctx.close();
+    } catch (e) {
+        // Web Audio API not available — silent fallback
+    }
+}
+
+/**
+ * Convert a basic Markdown string to safe HTML.
+ * Handles headings, bold, italic, code blocks, tables, lists, and links.
+ */
+function markdownToHtml(md) {
+    if (!md) return '';
+    let html = escHtml(md);
+
+    // Code blocks (``` ... ```)
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Headings
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    // Bold + italic
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // Tables
+    html = html.replace(/^\|(.+)\|$/gm, (match) => {
+        const cells = match.split('|').filter(c => c.trim());
+        if (cells.every(c => /^[\s-:]+$/.test(c))) return ''; // separator row
+        const tag = 'td';
+        return '<tr>' + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('') + '</tr>';
+    });
+    html = html.replace(/(<tr>[\s\S]*?<\/tr>)/g, (block) => {
+        if (!block.includes('<table>')) return '<table>' + block + '</table>';
+        return block;
+    });
+    // Unordered lists
+    html = html.replace(/^\* (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
+    // Clean up nested <ul>
+    html = html.replace(/<\/ul>\s*<ul>/g, '');
+    // Line breaks
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = html.replace(/\n/g, '<br>');
+    html = '<p>' + html + '</p>';
+    // Clean empty paragraphs
+    html = html.replace(/<p>\s*<\/p>/g, '');
+
+    return html;
+}
+
+/**
+ * Handle retro button press — toggle, exclusive selection, fetch song info.
+ */
+function handleRetroButton(btn) {
+    const queryType = btn.dataset.query;
+    playMechanicalClick();
+
+    // If same button pressed again — release it
+    if (activeQuery === queryType) {
+        btn.classList.remove('pressed');
+        btn.setAttribute('aria-pressed', 'false');
+        infoPanel.classList.remove('open');
+        activeQuery = null;
+        return;
+    }
+
+    // Release all other buttons
+    retroButtons.forEach(b => {
+        b.classList.remove('pressed');
+        b.setAttribute('aria-pressed', 'false');
+    });
+
+    // Press this button
+    btn.classList.add('pressed');
+    btn.setAttribute('aria-pressed', 'true');
+    activeQuery = queryType;
+
+    // Get current track info
+    const artist = artistEl ? artistEl.textContent : '';
+    const track = trackEl ? trackEl.textContent : '';
+    const album = albumEl ? albumEl.textContent : '';
+    const artworkImg = artworkEl ? artworkEl.querySelector('img') : null;
+    const artworkUrl = artworkImg ? artworkImg.src : '';
+
+    if (!artist || artist === 'Radio Calico' || !track || track === 'Live Stream') {
+        infoPanelContent.innerHTML = '<p style="text-align:center;color:#888">No track is currently playing. Start the stream first!</p>';
+        infoPanel.classList.add('open');
+        return;
+    }
+
+    // Show loading state
+    infoPanelContent.innerHTML = '<div class="info-panel-loading"><span class="spinner"></span>Asking the AI about this track&hellip;</div>';
+    infoPanel.classList.add('open');
+
+    // Call the API
+    fetch('/api/song-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query_type: queryType,
+            artist: artist,
+            track: track,
+            album: album,
+            artwork_url: artworkUrl,
+        }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (activeQuery !== queryType) return; // user switched buttons
+        if (data.ok) {
+            infoPanelContent.innerHTML = '<div class="info-panel-content">' + markdownToHtml(data.content) + '</div>';
+        } else {
+            infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">' +
+                escHtml(data.error || 'Failed to get song info. Is Ollama running?') + '</p>';
+        }
+    })
+    .catch(err => {
+        if (activeQuery !== queryType) return;
+        infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">Network error. Check that the server and Ollama are running.</p>';
+        log.error('song_info_fetch_error', { error: err.message });
+    });
+}
+
+retroButtons.forEach(btn => {
+    btn.addEventListener('click', () => handleRetroButton(btn));
+});
+
 // ── Test exports (Node.js only) ──────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory,
+        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory, markdownToHtml, handleRetroButton, playMechanicalClick,
         getShareText, getRecentlyPlayedText, getArtworkUrl,
         showPlayIcon, updateTrack, pushHistory, renderHistory,
         fetchArtwork, handleMetadataFields, togglePlay,
