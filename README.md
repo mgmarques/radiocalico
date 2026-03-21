@@ -492,14 +492,14 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**735 total tests** across 8 suites:
+**843 total tests** across 8 suites:
 
 | Suite | Tests | Tool | Coverage |
 | --- | --- | --- | --- |
-| Python unit | 70 | pytest + pytest-cov | 95% |
-| LLM service | 15 | pytest (mocked OpenAI SDK) | Song info + quiz endpoints |
+| Python unit | 81 | pytest + pytest-cov | 95% |
+| LLM service | 62 | pytest (mocked OpenAI SDK) | Song info + quiz endpoints |
 | Python integration | 19 | pytest | Multi-step API workflows |
-| JavaScript unit | 187 | Jest + jsdom | 90% lines (threshold) |
+| JavaScript unit | 238 | Jest + jsdom | 95% stmts / 97% lines |
 | E2E (Docker) | 24 | pytest + requests | nginx → gunicorn → MySQL |
 | Browser (Selenium) | 47 | Selenium + headless Chrome | UI, themes, auth, buttons, quiz |
 | Skills + Agents | 333 | pytest | 19 slash commands + 10 agents + 9 agent delegations |
@@ -522,7 +522,7 @@ graph LR
     end
 
     subgraph Tests["🧪 Tests (need: lint)"]
-        python["python-tests\n70 unit · ≥95% coverage"]
+        python["python-tests\n81 unit · ≥95% coverage"]
         integration["integration-tests\n19 API chain tests"]
         js["js-tests\n162 Jest · ≥90% lines"]
         skills["skills-tests\n333 commands + agents"]
@@ -1005,7 +1005,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
 
 1. **Clone + setup**: `make install` (or `/start` in Claude Code)
 2. **Develop**: Claude reads CLAUDE.md automatically. Use `/add-endpoint` for new routes.
-3. **Test**: `/run-ci` runs lint + coverage + security. All 735 tests must pass.
+3. **Test**: `/run-ci` runs lint + coverage + security. All 843 tests must pass.
 4. **PR**: `/create-pr` creates a branch, commits, pushes, and opens a PR with summary.
 5. **Add skills**: Create `.claude/commands/your-skill.md` + `.claude/skills/your-skill/SKILL.md`, add to `tests/test_skills.py`.
 

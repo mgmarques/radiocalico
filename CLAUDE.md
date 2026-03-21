@@ -17,7 +17,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
 - **LLM**: Ollama (Llama 3.2) via OpenAI SDK for song info (lyrics, details, facts, merchandise, jokes, quiz). Docker service with host GPU fallback. Response cache (24h TTL).
 - **i18n**: English (default), Brazilian Portuguese, Spanish. UI labels translated; song metadata always in original language.
-- **Testing**: 735 tests (70 unit + 15 LLM + 19 integration + 187 JS + 24 E2E + 47 browser + 333 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
+- **Testing**: 843 tests (81 unit + 62 LLM + 19 integration + 238 JS + 24 E2E + 47 browser + 333 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
 - **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination, LLM response cache (24h TTL).
 
@@ -32,21 +32,25 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 ### Local API (Flask :5000, Docker :5050)
 
 **Ratings** (no auth):
+
 - `GET /api/ratings` — paginated list (`?limit=100&offset=0`, max 500). No IPs exposed.
 - `GET /api/ratings/summary` — likes/dislikes by station
 - `GET /api/ratings/check?station=...` — check if current IP rated
 - `POST /api/ratings` — submit `{ station, score }` (score 0 or 1, 409 on duplicate)
 
 **Auth**:
+
 - `POST /api/register` — `{ username, password }` (8-128 chars, rate-limited 5/min)
 - `POST /api/login` — `{ username, password }` → `{ token, username }` (rate-limited 5/min)
 - `POST /api/logout` — invalidate token (requires Bearer token)
 
 **Profile** (requires Bearer token):
+
 - `GET /api/profile` — get profile (nickname, email, genres, about)
 - `PUT /api/profile` — update profile
 
 **Feedback** (requires Bearer token):
+
 - `POST /api/feedback` — submit `{ message }` (stores with profile snapshot)
 
 **Song Info** (LLM, rate-limited 10/min):
@@ -76,7 +80,7 @@ make docker-prod   # Prod: gunicorn + nginx + MySQL
 make docker-down   # Stop and remove volumes
 
 # Testing & CI
-make test          # All unit tests: Python (70) + JS (187)
+make test          # All unit tests: Python (81) + JS (238)
 make lint          # All linters (Ruff + ESLint + Stylelint + HTMLHint)
 make ci            # Full pipeline: lint + coverage + security
 make test-integration  # 19 API integration tests

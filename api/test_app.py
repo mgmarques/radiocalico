@@ -1,4 +1,6 @@
-"""Unit tests for Radio Calico API — 61 tests targeting 98% coverage of app.py."""
+"""Unit tests for Radio Calico API — tests targeting 98% coverage of app.py."""
+
+from unittest.mock import MagicMock, patch
 
 import app as app_module
 
@@ -437,11 +439,77 @@ class TestSongInfo:
         res = client.post("/api/song-info", json={"query_type": "lyrics", "artist": "A"})
         assert res.status_code == 400
 
+    def test_song_info_success(self, client):
+        mock_svc = MagicMock()
+        mock_svc.query.return_value = {"ok": True, "content": "# Lyrics here", "cached": False}
+        with patch("app._get_llm", return_value=mock_svc):
+            res = client.post(
+                "/api/song-info", json={"query_type": "lyrics", "artist": "The Church", "track": "Under the Milky Way"}
+            )
+        assert res.status_code == 200
+        data = res.get_json()
+        assert data["ok"] is True
+        assert "Lyrics" in data["content"]
+
+    def test_song_info_with_optional_fields(self, client):
+        mock_svc = MagicMock()
+        mock_svc.query.return_value = {"ok": True, "content": "# Details", "cached": False}
+        with patch("app._get_llm", return_value=mock_svc):
+            res = client.post(
+                "/api/song-info",
+                json={
+                    "query_type": "details",
+                    "artist": "A",
+                    "track": "T",
+                    "album": "Album",
+                    "artwork_url": "https://x.com/art.jpg",
+                    "language": "Portuguese",
+                },
+            )
+        assert res.status_code == 200
+        # Verify optional fields were passed through
+        call_kwargs = mock_svc.query.call_args[1]
+        assert call_kwargs["album"] == "Album"
+        assert call_kwargs["artwork_url"] == "https://x.com/art.jpg"
+        assert call_kwargs["language"] == "Portuguese"
+
+    def test_song_info_llm_error_returns_503(self, client):
+        mock_svc = MagicMock()
+        mock_svc.query.return_value = {"ok": False, "error": "Connection refused"}
+        with patch("app._get_llm", return_value=mock_svc):
+            res = client.post("/api/song-info", json={"query_type": "lyrics", "artist": "A", "track": "T"})
+        assert res.status_code == 503
+        data = res.get_json()
+        assert data["ok"] is False
+
+    def test_song_info_empty_query_type(self, client):
+        res = client.post("/api/song-info", json={"query_type": "", "artist": "A", "track": "T"})
+        assert res.status_code == 400
+
+    def test_song_info_none_fields(self, client):
+        res = client.post("/api/song-info", json={"query_type": None, "artist": None, "track": None})
+        assert res.status_code == 400
+
     def test_song_info_health_returns_json(self, client):
         res = client.get("/api/song-info/health")
         data = res.get_json()
         assert "ok" in data
         assert "model" in data
+
+    def test_song_info_health_mocked(self, client):
+        mock_svc = MagicMock()
+        mock_svc.health.return_value = {
+            "ok": True,
+            "ollama": True,
+            "model": "llama3.2",
+            "model_available": True,
+            "models": ["llama3.2"],
+        }
+        with patch("app._get_llm", return_value=mock_svc):
+            res = client.get("/api/song-info/health")
+        data = res.get_json()
+        assert data["ok"] is True
+        assert data["model_available"] is True
 
 
 # ── Quiz ─────────────────────────────────────────────────────
@@ -465,3 +533,87 @@ class TestQuiz:
     def test_quiz_answer_requires_json(self, client):
         res = client.post("/api/quiz/answer", data="bad", content_type="application/json")
         assert res.status_code == 400
+
+    def test_quiz_start_success(self, client):
+        mock_svc = MagicMock()
+        mock_svc.generate_quiz.return_value = {
+            "ok": True,
+            "questions": [{"q": "Q?", "options": ["A", "B", "C", "D"], "answer": "A", "fun_fact": "!"}],
+        }
+        with patch("app._get_llm", return_value=mock_svc):
+            res = client.post(
+                "/api/quiz/start",
+                json={
+                    "artist": "The Church",
+                    "track": "Under the Milky Way",
+                    "album": "Starfish",
+                    "language": "English",
+                },
+            )
+        assert res.status_code == 200
+        data = res.get_json()
+        assert data["ok"] is True
+        assert len(data["questions"]) == 1
+
+    def test_quiz_start_with_language(self, client):
+        mock_svc = MagicMock()
+        mock_svc.generate_quiz.return_value = {"ok": True, "questions": []}
+        with patch("app._get_llm", return_value=mock_svc):
+            res = client.post("/api/quiz/start", json={"artist": "A", "track": "T", "language": "French"})
+        assert res.status_code == 200
+        call_kwargs = mock_svc.generate_quiz.call_args[1]
+        assert call_kwargs["language"] == "French"
+
+    def test_quiz_start_default_language(self, client):
+        mock_svc = MagicMock()
+        mock_svc.generate_quiz.return_value = {"ok": True, "questions": []}
+        with patch("app._get_llm", return_value=mock_svc):
+            res = client.post("/api/quiz/start", json={"artist": "A", "track": "T"})
+        assert res.status_code == 200
+        call_kwargs = mock_svc.generate_quiz.call_args[1]
+        assert call_kwargs["language"] == "English"
+
+    def test_quiz_answer_success(self, client):
+        mock_svc = MagicMock()
+        mock_svc.evaluate_answer.return_value = {
+            "ok": True,
+            "score": 5,
+            "reaction": "Perfect!",
+            "correct_answer": "B) 1988",
+        }
+        with patch("app._get_llm", return_value=mock_svc):
+            res = client.post(
+                "/api/quiz/answer",
+                json={
+                    "question": "What year?",
+                    "correct": "B",
+                    "user_answer": "B",
+                    "options": ["A", "B", "C", "D"],
+                },
+            )
+        assert res.status_code == 200
+        data = res.get_json()
+        assert data["ok"] is True
+        assert data["score"] == 5
+
+    def test_quiz_answer_wrong(self, client):
+        mock_svc = MagicMock()
+        mock_svc.evaluate_answer.return_value = {
+            "ok": True,
+            "score": -3,
+            "reaction": "Ouch!",
+            "correct_answer": "The answer was A",
+        }
+        with patch("app._get_llm", return_value=mock_svc):
+            res = client.post(
+                "/api/quiz/answer",
+                json={
+                    "question": "Q?",
+                    "correct": "A",
+                    "user_answer": "D",
+                    "options": ["A", "B", "C", "D"],
+                },
+            )
+        assert res.status_code == 200
+        data = res.get_json()
+        assert data["score"] == -3

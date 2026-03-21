@@ -1681,6 +1681,7 @@ retroButtons.forEach(btn => {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory, markdownToHtml, buildInfoShareRow, _buildShareText, _infoShareMeta, handleRetroButton, playMechanicalClick, applyLanguage, t, _TRANSLATIONS,
+        wireInfoShareButtons, startQuiz, submitQuizAnswer, renderQuizQuestion, renderQuizSummary, setupMetadataTextTracks,
         getShareText, getRecentlyPlayedText, getArtworkUrl,
         showPlayIcon, updateTrack, pushHistory, renderHistory,
         fetchArtwork, handleMetadataFields, togglePlay,
@@ -1702,6 +1703,10 @@ if (typeof module !== 'undefined' && module.exports) {
         set historyLimit(v) { historyLimit = v; },
         get currentStreamQuality() { return currentStreamQuality; },
         set currentStreamQuality(v) { currentStreamQuality = v; },
+        get activeQuery() { return activeQuery; },
+        set activeQuery(v) { activeQuery = v; },
+        get quizState() { return quizState; },
+        set quizState(v) { quizState = v; },
         STREAM_LABELS, METADATA_DEBOUNCE_MS, MAX_HISTORY,
     };
 }
