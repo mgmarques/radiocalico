@@ -41,6 +41,15 @@ You are a Performance Analyst specializing in Radio Calico's frontend loading, A
 | **Codec selection** | FLAC lossless or AAC 211kbps — user-selectable | `player.js` |
 | **HLS retry** | Exponential backoff (4s→60s, max 10 retries) on fatal errors | `player.js` |
 
+### LLM Performance
+
+| Technique | Implementation | Location |
+|-----------|---------------|----------|
+| **Host GPU fallback** | `OLLAMA_BASE_URL` (host Metal GPU, fast) → `OLLAMA_FALLBACK_URL` (Docker CPU, 5-10x slower) | `llm_service.py` |
+| **max_tokens tuning** | Per-query-type limits (500–1500) to keep responses concise | `llm_service.py` |
+| **Response cache** | 24h TTL keyed by `(query_type, artist, track, language)` | `llm_service.py` |
+| **Docker CPU caveat** | Ollama in Docker is CPU-only on macOS (no GPU passthrough) — use `host.docker.internal` for host GPU | `docker-compose.yml` |
+
 ## Workflow
 
 1. **Profile** — identify the specific bottleneck area (frontend, API, streaming, database)
@@ -80,6 +89,9 @@ You are a Performance Analyst specializing in Radio Calico's frontend loading, A
 - Profile before optimizing — don't guess at bottlenecks
 - Prefer caching over reducing functionality
 - Keep the no-framework, no-bundler architecture — optimize within it
+- LLM response cache TTL (24h) is intentional — don't reduce it
+- Docker Ollama is CPU-only on macOS (5-10x slower) — prefer `host.docker.internal:11434` for host GPU
+- `max_tokens` limits per query type prevent verbose LLM responses — don't increase without measuring
 
 ## Security Checklist
 
@@ -103,6 +115,10 @@ You are a Performance Analyst specializing in Radio Calico's frontend loading, A
 | **CDN edge cache** | CloudFront caches `metadatav2.json` and HLS segments — Radio Calico has no control over TTL on these |
 | `FRAG_CHANGED` | HLS.js event fired when a new stream fragment is loaded — triggers `triggerMetadataFetch()` with debounce |
 | **keyset pagination** | High-performance alternative to `OFFSET` for large tables — not yet needed but relevant if `ratings` grows past ~50k rows |
+| **LLM response cache** | In-memory dict with 24h TTL keyed by `(query_type, artist, track, language)` — prevents redundant Ollama calls |
+| `OLLAMA_BASE_URL` | Primary Ollama URL — points to host GPU via `host.docker.internal:11434` for fast Metal inference |
+| `OLLAMA_FALLBACK_URL` | Fallback Ollama URL — Docker CPU container at `ollama:11434`, 5-10x slower on macOS (no GPU passthrough) |
+| `max_tokens` | Per-query-type token limit in LLM requests — controls response length and latency (500–1500 range) |
 
 ## Confidence Framework
 

@@ -24,10 +24,12 @@ You are a DevOps Engineer specializing in Radio Calico's Docker, nginx, CI/CD pi
 | `nginx` | nginx:alpine | 80 (mapped to 5050) | Static files + API proxy |
 | `web` | Custom (gunicorn + Flask) | 5000 (internal) | API server |
 | `db` | mysql:8.0 | 3306 (internal) | Database |
+| `ollama` | ollama/ollama | 11434 (internal) | LLM inference (Llama 3.2) |
 
 - Non-root `appuser` in web container
 - Health checks on all services
 - Named volumes for MySQL data persistence
+- Ollama healthcheck: `ollama list` with `start_period: 30s` (allows model loading time)
 
 ## CI/CD Pipeline (13 jobs)
 
@@ -72,6 +74,9 @@ Parallel security: bandit, safety, npm-audit, hadolint, trivy
 - Health endpoint: `GET /health` → `200 "ok"` (nginx-level, not Flask)
 - Structured JSON logging: Python (`python-json-logger`), nginx (JSON format)
 - X-Request-ID correlation across nginx → gunicorn → Flask
+- Ollama service uses `ollama list` healthcheck with `start_period: 30s` — allows model loading time
+- CI skips Ollama to avoid slow CPU inference: `docker compose --profile prod up --build -d db app nginx`
+- `OLLAMA_BASE_URL` (`http://host.docker.internal:11434`) for host GPU, `OLLAMA_FALLBACK_URL` (`http://ollama:11434`) for Docker CPU
 
 ## Security Checklist
 
@@ -97,6 +102,9 @@ Parallel security: bandit, safety, npm-audit, hadolint, trivy
 | **multi-stage build** | Dockerfile pattern: builder stage installs deps, final stage copies only what's needed — reduces image size |
 | **port 5050** | External port mapped from nginx:80 in Docker — the URL to use when Docker is running (not 5000, not 8080) |
 | `service_healthy` | Docker Compose condition that waits for a service's health check to pass before starting dependents |
+| `ollama` | Docker service running Ollama LLM server — healthcheck via `ollama list`, `start_period: 30s` for model loading |
+| `OLLAMA_BASE_URL` | Primary Ollama endpoint — `http://host.docker.internal:11434` to reach host macOS Metal GPU from Docker |
+| `OLLAMA_FALLBACK_URL` | Fallback Ollama endpoint — `http://ollama:11434` for Docker CPU container (5-10x slower on macOS) |
 
 ## Confidence Framework
 

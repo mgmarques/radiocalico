@@ -6,8 +6,8 @@
 | Field | Value |
 | --- | --- |
 | **Project** | Radio Calico |
-| **Version** | 1.0.0 |
-| **Date** | 2026-03-19 |
+| **Version** | 2.0.0 |
+| **Date** | 2026-03-21 |
 | **Diagrams** | 10 |
 | **Status** | Living document |
 
@@ -323,15 +323,15 @@ graph LR
     end
 
     subgraph Tests["🧪 Tests (need: lint)"]
-        python["python-tests\n61 unit · ≥95% coverage"]
+        python["python-tests\n81 unit · ≥95% coverage"]
         integration["integration-tests\n19 API chain tests"]
-        js["js-tests\n162 Jest · ≥90% lines"]
-        skills["skills-tests\n291 commands + agents"]
+        js["js-tests\n238 Jest · ≥95% stmts"]
+        skills["skills-tests\n351 commands + agents"]
     end
 
     subgraph E2E["🌐 E2E (need: python + js + integration)"]
-        e2e["e2e-tests\n19 HTTP · nginx→gunicorn→MySQL"]
-        browser["browser-tests\n37 Selenium headless Chrome"]
+        e2e["e2e-tests\n24 HTTP · nginx→gunicorn→MySQL"]
+        browser["browser-tests\n47 Selenium headless Chrome"]
     end
 
     subgraph DAST["🛡️ DAST (need: python + js)"]

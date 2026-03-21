@@ -6,8 +6,8 @@
 | Field | Value |
 | --- | --- |
 | **Project** | Radio Calico |
-| **Version** | 1.0.0 |
-| **Date** | 2026-03-17 |
+| **Version** | 2.0.0 |
+| **Date** | 2026-03-21 |
 | **Status** | Living document |
 
 </td>
@@ -35,9 +35,9 @@
 
 ## 1. Executive Summary
 
-Radio Calico is a live audio streaming web player with a Python Flask backend for track ratings, user accounts, and feedback. The application streams audio via HLS from AWS CloudFront in two user-selectable quality levels (48 kHz FLAC lossless and AAC Hi-Fi 211 kbps), displays real-time track metadata from a CloudFront JSON endpoint, fetches album artwork and duration from the iTunes Search API, and allows users to rate tracks, manage profiles, and submit feedback. All user-generated data is stored locally in MySQL.
+Radio Calico is a live audio streaming web player with a Python Flask backend for track ratings, user accounts, feedback, and AI-powered song information. The application streams audio via HLS from AWS CloudFront in two user-selectable quality levels (48 kHz FLAC lossless and AAC Hi-Fi 211 kbps), displays real-time track metadata from a CloudFront JSON endpoint, fetches album artwork and duration from the iTunes Search API, and allows users to rate tracks, manage profiles, submit feedback, and explore song details (lyrics, facts, merchandise, jokes, quiz) via a local LLM. All user-generated data is stored locally in MySQL.
 
-The frontend is a vanilla JavaScript single-page application with no build step or framework dependency. The backend is a stateless Flask REST API accessed through PyMySQL with parameterized queries. In production, the stack runs in Docker containers with nginx serving static files and reverse-proxying API requests to gunicorn. The project includes 467 automated tests across 6 test suites, 6 security scanning tools, 4 linters, and a GitHub Actions CI pipeline with 13 parallel jobs.
+The frontend is a vanilla JavaScript single-page application with no build step or framework dependency, featuring retro radio buttons for AI-powered song information, an interactive quiz game, and i18n support (English, Brazilian Portuguese, Spanish). The backend is a stateless Flask REST API accessed through PyMySQL with parameterized queries, with an LLM service layer (Ollama + Llama 3.2 via OpenAI SDK). In production, the stack runs in Docker containers with nginx serving static files and reverse-proxying API requests to gunicorn, with Ollama providing local LLM inference. The project includes 843 automated tests across 8 test suites, 6 security scanning tools, 4 linters, and a GitHub Actions CI pipeline with 13+ parallel jobs.
 
 ---
 
@@ -58,6 +58,7 @@ graph TD
         nginx["nginx:alpine<br/>:80"]
         gunicorn["gunicorn + Flask<br/>:5000 (internal)"]
         MySQL["MySQL 8.0<br/>:3306 (internal)"]
+        Ollama["Ollama<br/>Llama 3.2<br/>:11434"]
     end
 
     iTunes["iTunes Search API<br/>Artwork + Duration"]
@@ -73,6 +74,7 @@ graph TD
     nginx -- "Serves static files" --> nginx
     nginx -- "proxy_pass /api/" --> gunicorn
     gunicorn -- "PyMySQL queries" --> MySQL
+    gunicorn -- "OpenAI SDK<br/>(song info, quiz)" --> Ollama
 
     style Browser fill:#D8F2D5,stroke:#1F4E23,color:#231F20
     style nginx fill:#38A29D,stroke:#1F4E23,color:#FFFFFF
@@ -88,11 +90,12 @@ graph TD
 
 | Component | Role |
 |-----------|------|
-| **Browser** | HLS.js decodes audio stream; player.js manages UI, metadata, ratings, auth, sharing |
+| **Browser** | HLS.js decodes audio stream; player.js manages UI, metadata, ratings, auth, sharing, retro radio buttons, AI info panel, quiz game, i18n |
 | **CloudFront CDN** | Delivers HLS audio segments and track metadata JSON |
 | **nginx** | Serves static files (HTML/CSS/JS/images), reverse-proxies `/api/` to gunicorn, adds security headers |
-| **gunicorn + Flask** | Stateless REST API for ratings, auth, profiles, feedback |
-| **MySQL 8.0** | Persistent storage for ratings, users, profiles, feedback |
+| **gunicorn + Flask** | Stateless REST API for ratings, auth, profiles, feedback, song info, quiz |
+| **MySQL 8.0** | Persistent storage for ratings, users, profiles, feedback, SBOM history (8 tables) |
+| **Ollama + Llama 3.2** | Local LLM for song info (lyrics, details, facts, merchandise, jokes, everything) and interactive quiz. Host GPU fallback for fast inference on macOS |
 | **iTunes Search API** | Client-side lookups for album artwork (300x300), track duration, album name |
 | **Google Fonts** | Montserrat (headings) and Open Sans (body) loaded client-side |
 
@@ -102,7 +105,7 @@ graph TD
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Frontend** | Vanilla JavaScript (ES2020) | Playback, metadata, ratings, auth, sharing -- no framework or bundler |
+| **Frontend** | Vanilla JavaScript (ES2020) | Playback, metadata, ratings, auth, sharing, retro radio buttons, AI info panel, quiz game, i18n -- no framework or bundler |
 | **Frontend** | HTML5 + CSS3 | Single-page markup with CSS custom properties and responsive layout |
 | **Frontend** | HLS.js 1.x | HLS stream decoding for non-Safari browsers |
 | **Frontend** | Native HLS | Safari uses built-in `<audio>` HLS support |
@@ -113,14 +116,16 @@ graph TD
 | **Backend** | Flask-Limiter | Rate limiting on auth endpoints (in-memory storage) |
 | **Backend** | python-json-logger | Structured JSON log output |
 | **Backend** | python-dotenv | Environment variable loading from `.env` files |
-| **Database** | MySQL 5.7 (local) / 8.0 (Docker) | Relational storage for ratings, users, profiles, feedback |
+| **Backend** | OpenAI SDK (Python) | OpenAI-compatible client for Ollama LLM queries |
+| **LLM** | Ollama + Llama 3.2 | Local LLM for song info (lyrics, details, facts, merchandise, jokes, quiz). Host GPU fallback on macOS |
+| **Database** | MySQL 5.7 (local) / 8.0 (Docker) | Relational storage for ratings, users, profiles, feedback, SBOM history (8 tables) |
 | **Web Server** | nginx:alpine | Static file serving, reverse proxy, security headers, gzip |
 | **App Server** | gunicorn 22.0 | WSGI server, 4 worker processes in production |
 | **Streaming** | AWS CloudFront | HLS live stream delivery (FLAC + AAC) and metadata JSON |
 | **External API** | iTunes Search API | Album artwork, track duration, collection name |
 | **Typography** | Google Fonts | Montserrat + Open Sans web fonts |
 | **Containerization** | Docker + Docker Compose | Multi-stage builds, dev/prod profiles |
-| **CI/CD** | GitHub Actions | 11-job pipeline: lint, test, security, E2E, DAST |
+| **CI/CD** | GitHub Actions | 13+ job pipeline: lint, test, security, E2E, browser, DAST, SBOM, V&V |
 | **Testing** | pytest + pytest-cov | Python unit/integration tests with coverage |
 | **Testing** | Jest + jsdom | JavaScript unit tests with DOM simulation |
 | **Linting** | Ruff, ESLint, Stylelint, HTMLHint | Code quality across Python, JS, CSS, HTML |
@@ -376,7 +381,64 @@ Returns `200 "ok"` as plain text. Served directly by nginx (not proxied to Flask
 
 ---
 
-### 4.6 Static Files
+### 4.6 Song Info (LLM)
+
+#### POST /api/song-info
+
+Query the LLM for song information. Rate-limited to 10 requests/minute.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `query_type` | string | Yes | One of: `lyrics`, `details`, `facts`, `merchandise`, `jokes`, `everything` |
+| `artist` | string | Yes | Artist name |
+| `track` | string | Yes | Track title |
+| `album` | string | No | Album name (defaults to "Unknown") |
+| `artwork_url` | string | No | Album artwork URL for context |
+| `language` | string | No | Response language (defaults to English) |
+
+**Response:** `{ "ok": true, "content": "markdown..." }` or `{ "ok": false, "error": "..." }`
+
+Responses are cached for 24 hours keyed by `(query_type, artist, track, language)`.
+
+#### GET /api/song-info/health
+
+Health check for the LLM backend. Returns `{ "ok": true/false, "ollama": true/false, "model": "llama3.2", "model_available": true/false }`.
+
+---
+
+### 4.7 Quiz (LLM)
+
+#### POST /api/quiz/start
+
+Start an interactive 5-question quiz about the current song. Rate-limited to 10 requests/minute.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `artist` | string | Yes | Artist name |
+| `track` | string | Yes | Track title |
+| `album` | string | No | Album name |
+| `language` | string | No | Quiz language (defaults to English) |
+
+**Response:** `{ "ok": true, "session_id": "...", "question": "...", "question_number": 1, "total_questions": 5 }`
+
+#### POST /api/quiz/answer
+
+Submit an answer to the current quiz question.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `session_id` | string | Yes | Quiz session ID from `/api/quiz/start` |
+| `answer` | string | Yes | User's answer |
+
+**Response (mid-quiz):** `{ "ok": true, "score": 5, "feedback": "...", "question": "...", "question_number": 2 }`
+
+**Response (final):** `{ "ok": true, "score": -3, "feedback": "...", "summary": { "total": 12, "max": 25, "verdict": "..." } }`
+
+Scoring: -5 to +5 per question. The LLM evaluates how close the answer is and provides sarcastic feedback.
+
+---
+
+### 4.8 Static Files
 
 #### GET /
 
@@ -386,7 +448,7 @@ Serves `static/index.html` via Flask's `send_from_directory`. In production, ngi
 
 ## 5. Database Schema
 
-The application uses four MySQL tables. The `profiles` table has a foreign key to `users` (one-to-one, cascade on delete). The `feedback` table stores a denormalized snapshot of the user's profile at submission time. The `ratings` table is independent, keyed by station + IP with a unique constraint to prevent duplicate votes.
+The application uses 8 MySQL tables: 4 app tables and 4 SBOM history tables. The `profiles` table has a foreign key to `users` (one-to-one, cascade on delete). The `feedback` table stores a denormalized snapshot of the user's profile at submission time. The `ratings` table is independent, keyed by station + IP with a unique constraint to prevent duplicate votes. The SBOM tables (`sbom_scans`, `sbom_packages`, `sbom_vulnerabilities`, `sbom_impact_analysis`) store dependency scan history with cascade deletes from `sbom_scans`.
 
 ```mermaid
 erDiagram
@@ -429,8 +491,55 @@ erDiagram
         TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
     }
 
+    sbom_scans {
+        INT id PK "AUTO_INCREMENT"
+        VARCHAR(100) project "NOT NULL"
+        DATE scan_date "NOT NULL"
+        INT total_packages "DEFAULT 0"
+        INT total_vulns "DEFAULT 0"
+        TIMESTAMP created_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    sbom_packages {
+        INT id PK "AUTO_INCREMENT"
+        INT scan_id FK "NOT NULL"
+        ENUM ecosystem "python, nodejs, dotnet, maven, gradle"
+        VARCHAR(255) name "NOT NULL"
+        VARCHAR(100) version "NOT NULL"
+        VARCHAR(255) license "DEFAULT ''"
+        VARCHAR(100) latest_version "DEFAULT ''"
+    }
+
+    sbom_vulnerabilities {
+        INT id PK "AUTO_INCREMENT"
+        INT scan_id FK "NOT NULL"
+        VARCHAR(255) package_name "NOT NULL"
+        ENUM ecosystem "python, nodejs, dotnet, maven, gradle"
+        VARCHAR(100) vuln_id "NOT NULL"
+        VARCHAR(20) severity "DEFAULT ''"
+        DECIMAL cvss_score "NULL"
+        VARCHAR(255) cvss_vector "DEFAULT ''"
+        DATE published_date "NULL"
+        DATE modified_date "NULL"
+        VARCHAR(100) fix_version "DEFAULT ''"
+        VARCHAR(500) reference_url "DEFAULT ''"
+        VARCHAR(500) description "DEFAULT ''"
+    }
+
+    sbom_impact_analysis {
+        INT id PK "AUTO_INCREMENT"
+        INT scan_id FK "NOT NULL"
+        VARCHAR(100) vuln_id "NOT NULL"
+        VARCHAR(255) package_name "NOT NULL"
+        VARCHAR(50) rating "NOT NULL"
+        TEXT analysis "NOT NULL"
+    }
+
     users ||--o| profiles : "has (ON DELETE CASCADE)"
     users ||--o{ feedback : "submits (denormalized snapshot)"
+    sbom_scans ||--o{ sbom_packages : "contains"
+    sbom_scans ||--o{ sbom_vulnerabilities : "reports"
+    sbom_scans ||--o{ sbom_impact_analysis : "analyzes"
 ```
 
 ### Table Details
@@ -845,7 +954,7 @@ graph LR
     lint --> python-tests["python-tests<br/>pytest + coverage<br/>(95% threshold)"]
     lint --> integration-tests["integration-tests<br/>pytest<br/>test_integration.py"]
     lint --> js-tests["js-tests<br/>Jest + coverage<br/>(90% line threshold)"]
-    lint --> skills-tests["skills-tests<br/>pytest<br/>18 slash commands"]
+    lint --> skills-tests["skills-tests<br/>pytest<br/>19 slash commands + 10 agents"]
 
     python-tests --> e2e-tests["e2e-tests<br/>Docker prod stack<br/>+ pytest"]
     js-tests --> e2e-tests
@@ -887,28 +996,34 @@ graph LR
     style trivy fill:#D8F2D5,stroke:#1F4E23,color:#231F20
 ```
 
-### 9.2 Test Suites (467 Total Tests)
+### 9.2 Test Suites (843 Total Tests)
 
 | Suite | File | Tests | Tool | Coverage Threshold |
 |-------|------|-------|------|--------------------|
-| Python unit | `api/test_app.py` | 61 | pytest + pytest-cov | 95% line coverage |
+| Python unit | `api/test_app.py` | 81 | pytest + pytest-cov | 95% line coverage |
+| LLM service | `tests/test_llm_service.py` | 62 | pytest (mocked OpenAI SDK) | -- |
 | Python integration | `api/test_integration.py` | 19 | pytest | -- |
-| JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom | 90% line threshold (actual ~96%) |
-| End-to-end | `tests/test_e2e.py` | 19 | pytest + requests | -- |
-| Browser | `tests/test_browser.py` | 37 | Selenium + headless Chrome | -- |
-| Skills validation | `tests/test_skills.py` | 169 | pytest | -- |
+| JavaScript unit | `static/js/player.test.js` | 238 | Jest + jsdom | 95% statement / 97% line |
+| End-to-end | `tests/test_e2e.py` | 24 | pytest + requests | -- |
+| Browser | `tests/test_browser.py` | 47 | Selenium + headless Chrome | -- |
+| Skills validation | `tests/test_skills.py` | 333 | pytest | -- |
+| Script unit | `tests/test_generate_sbom.py` | 39 | pytest | -- |
 
-**Python unit tests** (`api/test_app.py`): Cover all API endpoints, helper functions (`hash_password`, `verify_password`, `get_user_from_token`, `require_auth`), error paths, edge cases, and rate limiting. Use an isolated `radiocalico_test` database created and destroyed per test session. Fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`.
+**Python unit tests** (`api/test_app.py`): Cover all API endpoints including song-info and quiz, helper functions (`hash_password`, `verify_password`, `get_user_from_token`, `require_auth`), error paths, edge cases, and rate limiting. Use an isolated `radiocalico_test` database created and destroyed per test session. Fixtures: `client`, `registered_user`, `auth_token`, `auth_headers`.
+
+**LLM service tests** (`tests/test_llm_service.py`): Cover all query types (lyrics, details, facts, merchandise, jokes, everything), quiz flow (generate, evaluate, summary), cache hit/miss paths, host GPU fallback logic, health check variations, language parameter handling, and error scenarios. Uses mocked OpenAI SDK.
 
 **Python integration tests** (`api/test_integration.py`): Chain multiple API calls per test to validate complete workflows: user lifecycle (register, login, profile, feedback, logout), ratings workflow, session handling, and auth edge cases.
 
-**JavaScript unit tests** (`static/js/player.test.js`): Cover pure functions, DOM manipulation, ratings UI, auth flows, sharing (WhatsApp, X/Twitter, Telegram), history management, theme switching, and stream quality selection. Use Jest with jsdom, mocked `fetch`, `Hls.js`, `localStorage`, and `window.open`.
+**JavaScript unit tests** (`static/js/player.test.js`): Cover pure functions, DOM manipulation, ratings UI, auth flows, sharing (WhatsApp, X/Twitter, Telegram with per-platform limits), retro radio buttons (toggle, exclusive, sound), info panel (expand, scroll, share), quiz game (start, answer, render, summary, scoring), i18n (applyLanguage, translations), markdownToHtml, history management, theme switching, and stream quality selection. Use Jest with jsdom, mocked `fetch`, `Hls.js`, `localStorage`, `window.open`, and Web Audio API.
 
-**End-to-end tests** (`tests/test_e2e.py`): Make real HTTP requests to the full Docker production stack (nginx, gunicorn, MySQL). Validate static file serving, security headers, API proxy behavior, health checks, and error handling.
+**End-to-end tests** (`tests/test_e2e.py`): Make real HTTP requests to the full Docker production stack (nginx, gunicorn, MySQL). Validate static file serving, security headers, API proxy behavior, health checks, song-info endpoints, quiz endpoints, and error handling.
 
-**Browser tests** (`tests/test_browser.py`): Use Selenium with headless Chrome against the Docker production stack. Validate page load, theme switching, drawer navigation, auth UI, rating buttons, share buttons, responsive layout, and settings dropdown.
+**Browser tests** (`tests/test_browser.py`): Use Selenium with headless Chrome against the Docker production stack. Validate page load, theme switching, drawer navigation, auth UI, rating buttons, retro radio buttons, info panel expand/collapse, share buttons, language switching, responsive layout, and settings dropdown.
 
-**Skills validation tests** (`tests/test_skills.py`): Validate all 18 Claude Code slash commands for correct structure, version references, and file path accuracy.
+**Skills validation tests** (`tests/test_skills.py`): Validate all 19 Claude Code slash commands + 10 agents for correct structure, version references, agent delegation, and file path accuracy (333 parametrized tests).
+
+**Script unit tests** (`tests/test_generate_sbom.py`): Validate SBOM generation including enrichment, policy compliance, OSV cache, multi-project support, and DB persistence.
 
 ### 9.3 Security Scanning (6 Tools)
 
@@ -934,7 +1049,7 @@ All linters run as the first job in CI (`lint`). All other test jobs depend on l
 
 ### 9.5 CI Job Dependencies
 
-The 11 CI jobs form a directed acyclic graph:
+The 13+ CI jobs form a directed acyclic graph:
 
 - **Independent** (no dependencies): `lint`, `bandit`, `safety`, `npm-audit`, `hadolint`, `trivy`
 - **After lint**: `python-tests`, `integration-tests`, `js-tests`, `skills-tests`
@@ -1005,22 +1120,25 @@ All configuration is loaded from environment variables via `python-dotenv`. The 
 | `CORS_ORIGIN` | `http://127.0.0.1:5000` | Allowed CORS origin(s) |
 | `APP_PORT` | `5050` | Host port mapped to the container (Docker Compose) |
 | `MYSQL_ROOT_PASSWORD` | -- | MySQL root password (Docker only, required) |
+| `OLLAMA_BASE_URL` | `http://ollama:11434/v1` | Primary Ollama URL (set to `http://host.docker.internal:11434/v1` for host GPU) |
+| `OLLAMA_FALLBACK_URL` | `http://ollama:11434/v1` | Fallback Ollama URL (Docker CPU) |
+| `OLLAMA_MODEL` | `llama3.2` | LLM model name for Ollama |
 
 ### 11.2 Docker Compose Profiles
 
 | Profile | Command | Services Started | Use Case |
 |---------|---------|-----------------|----------|
 | `dev` | `docker compose --profile dev up --build` | `db` + `app-dev` | Development with Flask debug + hot reload |
-| `prod` | `docker compose --profile prod up --build -d` | `db` + `app` + `nginx` | Production with gunicorn + nginx |
+| `prod` | `docker compose --profile prod up --build -d` | `db` + `app` + `nginx` + `ollama` + `ollama-pull` | Production with gunicorn + nginx + LLM |
 
 ### 11.3 Key Makefile Targets
 
 | Target | Description |
 |--------|-------------|
 | `make install` | Install all dev dependencies (Python + npm) |
-| `make test` | Run all unit tests (Python + JavaScript) |
-| `make coverage` | Python tests + coverage (fails if <98%) |
-| `make coverage-js` | JavaScript tests + coverage (fails if below thresholds) |
+| `make test` | Run all unit tests (Python + JavaScript + scripts) |
+| `make coverage` | Python tests + coverage (fails if <95%) |
+| `make coverage-js` | JavaScript tests + coverage (95% stmts / 97% lines) |
 | `make lint` | Run all 4 linters (Ruff + ESLint + Stylelint + HTMLHint) |
 | `make fix-py` | Auto-fix Python lint + format issues |
 | `make security` | Core scans: Bandit + Safety + npm audit |

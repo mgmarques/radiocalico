@@ -1,6 +1,6 @@
 # Testing & CI/CD
 
-## Test Suite — 843 total tests across 8 suites
+## Test Suite — 861 total tests across 8 suites
 
 | Suite | File | Tests | Tool |
 |-------|------|-------|------|
@@ -10,7 +10,7 @@
 | JavaScript unit | `static/js/player.test.js` | 238 | Jest + jsdom (95% statement, 97% line) |
 | E2E | `tests/test_e2e.py` | 24 | pytest + requests (Docker prod stack) |
 | Browser | `tests/test_browser.py` | 47 | Selenium + headless Chrome (Docker prod) |
-| Skills + Agents | `tests/test_skills.py` | 333 | pytest (validates 19 commands + 10 agents + 9 agent delegations) |
+| Skills + Agents | `tests/test_skills.py` | 351 | pytest (validates 22 commands + 10 agents + 9 agent delegations) |
 | Script unit | `tests/test_generate_sbom.py` | 39 | pytest (SBOM enrichment, policy compliance, OSV cache, multi-project, DB persistence) |
 
 - Python unit tests use isolated `radiocalico_test` database (created/destroyed per test)
@@ -44,7 +44,7 @@ Parallel security: `bandit, safety, npm-audit, hadolint, trivy`
 | `make security-all` | All scans including Docker + DAST |
 | `make ci` | Full pipeline: lint + coverage + security |
 | `make test-integration` | API integration tests (requires MySQL) |
-| `make test-skills` | Validate 19 slash commands + 10 agents |
+| `make test-skills` | Validate 22 slash commands + 10 agents |
 | `make test-browser` | 47 Selenium browser tests (Docker + Chrome) |
 | `make test-e2e` | E2E tests (requires Docker prod running) |
 | `make docker-e2e` | Start prod, run E2E, stop prod |
