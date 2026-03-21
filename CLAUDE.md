@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-Radio Calico is a live audio streaming web player with a Flask backend for ratings, user accounts, and feedback. Streams HLS audio from CloudFront (FLAC lossless or AAC Hi-Fi), displays track metadata, fetches artwork from iTunes, and lets users rate tracks, manage profiles, and submit feedback — all stored in MySQL.
+Radio Calico is a live audio streaming web player with a Flask backend for ratings, user accounts, feedback, and AI-powered song information. Streams HLS audio from CloudFront (FLAC lossless or AAC Hi-Fi), displays track metadata, fetches artwork from iTunes, and lets users rate tracks, manage profiles, submit feedback, and explore song details via LLM — all stored in MySQL.
 
 ## Architecture
 
@@ -15,9 +15,11 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Artwork**: iTunes Search API (client-side, cached in localStorage 24h TTL).
 - **Auth**: Token-based. PBKDF2 (260k iterations). Tokens in `localStorage`.
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
-- **Testing**: 670 tests (61 unit + 19 integration + 162 JS + 19 E2E + 37 browser + 333 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
+- **LLM**: Ollama (Llama 3.2) via OpenAI SDK for song info (lyrics, details, facts, merchandise, jokes, quiz). Docker service with host GPU fallback. Response cache (24h TTL).
+- **i18n**: English (default), Brazilian Portuguese, Spanish. UI labels translated; song metadata always in original language.
+- **Testing**: 843 tests (81 unit + 62 LLM + 19 integration + 238 JS + 24 E2E + 47 browser + 333 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
-- **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination.
+- **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination, LLM response cache (24h TTL).
 
 ## Key URLs & Endpoints
 
@@ -30,22 +32,36 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 ### Local API (Flask :5000, Docker :5050)
 
 **Ratings** (no auth):
+
 - `GET /api/ratings` — paginated list (`?limit=100&offset=0`, max 500). No IPs exposed.
 - `GET /api/ratings/summary` — likes/dislikes by station
 - `GET /api/ratings/check?station=...` — check if current IP rated
 - `POST /api/ratings` — submit `{ station, score }` (score 0 or 1, 409 on duplicate)
 
 **Auth**:
+
 - `POST /api/register` — `{ username, password }` (8-128 chars, rate-limited 5/min)
 - `POST /api/login` — `{ username, password }` → `{ token, username }` (rate-limited 5/min)
 - `POST /api/logout` — invalidate token (requires Bearer token)
 
 **Profile** (requires Bearer token):
+
 - `GET /api/profile` — get profile (nickname, email, genres, about)
 - `PUT /api/profile` — update profile
 
 **Feedback** (requires Bearer token):
+
 - `POST /api/feedback` — submit `{ message }` (stores with profile snapshot)
+
+**Song Info** (LLM, rate-limited 10/min):
+
+- `POST /api/song-info` — `{ query_type, artist, track, album?, artwork_url?, language? }` → `{ ok, content }` (Markdown)
+- `GET /api/song-info/health` — check Ollama + model availability
+
+**Quiz** (LLM, rate-limited 10/min):
+
+- `POST /api/quiz/start` — `{ artist, track, album?, language? }` → `{ ok, session_id, question, question_number, total_questions }`
+- `POST /api/quiz/answer` — `{ session_id, answer }` → `{ ok, score, feedback, question?, summary? }`
 
 **Health** (nginx only): `GET /health` → `200 "ok"`
 
@@ -64,13 +80,13 @@ make docker-prod   # Prod: gunicorn + nginx + MySQL
 make docker-down   # Stop and remove volumes
 
 # Testing & CI
-make test          # All unit tests: Python (61) + JS (162)
+make test          # All unit tests: Python (81) + JS (238)
 make lint          # All linters (Ruff + ESLint + Stylelint + HTMLHint)
 make ci            # Full pipeline: lint + coverage + security
 make test-integration  # 19 API integration tests
-make test-e2e          # 19 E2E tests (Docker prod required)
-make test-skills       # 297 skill + agent validation tests
-make test-browser      # 37 Selenium browser tests (Docker + Chrome)
+make test-e2e          # 24 E2E tests (Docker prod required)
+make test-skills       # 333 skill + agent validation tests
+make test-browser      # 47 Selenium browser tests (Docker + Chrome)
 
 # Hard refresh after static file edits: Cmd+Shift+R
 ```
@@ -98,7 +114,7 @@ make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 7. **Emoji in URL encoding**: Use plain text `[N likes / N unlikes]`.
 8. **mailto: in `window.open`**: Use `window.location.href` instead.
 
-## Slash Commands (19 total, all v1.0.0)
+## Slash Commands (19 total, all v2.0.0)
 
 9 heavy skills delegate to a specialized subagent (isolated context window).
 
@@ -124,7 +140,7 @@ make test-browser      # 37 Selenium browser tests (Docker + Chrome)
 | `/update-claude-md` | Refresh CLAUDE.md from codebase | — |
 | `/generate-sbom` | Generate SBOM.md with all packages + CVE status | Security Auditor |
 
-## Custom Agents (10 total, all v1.0.0)
+## Custom Agents (10 total, all v2.0.0)
 
 Task-specific AI personalities in `.claude/agents/` with specialized knowledge and workflows.
 
@@ -147,7 +163,7 @@ Task-specific AI personalities in `.claude/agents/` with specialized knowledge a
 - **Settings**: `.claude/settings.json` — auto-approved commands, denied destructive ops, lint hooks
 - **Skills**: `.claude/skills/*/SKILL.md` — mirrored from commands for extended skill features
 - **Agents**: `.claude/agents/*.md` — 10 task-specific AI agents with specialized workflows
-- **Hooks**: auto-lint Python/JS on file edit, context reminder on compaction
+- **Hooks**: auto-lint Python/JS/CSS/HTML on file edit, static file hard-refresh reminder, SBOM reminder on dependency changes, context reminder on compaction
 - **Ignore**: `.claudeignore` — excludes node_modules, venv, coverage, caches from context
 
 ## Strict Accuracy Policy

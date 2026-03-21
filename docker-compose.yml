@@ -36,6 +36,9 @@ services:
       FLASK_HOST: "0.0.0.0"
       FLASK_DEBUG: "false"
       CORS_ORIGIN: ${CORS_ORIGIN}
+      # Tries host Ollama first (GPU), falls back to Docker Ollama (CPU)
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434/v1}"
+      OLLAMA_FALLBACK_URL: "http://ollama:11434/v1"
     depends_on:
       db:
         condition: service_healthy
@@ -83,6 +86,8 @@ services:
       FLASK_HOST: "0.0.0.0"
       FLASK_DEBUG: "true"
       CORS_ORIGIN: "*"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434/v1}"
+      OLLAMA_FALLBACK_URL: "http://ollama:11434/v1"
     volumes:
       - ./api:/app/api
       - ./static:/app/static
@@ -97,5 +102,38 @@ services:
     profiles:
       - dev
 
+  # ── Ollama LLM (Llama 3.2 for song info) ──────────────────
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 30s
+    profiles:
+      - prod
+      - dev
+
+  # ── Pull Llama 3.2 model on first startup ────────────────
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["ollama", "pull", "llama3.2"]
+    environment:
+      OLLAMA_HOST: "http://ollama:11434"
+    restart: "no"
+    profiles:
+      - prod
+      - dev
+
 volumes:
   mysql_data:
+  ollama_data:

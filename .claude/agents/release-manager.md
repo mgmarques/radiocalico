@@ -1,4 +1,4 @@
-<!-- Radio Calico Agent v1.0.0 -->
+<!-- Radio Calico Agent v2.0.0 -->
 # Release Manager Agent
 
 ## Description
@@ -109,7 +109,7 @@ bandit, safety, npm-audit, hadolint, trivy
 |------|------------------------|
 | **semver** | Versioning scheme: MAJOR.MINOR.PATCH — PATCH=bug fix, MINOR=new feature, MAJOR=breaking change |
 | **CI gate** | A required GitHub Actions job that must be green before merge is allowed — all 13 jobs are gates |
-| **VERSION file** | Single source of version truth at repo root — must match all `<!-- Radio Calico Agent/Skill/Command v1.0.0 -->` headers |
+| **VERSION file** | Single source of version truth at repo root — must match all `<!-- Radio Calico Agent/Skill/Command v2.0.0 -->` headers |
 | **pre-merge checklist** | The 9-item list in `## Pre-Merge Checklist` — every item must be checked before approving a merge |
 | **schema change PR** | Any PR modifying `db/init.sql` — automatically requires extra DBA review before merge |
 | **pipeline change PR** | Any PR modifying `.github/workflows/ci.yml` — automatically requires extra DevOps review before merge |

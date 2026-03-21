@@ -1,4 +1,4 @@
-<!-- Radio Calico Skill v1.0.0 -->
+<!-- Radio Calico Skill v2.0.0 -->
 Test the Radio Calico ratings API end-to-end.
 
 Detect the environment: if Docker is running (`docker compose --profile dev ps` shows healthy containers), use http://127.0.0.1:5050. Otherwise use http://127.0.0.1:5000.

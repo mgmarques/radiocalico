@@ -7,7 +7,7 @@
 **A live audio streaming web player**
 Ad-free, subscription-free — 48 kHz FLAC lossless or AAC Hi-Fi 211 kbps via HLS
 
-> Study Case: Claude Code — Building Faster with AI, from Prototype to Prod (2026)
+> Study Case: Claude Code and OpenAI — Building Faster with AI, from Prototype to Prod (2026)
 
 </td>
 </tr></table>
@@ -28,6 +28,7 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 - **Social Sharing** — share current track or recently played list via WhatsApp, X/Twitter, Telegram
 - **Music Search** — find tracks on Spotify, YouTube Music, Amazon Music
 - **Feedback System** — logged-in users can submit feedback (stored with profile data)
+- **AI Song Info** — retro radio buttons for Lyrics, Details, Interesting Facts, Merchandise, Jokes, Everything About, and an interactive Quiz — powered by Ollama (Llama 3.2)
 - **Dark/Light Theme** — toggle via settings gear, persisted in localStorage
 - **Responsive Design** — single-column layout below 700px
 
@@ -35,53 +36,59 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 
 ## Screenshots
 
-### Light Mode
+### 1. Light Mode
 
-![Radio Calico Light Mode](docs/1_LightMode.png)
+![Radio Calico Light Mode](docs/1_Light.png)
 
-*Light theme — Now Playing with album artwork, metadata, ratings, share buttons (WhatsApp, X, Telegram, Spotify, YouTube Music, Amazon), player bar, Recently Played with filters, and sticky footer.*
+*Light theme — Now Playing with album artwork, metadata, ratings, retro radio buttons (Lyrics, Details, Facts, Merchandise, Jokes, Everything About, Quiz), share buttons, player bar, and Recently Played with filters.*
 
-### Settings / Configurations
+### 2. Settings / Configurations
 
-![Radio Calico Settings](docs/2_Configurations.png)
+![Radio Calico Settings](docs/2_config.png)
 
-*Settings dropdown — Light/Dark theme toggle and Stream Quality selection (FLAC Hi-Res lossless or AAC Hi-Fi).*
+*Settings dropdown — Light/Dark theme toggle, Stream Quality selection (FLAC Hi-Res / AAC Hi-Fi), and Language selector (English, Brazilian Portuguese, Spanish).*
 
-### Dark Mode (Default)
+### 3. AI-Powered Song Information
 
-![Radio Calico Dark Mode](docs/3_DarkMode.png)
+![Radio Calico AI Action](docs/3_AI_Action.png)
 
-*Dark theme — all colors adapt via CSS custom property overrides. Default theme on first visit.*
+*Retro radio buttons in action — pressing "Details" or any button queries the LLM (Ollama + Llama 3.2) and displays song information in an expanding scrollable panel. Results include song meaning, genre, album tracklist, and more.*
 
-### Login / Register
+### 4. Share AI Content
 
-![Radio Calico Login Drawer](docs/4_Loggin.png)
+![Radio Calico Share](docs/4_Share.png)
 
-*Hamburger menu opens a slide-out drawer with Login/Register form.*
+*Share AI-generated content via WhatsApp (up to 4000 chars), X/Twitter (280 chars), or Telegram (4000 chars). Share buttons appear at the bottom of each AI result panel.*
 
-### User Profile
+### 5. Multi-Language Support
 
-![Radio Calico User Profile](docs/5_Profile.png)
+![Radio Calico Multi-Language](docs/5_Mult_Languages.png)
 
-*Logged-in view — profile with nickname, email, music genre preferences (tag-style checkboxes), and "About You" text area.*
+*i18n support — UI labels translated to Brazilian Portuguese and Spanish. Song metadata (artist, track, album) always stays in its original language. AI responses are generated in the selected language.*
 
-### Feedback
+### 6. Dark Mode (Default)
 
-![Radio Calico Feedback](docs/6_Feedback.png)
+![Radio Calico Dark Mode](docs/6_Dark.png)
 
-*Feedback form — submit via email (stored in DB), or post on X/Twitter or Telegram.*
+*Dark theme — all colors adapt via CSS custom property overrides. Retro buttons, info panel, and quiz chat all support dark mode. Default theme on first visit.*
 
-### Docker Production Stack
+### 7. Login / Register
 
-![Radio Calico Docker Containers](docs/7_Docker_contanier.png)
+![Radio Calico Login Drawer](docs/7_Login.png)
 
-*Docker production deployment — nginx reverse proxy, gunicorn (4 workers), and MySQL 8.0 running as healthy containers.*
+*Hamburger menu opens a slide-out drawer with Login/Register form, user profile (nickname, email, genre tags), and feedback submission.*
 
-### CI/CD Pipeline (GitHub Actions)
+### 8. Interactive Song Quiz
 
-![Radio Calico CI/CD Pipeline](docs/8_CiCD.png)
+![Radio Calico Quiz](docs/8_Quiz.png)
 
-*GitHub Actions workflow — 13 parallel jobs: lint, unit tests (Python + JS), integration tests, E2E tests, browser tests, skills validation, and 6 security scans (Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP).*
+*Quiz mode — 5-question interactive chat game powered by the LLM. Sarcastic scoring from -5 to +5 points per question. Chat-style UI with user answers and AI responses. Share your score via WhatsApp, X, or Telegram.*
+
+### 9. CI/CD Pipeline (GitHub Actions)
+
+![Radio Calico CI/CD Pipeline](docs/9_CiCD.png)
+
+*GitHub Actions workflow — 13+ parallel jobs: lint, unit tests (Python + JS), integration tests, E2E tests, browser tests, skills validation, security scans, SBOM generation, and V&V plan updates.*
 
 ---
 
@@ -491,15 +498,16 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**670 total tests** across 7 suites:
+**843 total tests** across 8 suites:
 
 | Suite | Tests | Tool | Coverage |
 | --- | --- | --- | --- |
-| Python unit | 61 | pytest + pytest-cov | 95% |
+| Python unit | 81 | pytest + pytest-cov | 95% |
+| LLM service | 62 | pytest (mocked OpenAI SDK) | Song info + quiz endpoints |
 | Python integration | 19 | pytest | Multi-step API workflows |
-| JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
-| E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
-| Browser (Selenium) | 37 | Selenium + headless Chrome | UI, themes, auth, playback |
+| JavaScript unit | 238 | Jest + jsdom | 95% stmts / 97% lines |
+| E2E (Docker) | 24 | pytest + requests | nginx → gunicorn → MySQL |
+| Browser (Selenium) | 47 | Selenium + headless Chrome | UI, themes, auth, buttons, quiz |
 | Skills + Agents | 333 | pytest | 19 slash commands + 10 agents + 9 agent delegations |
 | Script unit | 39 | pytest | SBOM enrichment, policy compliance, OSV cache, multi-project, DB persistence |
 
@@ -520,7 +528,7 @@ graph LR
     end
 
     subgraph Tests["🧪 Tests (need: lint)"]
-        python["python-tests\n61 unit · ≥95% coverage"]
+        python["python-tests\n81 unit · ≥95% coverage"]
         integration["integration-tests\n19 API chain tests"]
         js["js-tests\n162 Jest · ≥90% lines"]
         skills["skills-tests\n333 commands + agents"]
@@ -669,7 +677,7 @@ radiocalico/
 
 ### Database Schema
 
-Entity-relationship diagram of the four MySQL tables showing relationships between users, profiles, feedback, and ratings.
+Entity-relationship diagram of all 8 MySQL tables (4 app + 4 SBOM) with relationships.
 
 ```mermaid
 erDiagram
@@ -712,8 +720,55 @@ erDiagram
         timestamp created_at
     }
 
+    SBOM_SCANS {
+        int id PK
+        varchar project
+        date scan_date
+        int total_packages
+        int total_vulns
+        timestamp created_at
+    }
+
+    SBOM_PACKAGES {
+        int id PK
+        int scan_id FK
+        enum ecosystem
+        varchar name
+        varchar version
+        varchar license
+        varchar latest_version
+    }
+
+    SBOM_VULNERABILITIES {
+        int id PK
+        int scan_id FK
+        varchar package_name
+        enum ecosystem
+        varchar vuln_id
+        varchar severity
+        decimal cvss_score
+        varchar cvss_vector
+        date published_date
+        date modified_date
+        varchar fix_version
+        varchar reference_url
+        varchar description
+    }
+
+    SBOM_IMPACT_ANALYSIS {
+        int id PK
+        int scan_id FK
+        varchar vuln_id
+        varchar package_name
+        varchar rating
+        text analysis
+    }
+
     USERS ||--o| PROFILES : "has one"
     USERS ||--o{ FEEDBACK : "submits"
+    SBOM_SCANS ||--o{ SBOM_PACKAGES : "contains"
+    SBOM_SCANS ||--o{ SBOM_VULNERABILITIES : "reports"
+    SBOM_SCANS ||--o{ SBOM_IMPACT_ANALYSIS : "analyzes"
 ```
 
 | DB Driver | PyMySQL | Python-MySQL connector |
@@ -724,7 +779,75 @@ erDiagram
 | Security | Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP | SAST, dependency, Dockerfile, image, and DAST scanning |
 | Containers | Docker + Docker Compose | Dev/prod deployment with MySQL |
 | Reverse Proxy | nginx (alpine) | Static file serving + /api proxy (prod) |
-| Prod Server | gunicorn | WSGI server (4 workers) behind nginx |
+| Prod Server | gunicorn | WSGI server (4 workers, 120s timeout) behind nginx |
+| LLM | Ollama + Llama 3.2 | Song info (lyrics, facts, quiz) via OpenAI-compatible API |
+| LLM SDK | openai (Python) | OpenAI-compatible client — works with Ollama, LM Studio, vLLM, etc. |
+
+---
+
+## AI / LLM Configuration
+
+Radio Calico uses a local LLM (Ollama with Llama 3.2) for AI-powered song information. The backend uses the **OpenAI-compatible API**, so you can swap in any provider that speaks the same protocol.
+
+### Default Setup (Ollama — Free, Local)
+
+```bash
+# Install Ollama (macOS)
+brew install ollama
+ollama pull llama3.2
+
+# Docker handles this automatically via the ollama + ollama-pull services
+```
+
+### Performance: Host vs Docker
+
+| Mode | Speed | GPU | Config |
+| --- | --- | --- | --- |
+| **Host Ollama** (recommended on macOS) | Fast (3-10s) | Apple Metal GPU | `OLLAMA_BASE_URL=http://host.docker.internal:11434/v1` in `.env` |
+| **Docker Ollama** (default fallback) | Slow (30-120s) | CPU only on macOS | No config needed — auto-detected |
+| **Linux + NVIDIA** | Fast (2-8s) | CUDA GPU | Add `deploy.resources.reservations.devices` to docker-compose |
+
+The app automatically tries the configured URL first and falls back to the Docker container if unreachable.
+
+### Alternative LLM Providers
+
+Since Radio Calico uses the OpenAI-compatible API format, you can swap the backend by setting `OLLAMA_BASE_URL` and optionally `OLLAMA_MODEL` in your `.env` file.
+
+#### Free / Local (no API key needed)
+
+| Provider | Model | Speed | RAM | Config |
+| --- | --- | --- | --- | --- |
+| **Ollama + Llama 3.2** (default) | `llama3.2` (3.2B, Q4) | ⭐⭐⭐⭐ | 2 GB | Default — no config needed |
+| **Ollama + Llama 3.2:1b** | `llama3.2:1b` (1B, Q4) | ⭐⭐⭐⭐⭐ | 0.7 GB | `OLLAMA_MODEL=llama3.2:1b` — fastest, less detailed |
+| **Ollama + Gemma 3 4B** | `gemma3:4b` | ⭐⭐⭐⭐ | 3 GB | `OLLAMA_MODEL=gemma3:4b` — good quality, fast |
+| **Ollama + Mistral 7B** | `mistral` (7B, Q4) | ⭐⭐⭐ | 4 GB | `OLLAMA_MODEL=mistral` — better quality, needs more RAM |
+| **Ollama + Phi-3 Mini** | `phi3` (3.8B) | ⭐⭐⭐⭐ | 2.4 GB | `OLLAMA_MODEL=phi3` — good balance |
+| **LM Studio** | Any GGUF model | ⭐⭐⭐⭐ | Varies | `OLLAMA_BASE_URL=http://localhost:1234/v1` |
+| **vLLM** | Any HuggingFace model | ⭐⭐⭐⭐⭐ | Varies | `OLLAMA_BASE_URL=http://localhost:8000/v1` — needs GPU server |
+
+#### Cloud APIs (paid, no local GPU needed)
+
+| Provider | Model | Quality | Cost (per 1M tokens) | Config |
+| --- | --- | --- | --- | --- |
+| **OpenAI** | `gpt-4o-mini` | ⭐⭐⭐⭐⭐ | ~$0.15 input / $0.60 output | `OLLAMA_BASE_URL=https://api.openai.com/v1` + set `api_key` |
+| **OpenAI** | `gpt-4o` | ⭐⭐⭐⭐⭐ | ~$2.50 input / $10 output | Same — premium quality |
+| **Anthropic (Claude)** | `claude-haiku-4-5` | ⭐⭐⭐⭐⭐ | ~$0.80 input / $4 output | Needs Anthropic SDK (not OpenAI-compatible) |
+| **Google Gemini** | `gemini-2.0-flash` | ⭐⭐⭐⭐ | Free tier available | `OLLAMA_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai` |
+| **Groq** | `llama-3.3-70b` | ⭐⭐⭐⭐⭐ | Free tier (30 req/min) | `OLLAMA_BASE_URL=https://api.groq.com/openai/v1` — blazing fast |
+| **Together AI** | `meta-llama/Llama-3.2-3B` | ⭐⭐⭐⭐ | ~$0.06 input / $0.06 output | `OLLAMA_BASE_URL=https://api.together.xyz/v1` |
+| **Fireworks AI** | `llama-v3p2-3b` | ⭐⭐⭐⭐ | ~$0.10 per 1M tokens | `OLLAMA_BASE_URL=https://api.fireworks.ai/inference/v1` |
+
+#### Best Value Recommendations
+
+| Priority | Recommendation |
+| --- | --- |
+| **Best free + fast** | Ollama + Llama 3.2 locally (default) — zero cost, GPU-accelerated on Apple Silicon |
+| **Best free cloud** | Groq free tier — extremely fast inference, 30 req/min limit |
+| **Best cheap cloud** | Together AI or Fireworks — ~$0.06-0.10/M tokens, fast |
+| **Best quality** | OpenAI gpt-4o-mini — best answers per dollar |
+| **Fastest local** | Ollama + Llama 3.2:1b — half the model, twice the speed |
+
+> **Note**: For cloud APIs, you'll need to modify `api/llm_service.py` to pass a real `api_key` instead of the `"ollama"` placeholder. Set it via an `OLLAMA_API_KEY` environment variable.
 
 ---
 
@@ -935,7 +1058,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
 
 1. **Clone + setup**: `make install` (or `/start` in Claude Code)
 2. **Develop**: Claude reads CLAUDE.md automatically. Use `/add-endpoint` for new routes.
-3. **Test**: `/run-ci` runs lint + coverage + security. All 670 tests must pass.
+3. **Test**: `/run-ci` runs lint + coverage + security. All 843 tests must pass.
 4. **PR**: `/create-pr` creates a branch, commits, pushes, and opens a PR with summary.
 5. **Add skills**: Create `.claude/commands/your-skill.md` + `.claude/skills/your-skill/SKILL.md`, add to `tests/test_skills.py`.
 

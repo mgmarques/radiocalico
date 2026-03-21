@@ -138,7 +138,7 @@ jobs:
           ENVEOF
 
       - name: Start production stack
-        run: docker compose --profile prod up --build -d
+        run: docker compose --profile prod up --build -d db app nginx
 
       - name: Wait for prod stack to be healthy
         id: stack_health

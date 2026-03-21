@@ -78,6 +78,18 @@ function buildDOM() {
         <input type="radio" name="theme" value="dark" checked />
         <input type="radio" name="stream-quality" value="flac" checked />
         <input type="radio" name="stream-quality" value="aac" />
+        <div class="radio-buttons-row" id="radio-buttons-row">
+            <button class="retro-btn" data-query="lyrics" aria-pressed="false">Lyrics</button>
+            <button class="retro-btn" data-query="details" aria-pressed="false">Details</button>
+            <button class="retro-btn" data-query="facts" aria-pressed="false">Facts</button>
+            <button class="retro-btn" data-query="merchandise" aria-pressed="false">Merchandise</button>
+            <button class="retro-btn" data-query="jokes" aria-pressed="false">Jokes</button>
+            <button class="retro-btn" data-query="everything" aria-pressed="false">Everything</button>
+            <button class="retro-btn" data-query="quiz" aria-pressed="false">Quiz</button>
+        </div>
+        <div class="info-panel" id="info-panel">
+            <div class="info-panel-content" id="info-panel-content"></div>
+        </div>
     `;
 }
 
@@ -417,7 +429,7 @@ describe('getRecentlyPlayedText', () => {
             { artist: 'B', title: 'T2', album: '' }
         );
         const text = player.getRecentlyPlayedText();
-        expect(text).toContain('Recently Played on Radio Calico:');
+        expect(text).toContain('Recently Played - Radio Calico:');
         expect(text).toContain('1. T1 by A (Album1)');
         expect(text).toContain('2. T2 by B');
     });
@@ -667,7 +679,7 @@ describe('submitRating', () => {
     test('handles network error', async () => {
         global.fetch = jest.fn(() => Promise.reject(new Error('network')));
         await player.submitRating(1);
-        expect(document.getElementById('rating-feedback').textContent).toBe('Could not send rating');
+        expect(document.getElementById('rating-feedback').textContent).toBe('Network error. Check that the server and Ollama are running.');
     });
 });
 
@@ -2035,5 +2047,941 @@ describe('module exports state accessors', () => {
     test('MAX_HISTORY is a number', () => {
         expect(typeof player.MAX_HISTORY).toBe('number');
         expect(player.MAX_HISTORY).toBeGreaterThan(0);
+    });
+});
+
+/* ── v2: markdownToHtml ───────────────────────────────────── */
+
+describe('markdownToHtml', () => {
+    test('returns empty string for falsy input', () => {
+        expect(player.markdownToHtml('')).toBe('');
+        expect(player.markdownToHtml(null)).toBe('');
+        expect(player.markdownToHtml(undefined)).toBe('');
+    });
+
+    test('converts h1 heading', () => {
+        const html = player.markdownToHtml('# Hello');
+        expect(html).toContain('<h1>Hello</h1>');
+    });
+
+    test('converts h2 heading', () => {
+        const html = player.markdownToHtml('## Sub');
+        expect(html).toContain('<h2>Sub</h2>');
+    });
+
+    test('converts h3 heading', () => {
+        const html = player.markdownToHtml('### Third');
+        expect(html).toContain('<h3>Third</h3>');
+    });
+
+    test('converts h4 heading', () => {
+        const html = player.markdownToHtml('#### Fourth');
+        expect(html).toContain('<h4>Fourth</h4>');
+    });
+
+    test('converts h5 heading', () => {
+        const html = player.markdownToHtml('##### Fifth');
+        expect(html).toContain('<h5>Fifth</h5>');
+    });
+
+    test('converts h6 heading', () => {
+        const html = player.markdownToHtml('###### Sixth');
+        expect(html).toContain('<h6>Sixth</h6>');
+    });
+
+    test('converts bold text', () => {
+        const html = player.markdownToHtml('**bold**');
+        expect(html).toContain('<strong>bold</strong>');
+    });
+
+    test('converts italic text', () => {
+        const html = player.markdownToHtml('*italic*');
+        expect(html).toContain('<em>italic</em>');
+    });
+
+    test('converts bold+italic text', () => {
+        const html = player.markdownToHtml('***bolditalic***');
+        expect(html).toContain('<strong><em>bolditalic</em></strong>');
+    });
+
+    test('converts inline code', () => {
+        const html = player.markdownToHtml('use `npm install`');
+        expect(html).toContain('<code>npm install</code>');
+    });
+
+    test('converts unordered list with asterisks', () => {
+        const html = player.markdownToHtml('* item one\n* item two');
+        expect(html).toContain('<li>item one</li>');
+        expect(html).toContain('<li>item two</li>');
+        expect(html).toContain('<ul>');
+    });
+
+    test('converts unordered list with dashes', () => {
+        const html = player.markdownToHtml('- first\n- second');
+        expect(html).toContain('<li>first</li>');
+        expect(html).toContain('<li>second</li>');
+    });
+
+    test('escapes HTML to prevent XSS', () => {
+        const html = player.markdownToHtml('<script>alert("xss")</script>');
+        expect(html).not.toContain('<script>');
+        expect(html).toContain('&lt;script&gt;');
+    });
+
+    test('converts double newlines to paragraph breaks', () => {
+        const html = player.markdownToHtml('para one\n\npara two');
+        expect(html).toContain('</p><p>');
+    });
+});
+
+/* ── v2: buildInfoShareRow ────────────────────────────────── */
+
+describe('buildInfoShareRow', () => {
+    test('returns HTML string with share buttons', () => {
+        const html = player.buildInfoShareRow('lyrics', 'Artist', 'Track', 'Some content');
+        expect(html).toContain('info-share-row');
+        expect(html).toContain('share-whatsapp');
+        expect(html).toContain('share-twitter');
+        expect(html).toContain('share-telegram');
+    });
+
+    test('stores artist and track in module-level _infoShareMeta', () => {
+        player.buildInfoShareRow('facts', 'The Beatles', 'Yesterday', 'Great song');
+        // Share text is built at click time via _buildShareText(), stored in _infoShareMeta
+        const text = player._buildShareText(4000);
+        expect(text).toContain('The Beatles');
+        expect(text).toContain('Yesterday');
+    });
+
+    test('stores query type label in share meta', () => {
+        player.buildInfoShareRow('jokes', 'Artist', 'Track', 'Funny content');
+        const text = player._buildShareText(4000);
+        expect(text).toContain('Jokes');
+    });
+
+    test('uses data-platform attributes for CSP-safe share (no inline onclick)', () => {
+        const html = player.buildInfoShareRow('lyrics', 'A&B', 'Track "1"', 'Content');
+        // URLs are set via wireInfoShareButtons(), not inline onclick
+        expect(html).toContain('data-platform="whatsapp"');
+        expect(html).toContain('data-platform="twitter"');
+        expect(html).toContain('data-platform="telegram"');
+        expect(html).not.toContain('onclick');
+    });
+
+    test('truncates long content', () => {
+        const longContent = 'A'.repeat(1000);
+        const html = player.buildInfoShareRow('details', 'Art', 'Trk', longContent);
+        // The encoded text should not contain the full 1000 chars
+        expect(html.length).toBeLessThan(5000);
+    });
+});
+
+/* ── v2: Retro buttons DOM ────────────────────────────────── */
+
+describe('Retro buttons DOM', () => {
+    test('7 retro buttons exist in DOM', () => {
+        const buttons = document.querySelectorAll('.retro-btn');
+        expect(buttons.length).toBe(7);
+    });
+
+    test('each button has a data-query attribute', () => {
+        const buttons = document.querySelectorAll('.retro-btn');
+        buttons.forEach(btn => {
+            expect(btn.dataset.query).toBeTruthy();
+        });
+    });
+
+    test('expected query types are present', () => {
+        const types = [...document.querySelectorAll('.retro-btn')].map(b => b.dataset.query);
+        expect(types).toContain('lyrics');
+        expect(types).toContain('details');
+        expect(types).toContain('facts');
+        expect(types).toContain('merchandise');
+        expect(types).toContain('jokes');
+        expect(types).toContain('everything');
+        expect(types).toContain('quiz');
+    });
+
+    test('info panel exists and starts closed', () => {
+        const panel = document.getElementById('info-panel');
+        expect(panel).not.toBeNull();
+        expect(panel.classList.contains('open')).toBe(false);
+    });
+
+    test('all buttons start unpressed', () => {
+        const buttons = document.querySelectorAll('.retro-btn');
+        buttons.forEach(btn => {
+            expect(btn.getAttribute('aria-pressed')).toBe('false');
+            expect(btn.classList.contains('pressed')).toBe(false);
+        });
+    });
+});
+
+/* ── v2: applyLanguage ──────────────────────────────────────── */
+
+describe('applyLanguage', () => {
+    test('sets currentLang and persists to localStorage', () => {
+        player.applyLanguage('pt-BR');
+        expect(localStorageMock.setItem).toHaveBeenCalledWith('rc-lang', 'pt-BR');
+        // t() should now use pt-BR translations
+        expect(player.t('share')).toBe('Compartilhar:');
+    });
+
+    test('translates data-i18n elements in the DOM', () => {
+        const el = document.createElement('span');
+        el.dataset.i18n = 'share';
+        document.body.appendChild(el);
+        player.applyLanguage('pt-BR');
+        expect(el.textContent).toBe('Compartilhar:');
+        document.body.removeChild(el);
+    });
+
+    test('checks the matching language radio button', () => {
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'language';
+        radio.value = 'es';
+        document.body.appendChild(radio);
+        player.applyLanguage('es');
+        expect(radio.checked).toBe(true);
+        document.body.removeChild(radio);
+    });
+
+    test('falls back to en for unknown language', () => {
+        player.applyLanguage('xx');
+        // t() with unknown lang falls back to en
+        expect(player.t('share')).toBe('Share:');
+    });
+
+    test('restores to en properly', () => {
+        player.applyLanguage('en');
+        expect(player.t('share')).toBe('Share:');
+    });
+});
+
+/* ── v2: playMechanicalClick ────────────────────────────────── */
+
+describe('playMechanicalClick', () => {
+    test('creates AudioContext and plays a click sound', () => {
+        const mockSource = {
+            connect: jest.fn(),
+            start: jest.fn(),
+            buffer: null,
+            onended: null,
+        };
+        const mockFilter = { connect: jest.fn(), type: '', frequency: { value: 0 }, Q: { value: 0 } };
+        const mockGain = { connect: jest.fn(), gain: { value: 0 } };
+        const mockBuffer = { getChannelData: jest.fn(() => new Float32Array(1323)) };
+        const mockCtx = {
+            sampleRate: 44100,
+            createBuffer: jest.fn(() => mockBuffer),
+            createBufferSource: jest.fn(() => mockSource),
+            createBiquadFilter: jest.fn(() => mockFilter),
+            createGain: jest.fn(() => mockGain),
+            destination: {},
+            close: jest.fn(),
+        };
+        window.AudioContext = jest.fn(() => mockCtx);
+
+        player.playMechanicalClick();
+
+        expect(window.AudioContext).toHaveBeenCalled();
+        expect(mockCtx.createBuffer).toHaveBeenCalledWith(1, expect.any(Number), 44100);
+        expect(mockCtx.createBufferSource).toHaveBeenCalled();
+        expect(mockSource.connect).toHaveBeenCalledWith(mockFilter);
+        expect(mockFilter.connect).toHaveBeenCalledWith(mockGain);
+        expect(mockGain.connect).toHaveBeenCalledWith(mockCtx.destination);
+        expect(mockSource.start).toHaveBeenCalled();
+
+        // Trigger cleanup callback
+        mockSource.onended();
+        expect(mockCtx.close).toHaveBeenCalled();
+    });
+
+    test('silently fails when AudioContext not available', () => {
+        delete window.AudioContext;
+        delete window.webkitAudioContext;
+        expect(() => player.playMechanicalClick()).not.toThrow();
+    });
+
+    test('silently fails when AudioContext throws', () => {
+        window.AudioContext = jest.fn(() => { throw new Error('not allowed'); });
+        expect(() => player.playMechanicalClick()).not.toThrow();
+    });
+});
+
+/* ── v2: handleRetroButton ──────────────────────────────────── */
+
+describe('handleRetroButton', () => {
+    let lyricsBtn, detailsBtn, factsBtn, quizBtn, infoPanel, infoPanelContent;
+
+    beforeEach(() => {
+        // Provide AudioContext mock to avoid errors from playMechanicalClick
+        const mockSource = { connect: jest.fn(), start: jest.fn(), buffer: null, onended: null };
+        const mockFilter = { connect: jest.fn(), type: '', frequency: { value: 0 }, Q: { value: 0 } };
+        const mockGain = { connect: jest.fn(), gain: { value: 0 } };
+        const mockBuffer = { getChannelData: jest.fn(() => new Float32Array(100)) };
+        window.AudioContext = jest.fn(() => ({
+            sampleRate: 44100,
+            createBuffer: jest.fn(() => mockBuffer),
+            createBufferSource: jest.fn(() => mockSource),
+            createBiquadFilter: jest.fn(() => mockFilter),
+            createGain: jest.fn(() => mockGain),
+            destination: {},
+            close: jest.fn(),
+        }));
+
+        lyricsBtn = document.querySelector('.retro-btn[data-query="lyrics"]');
+        detailsBtn = document.querySelector('.retro-btn[data-query="details"]');
+        factsBtn = document.querySelector('.retro-btn[data-query="facts"]');
+        quizBtn = document.querySelector('.retro-btn[data-query="quiz"]');
+        infoPanel = document.getElementById('info-panel');
+        infoPanelContent = document.getElementById('info-panel-content');
+
+        // Reset state
+        player.activeQuery = null;
+        document.querySelectorAll('.retro-btn').forEach(b => {
+            b.classList.remove('pressed');
+            b.setAttribute('aria-pressed', 'false');
+        });
+        infoPanel.classList.remove('open');
+        infoPanelContent.innerHTML = '';
+        fetch.mockClear();
+    });
+
+    test('pressing a button sets it as pressed and opens info panel (no track)', () => {
+        // Default artist is "Radio Calico" => shows no_track message
+        document.getElementById('artist').textContent = 'Radio Calico';
+        document.getElementById('track').textContent = 'Live Stream';
+
+        player.handleRetroButton(lyricsBtn);
+
+        expect(lyricsBtn.classList.contains('pressed')).toBe(true);
+        expect(lyricsBtn.getAttribute('aria-pressed')).toBe('true');
+        expect(infoPanel.classList.contains('open')).toBe(true);
+        expect(infoPanelContent.innerHTML).toContain('color:#888');
+    });
+
+    test('pressing the same button again toggles it off', () => {
+        document.getElementById('artist').textContent = 'Radio Calico';
+        player.handleRetroButton(lyricsBtn);
+        expect(player.activeQuery).toBe('lyrics');
+
+        // Press again — should toggle off
+        player.handleRetroButton(lyricsBtn);
+        expect(lyricsBtn.classList.contains('pressed')).toBe(false);
+        expect(lyricsBtn.getAttribute('aria-pressed')).toBe('false');
+        expect(infoPanel.classList.contains('open')).toBe(false);
+        expect(player.activeQuery).toBeNull();
+    });
+
+    test('pressing a different button releases the previous one', () => {
+        document.getElementById('artist').textContent = 'Radio Calico';
+        player.handleRetroButton(lyricsBtn);
+        expect(lyricsBtn.classList.contains('pressed')).toBe(true);
+
+        player.handleRetroButton(detailsBtn);
+        expect(lyricsBtn.classList.contains('pressed')).toBe(false);
+        expect(lyricsBtn.getAttribute('aria-pressed')).toBe('false');
+        expect(detailsBtn.classList.contains('pressed')).toBe(true);
+        expect(detailsBtn.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    test('fetches song info from API when track is available', async () => {
+        document.getElementById('artist').textContent = 'The Beatles';
+        document.getElementById('track').textContent = 'Yesterday';
+        document.getElementById('album').textContent = 'Help!';
+
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ ok: true, content: '## Lyrics\nYesterday, all my troubles...' }),
+        });
+
+        player.handleRetroButton(lyricsBtn);
+
+        // Should show loading state
+        expect(infoPanelContent.innerHTML).toContain('spinner');
+        expect(infoPanel.classList.contains('open')).toBe(true);
+
+        // Wait for fetch to resolve
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(fetch).toHaveBeenCalledWith('/api/song-info', expect.objectContaining({
+            method: 'POST',
+        }));
+        expect(infoPanelContent.innerHTML).toContain('Lyrics');
+        expect(infoPanelContent.innerHTML).toContain('info-share-row');
+    });
+
+    test('shows error when API returns not ok', async () => {
+        document.getElementById('artist').textContent = 'The Beatles';
+        document.getElementById('track').textContent = 'Yesterday';
+
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ ok: false, error: 'Ollama is down' }),
+        });
+
+        player.handleRetroButton(factsBtn);
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(infoPanelContent.innerHTML).toContain('Ollama is down');
+        expect(infoPanelContent.innerHTML).toContain('color:#c0392b');
+    });
+
+    test('shows network error on fetch failure', async () => {
+        document.getElementById('artist').textContent = 'The Beatles';
+        document.getElementById('track').textContent = 'Yesterday';
+
+        fetch.mockRejectedValueOnce(new Error('Network failure'));
+
+        player.handleRetroButton(lyricsBtn);
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(infoPanelContent.innerHTML).toContain('color:#c0392b');
+    });
+
+    test('ignores late response if user switched buttons', async () => {
+        document.getElementById('artist').textContent = 'The Beatles';
+        document.getElementById('track').textContent = 'Yesterday';
+
+        let resolveFirst;
+        fetch.mockImplementationOnce(() => new Promise(r => { resolveFirst = r; }));
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ ok: true, content: 'Details content' }),
+        });
+
+        player.handleRetroButton(lyricsBtn);
+        // Switch to details before lyrics response arrives
+        player.handleRetroButton(detailsBtn);
+        await new Promise(r => setTimeout(r, 50));
+
+        // Now resolve the first (lyrics) response — should be ignored
+        resolveFirst({ ok: true, json: () => Promise.resolve({ ok: true, content: 'Late lyrics' }) });
+        await new Promise(r => setTimeout(r, 50));
+
+        // Panel should show details, not late lyrics
+        expect(player.activeQuery).toBe('details');
+    });
+
+    test('quiz button delegates to startQuiz', async () => {
+        document.getElementById('artist').textContent = 'Radio Calico';
+        document.getElementById('track').textContent = 'Live Stream';
+
+        player.handleRetroButton(quizBtn);
+
+        // Quiz btn should be pressed
+        expect(quizBtn.classList.contains('pressed')).toBe(true);
+        expect(player.activeQuery).toBe('quiz');
+        // Shows no_track since artist is default
+        expect(infoPanelContent.innerHTML).toContain('color:#888');
+    });
+});
+
+/* ── v2: wireInfoShareButtons ───────────────────────────────── */
+
+describe('wireInfoShareButtons', () => {
+    beforeEach(() => {
+        window.open = jest.fn();
+    });
+
+    test('attaches click listeners that open share URLs', () => {
+        // Set up share meta
+        player.buildInfoShareRow('lyrics', 'Artist', 'Track', 'Content here');
+        // Insert the row into DOM
+        document.getElementById('info-panel-content').innerHTML =
+            player.buildInfoShareRow('lyrics', 'Artist', 'Track', 'Content here');
+        player.wireInfoShareButtons();
+
+        const waBtn = document.querySelector('#info-share-row .share-btn[data-platform="whatsapp"]');
+        waBtn.click();
+        expect(window.open).toHaveBeenCalledWith(
+            expect.stringContaining('wa.me'),
+            '_blank',
+            'noopener'
+        );
+    });
+
+    test('twitter share button opens x.com', () => {
+        document.getElementById('info-panel-content').innerHTML =
+            player.buildInfoShareRow('facts', 'Beatles', 'Help', 'Fun facts');
+        player.wireInfoShareButtons();
+
+        const btn = document.querySelector('#info-share-row .share-btn[data-platform="twitter"]');
+        btn.click();
+        expect(window.open).toHaveBeenCalledWith(
+            expect.stringContaining('x.com/intent/tweet'),
+            '_blank',
+            'noopener'
+        );
+    });
+
+    test('telegram share button opens t.me', () => {
+        document.getElementById('info-panel-content').innerHTML =
+            player.buildInfoShareRow('jokes', 'Artist', 'Track', 'A joke');
+        player.wireInfoShareButtons();
+
+        const btn = document.querySelector('#info-share-row .share-btn[data-platform="telegram"]');
+        btn.click();
+        expect(window.open).toHaveBeenCalledWith(
+            expect.stringContaining('t.me/share'),
+            '_blank',
+            'noopener'
+        );
+    });
+
+    test('returns early if no info-share-row in DOM', () => {
+        document.getElementById('info-panel-content').innerHTML = '<p>No share row</p>';
+        expect(() => player.wireInfoShareButtons()).not.toThrow();
+    });
+});
+
+/* ── v2: _buildShareText per-platform limits ────────────────── */
+
+describe('_buildShareText', () => {
+    beforeEach(() => {
+        player.applyLanguage('en');
+    });
+
+    test('truncates content for Twitter (280 chars)', () => {
+        const longContent = 'A'.repeat(500);
+        player.buildInfoShareRow('lyrics', 'Artist', 'Track', longContent);
+        const text = player._buildShareText(280);
+        expect(text.length).toBeLessThanOrEqual(283); // 280 + potential "..."
+        expect(text).toContain('...');
+    });
+
+    test('allows longer content for WhatsApp (4000 chars)', () => {
+        const longContent = 'B'.repeat(3000);
+        player.buildInfoShareRow('details', 'Artist', 'Track', longContent);
+        const text = player._buildShareText(4000);
+        expect(text.length).toBeLessThanOrEqual(4003);
+    });
+
+    test('does not add ellipsis if content fits', () => {
+        player.buildInfoShareRow('facts', 'Art', 'Trk', 'Short content.');
+        const text = player._buildShareText(4000);
+        expect(text).not.toContain('...');
+        expect(text).toContain('Short content.');
+    });
+
+    test('includes header with label, track, artist', () => {
+        player.buildInfoShareRow('merchandise', 'Queen', 'Bohemian Rhapsody', 'Merch info');
+        const text = player._buildShareText(4000);
+        expect(text).toContain('Merchandise');
+        expect(text).toContain('Queen');
+        expect(text).toContain('Bohemian Rhapsody');
+        expect(text).toContain('via Radio Calico AI');
+    });
+
+    test('strips markdown formatting from content', () => {
+        player.buildInfoShareRow('lyrics', 'A', 'T', '## Heading\n**bold** and *italic* with `code`');
+        const text = player._buildShareText(4000);
+        expect(text).not.toContain('##');
+        expect(text).not.toContain('**');
+        expect(text).not.toContain('`');
+    });
+});
+
+/* ── v2: Quiz flow — startQuiz ──────────────────────────────── */
+
+describe('startQuiz', () => {
+    let infoPanel, infoPanelContent;
+
+    beforeEach(() => {
+        infoPanel = document.getElementById('info-panel');
+        infoPanelContent = document.getElementById('info-panel-content');
+        infoPanel.classList.remove('open');
+        infoPanelContent.innerHTML = '';
+        player.quizState = null;
+        fetch.mockClear();
+    });
+
+    test('shows no_track message when no real track is playing', () => {
+        document.getElementById('artist').textContent = 'Radio Calico';
+        document.getElementById('track').textContent = 'Live Stream';
+
+        player.startQuiz();
+
+        expect(infoPanel.classList.contains('open')).toBe(true);
+        expect(infoPanelContent.innerHTML).toContain('color:#888');
+    });
+
+    test('shows loading then renders first question on success', async () => {
+        document.getElementById('artist').textContent = 'The Beatles';
+        document.getElementById('track').textContent = 'Yesterday';
+        document.getElementById('album').textContent = 'Help!';
+
+        const questions = [
+            { q: 'Who wrote Yesterday?', options: ['A) Lennon', 'B) McCartney', 'C) Harrison', 'D) Starr'], answer: 'B' },
+            { q: 'Q2?', options: ['A', 'B', 'C', 'D'], answer: 'A' },
+            { q: 'Q3?', options: ['A', 'B', 'C', 'D'], answer: 'C' },
+            { q: 'Q4?', options: ['A', 'B', 'C', 'D'], answer: 'D' },
+            { q: 'Q5?', options: ['A', 'B', 'C', 'D'], answer: 'B' },
+        ];
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ ok: true, questions }),
+        });
+
+        player.startQuiz();
+        expect(infoPanelContent.innerHTML).toContain('spinner');
+
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(player.quizState).not.toBeNull();
+        expect(player.quizState.questions).toHaveLength(5);
+        expect(player.quizState.current).toBe(0);
+        expect(infoPanelContent.innerHTML).toContain('Who wrote Yesterday?');
+        expect(infoPanelContent.innerHTML).toContain('quiz-answer');
+        expect(infoPanelContent.innerHTML).toContain('quiz-send');
+    });
+
+    test('shows error when API returns no questions', async () => {
+        document.getElementById('artist').textContent = 'The Beatles';
+        document.getElementById('track').textContent = 'Yesterday';
+
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ ok: false, error: 'Ollama is down' }),
+        });
+
+        player.startQuiz();
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(infoPanelContent.innerHTML).toContain('Ollama is down');
+    });
+
+    test('shows error on network failure', async () => {
+        document.getElementById('artist').textContent = 'The Beatles';
+        document.getElementById('track').textContent = 'Yesterday';
+
+        fetch.mockRejectedValueOnce(new Error('timeout'));
+
+        player.startQuiz();
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(infoPanelContent.innerHTML).toContain('Network error');
+    });
+});
+
+/* ── v2: Quiz answer submission ─────────────────────────────── */
+
+describe('submitQuizAnswer', () => {
+    let infoPanelContent;
+
+    const makeQuestions = () => [
+        { q: 'Q1?', options: ['A', 'B', 'C', 'D'], answer: 'B' },
+        { q: 'Q2?', options: ['A', 'B', 'C', 'D'], answer: 'A' },
+        { q: 'Q3?', options: ['A', 'B', 'C', 'D'], answer: 'C' },
+        { q: 'Q4?', options: ['A', 'B', 'C', 'D'], answer: 'D' },
+        { q: 'Q5?', options: ['A', 'B', 'C', 'D'], answer: 'B' },
+    ];
+
+    beforeEach(() => {
+        infoPanelContent = document.getElementById('info-panel-content');
+        player.quizState = { questions: makeQuestions(), current: 0, scores: [], total: 0 };
+        // Render so DOM elements exist
+        player.renderQuizQuestion();
+        fetch.mockClear();
+    });
+
+    test('does nothing if answer is empty', () => {
+        player.submitQuizAnswer('');
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    test('does nothing if quizState is null', () => {
+        player.quizState = null;
+        player.submitQuizAnswer('B');
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    test('sends answer to API and advances to next question', async () => {
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ score: 5, reaction: 'Correct!' }),
+        });
+
+        player.submitQuizAnswer('B');
+
+        // Input should be disabled
+        const input = document.getElementById('quiz-answer');
+        const sendBtn = document.getElementById('quiz-send');
+        expect(input.disabled).toBe(true);
+        expect(sendBtn.disabled).toBe(true);
+
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(player.quizState.current).toBe(1);
+        expect(player.quizState.total).toBe(5);
+        expect(player.quizState.scores).toHaveLength(1);
+        expect(player.quizState.scores[0].score).toBe(5);
+    });
+
+    test('handles API failure gracefully (score 0, continues)', async () => {
+        fetch.mockRejectedValueOnce(new Error('network'));
+
+        player.submitQuizAnswer('A');
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(player.quizState.current).toBe(1);
+        expect(player.quizState.scores[0].score).toBe(0);
+        expect(player.quizState.scores[0].reaction).toContain('crashed');
+    });
+
+    test('renders summary after 5th question', async () => {
+        // Set state to question 4 (0-indexed) with 4 prior scores
+        player.quizState.current = 4;
+        player.quizState.scores = [
+            { userAnswer: 'A', score: 5, reaction: 'Great!' },
+            { userAnswer: 'B', score: 3, reaction: 'OK' },
+            { userAnswer: 'C', score: 5, reaction: 'Nailed it' },
+            { userAnswer: 'D', score: 0, reaction: 'Wrong' },
+        ];
+        player.quizState.total = 13;
+        player.renderQuizQuestion();
+
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ score: 5, reaction: 'Final correct!' }),
+        });
+
+        player.submitQuizAnswer('B');
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(player.quizState.current).toBe(5);
+        // Should show summary with score
+        expect(infoPanelContent.innerHTML).toContain('quiz-score');
+        expect(infoPanelContent.innerHTML).toContain('Final Score');
+        expect(infoPanelContent.innerHTML).toContain('18');  // 13 + 5
+    });
+});
+
+/* ── v2: renderQuizQuestion ─────────────────────────────────── */
+
+describe('renderQuizQuestion', () => {
+    test('returns early if quizState is null', () => {
+        player.quizState = null;
+        const content = document.getElementById('info-panel-content');
+        content.innerHTML = 'original';
+        player.renderQuizQuestion();
+        expect(content.innerHTML).toBe('original');
+    });
+
+    test('renders question with options and input', () => {
+        player.quizState = {
+            questions: [{ q: 'Test question?', options: ['A) One', 'B) Two', 'C) Three', 'D) Four'], answer: 'A' }],
+            current: 0,
+            scores: [],
+            total: 0,
+        };
+        player.renderQuizQuestion();
+
+        const content = document.getElementById('info-panel-content');
+        expect(content.innerHTML).toContain('Test question?');
+        expect(content.innerHTML).toContain('A) One');
+        expect(content.innerHTML).toContain('quiz-input');
+        expect(content.innerHTML).toContain('quiz-send');
+    });
+
+    test('shows previous exchanges for later questions', () => {
+        player.quizState = {
+            questions: [
+                { q: 'Q1?', options: ['A', 'B', 'C', 'D'], answer: 'A' },
+                { q: 'Q2?', options: ['A', 'B', 'C', 'D'], answer: 'B' },
+            ],
+            current: 1,
+            scores: [{ userAnswer: 'A', score: 5, reaction: 'Correct!' }],
+            total: 5,
+        };
+        player.renderQuizQuestion();
+
+        const content = document.getElementById('info-panel-content');
+        expect(content.innerHTML).toContain('Q1');
+        expect(content.innerHTML).toContain('+5 pts');
+        expect(content.innerHTML).toContain('Q2');
+    });
+
+    test('send button and enter key submit answer', () => {
+        player.quizState = {
+            questions: [
+                { q: 'Q1?', options: ['A', 'B', 'C', 'D'], answer: 'A' },
+                { q: 'Q2?', options: ['A', 'B', 'C', 'D'], answer: 'B' },
+            ],
+            current: 0,
+            scores: [],
+            total: 0,
+        };
+        player.renderQuizQuestion();
+        fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ score: 0, reaction: 'Nope' }) });
+
+        const input = document.getElementById('quiz-answer');
+        input.value = 'A';
+        document.getElementById('quiz-send').click();
+        expect(fetch).toHaveBeenCalledWith('/api/quiz/answer', expect.any(Object));
+    });
+});
+
+/* ── v2: renderQuizSummary ──────────────────────────────────── */
+
+describe('renderQuizSummary', () => {
+    let infoPanelContent;
+
+    beforeEach(() => {
+        infoPanelContent = document.getElementById('info-panel-content');
+        document.getElementById('artist').textContent = 'The Beatles';
+        document.getElementById('track').textContent = 'Yesterday';
+    });
+
+    test('returns early if quizState is null', () => {
+        player.quizState = null;
+        infoPanelContent.innerHTML = 'original';
+        player.renderQuizSummary();
+        expect(infoPanelContent.innerHTML).toBe('original');
+    });
+
+    test('shows legend verdict for high score (>=20)', () => {
+        player.quizState = {
+            questions: Array(5).fill({ q: 'Q?', options: ['A','B','C','D'], answer: 'A' }),
+            current: 5,
+            scores: Array(5).fill({ userAnswer: 'A', score: 5, reaction: 'Perfect!' }),
+            total: 25,
+        };
+        player.renderQuizSummary();
+        expect(infoPanelContent.innerHTML).toContain('25');
+        expect(infoPanelContent.innerHTML).toContain('LEGEND');
+    });
+
+    test('shows rock solid verdict for medium-high score (12-19)', () => {
+        player.quizState = {
+            questions: Array(5).fill({ q: 'Q?', options: ['A','B','C','D'], answer: 'A' }),
+            current: 5,
+            scores: Array(5).fill({ userAnswer: 'A', score: 3, reaction: 'OK' }),
+            total: 15,
+        };
+        player.renderQuizSummary();
+        expect(infoPanelContent.innerHTML).toContain('Rock solid');
+    });
+
+    test('shows not bad verdict for medium score (5-11)', () => {
+        player.quizState = {
+            questions: Array(5).fill({ q: 'Q?', options: ['A','B','C','D'], answer: 'A' }),
+            current: 5,
+            scores: Array(5).fill({ userAnswer: 'A', score: 1, reaction: 'Meh' }),
+            total: 8,
+        };
+        player.renderQuizSummary();
+        expect(infoPanelContent.innerHTML).toContain('Not bad');
+    });
+
+    test('shows meh verdict for low score (0-4)', () => {
+        player.quizState = {
+            questions: Array(5).fill({ q: 'Q?', options: ['A','B','C','D'], answer: 'A' }),
+            current: 5,
+            scores: Array(5).fill({ userAnswer: 'X', score: 0, reaction: 'Wrong' }),
+            total: 2,
+        };
+        player.renderQuizSummary();
+        expect(infoPanelContent.innerHTML).toContain('Meh');
+    });
+
+    test('shows impressively wrong verdict for negative score', () => {
+        player.quizState = {
+            questions: Array(5).fill({ q: 'Q?', options: ['A','B','C','D'], answer: 'A' }),
+            current: 5,
+            scores: Array(5).fill({ userAnswer: 'X', score: -2, reaction: 'Terrible' }),
+            total: -5,
+        };
+        player.renderQuizSummary();
+        expect(infoPanelContent.innerHTML).toContain('Impressively wrong');
+    });
+
+    test('includes share buttons and quiz exchange history', () => {
+        player.quizState = {
+            questions: [
+                { q: 'Q1?', options: ['A','B','C','D'], answer: 'A' },
+                { q: 'Q2?', options: ['A','B','C','D'], answer: 'B' },
+            ],
+            current: 2,
+            scores: [
+                { userAnswer: 'A', score: 5, reaction: 'Yes!' },
+                { userAnswer: 'C', score: 0, reaction: 'No!' },
+            ],
+            total: 5,
+        };
+        player.renderQuizSummary();
+        expect(infoPanelContent.innerHTML).toContain('info-share-row');
+        expect(infoPanelContent.innerHTML).toContain('Q1');
+        expect(infoPanelContent.innerHTML).toContain('Q2');
+    });
+});
+
+/* ── v2: setupMetadataTextTracks ────────────────────────────── */
+
+describe('setupMetadataTextTracks', () => {
+    test('is a function that can be called without error', () => {
+        expect(typeof player.setupMetadataTextTracks).toBe('function');
+        // It was already called during boot; just verify it exists
+    });
+});
+
+/* ── v2: markdownToHtml tables ──────────────────────────────── */
+
+describe('markdownToHtml — tables', () => {
+    test('converts table rows', () => {
+        const md = '| Name | Value |\n|------|-------|\n| A | 1 |';
+        const html = player.markdownToHtml(md);
+        expect(html).toContain('<table>');
+        expect(html).toContain('<tr>');
+        expect(html).toContain('<td>');
+        expect(html).toContain('Name');
+        expect(html).toContain('Value');
+    });
+
+    test('removes separator rows', () => {
+        const md = '| H1 | H2 |\n|---|---|\n| D1 | D2 |';
+        const html = player.markdownToHtml(md);
+        // Separator row should be gone (empty string)
+        expect(html).toContain('H1');
+        expect(html).toContain('D1');
+    });
+});
+
+/* ── v2: Safari native HLS branch & unsupported branch ──────── */
+
+describe('HLS support branches', () => {
+    test('Hls.isSupported was called at boot time', () => {
+        // Verify that the boot code did check HLS support
+        expect(window.Hls.isSupported).toHaveBeenCalled();
+    });
+});
+
+/* ── v2: logout fetch failure branch ────────────────────────── */
+
+describe('logout button', () => {
+    test('clears auth state even if fetch fails', () => {
+        // Simulate logged-in state
+        localStorageMock.setItem('rc-token', 'test-token');
+        localStorageMock.setItem('rc-user', 'testuser');
+
+        // The logout button handler calls fetch.catch — ensure no error thrown
+        fetch.mockRejectedValueOnce(new Error('server down'));
+        const logoutBtn = document.getElementById('btn-logout');
+        expect(() => logoutBtn.click()).not.toThrow();
+
+        expect(localStorageMock.removeItem).toHaveBeenCalledWith('rc-token');
+        expect(localStorageMock.removeItem).toHaveBeenCalledWith('rc-user');
+    });
+});
+
+/* ── v2: profile save with checked genres ───────────────────── */
+
+describe('profile form genre checkboxes', () => {
+    test('genre checkboxes exist in DOM', () => {
+        const cbs = document.querySelectorAll('#genre-grid input[type="checkbox"]');
+        expect(cbs.length).toBe(3);
+        expect([...cbs].map(c => c.value)).toEqual(['rock', 'jazz', 'pop']);
     });
 });

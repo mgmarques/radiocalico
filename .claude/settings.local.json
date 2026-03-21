@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source api/venv/bin/activate && python -m pytest tests/test_generate_sbom.py -v 2>&1 | tail -60)",
+      "Bash(source api/venv/bin/activate && time python scripts/generate_sbom.py 2>&1)",
+      "Bash(find /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico/scripts -name \"__pycache__\" -type d -exec rm -rf {} + 2>/dev/null; echo \"cleared\")"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "github",
+    "sentry",
+    "docker",
+    "brave-search"
+  ]
+}

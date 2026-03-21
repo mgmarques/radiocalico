@@ -1,4 +1,4 @@
-<!-- Radio Calico Skill v1.0.0 -->
+<!-- Radio Calico Skill v2.0.0 -->
 Generate or update the Verification & Validation (V&V) test plan for Radio Calico.
 
 ## Agent

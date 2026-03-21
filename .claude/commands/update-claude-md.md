@@ -1,4 +1,4 @@
-<!-- Radio Calico Skill v1.0.0 -->
+<!-- Radio Calico Skill v2.0.0 -->
 Refresh CLAUDE.md to match the current state of the Radio Calico codebase.
 
 Steps:

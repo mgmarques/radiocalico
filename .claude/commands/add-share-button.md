@@ -1,4 +1,4 @@
-<!-- Radio Calico Skill v1.0.0 -->
+<!-- Radio Calico Skill v2.0.0 -->
 Add a new share/search button to the Radio Calico player.
 
 The user will specify a platform name. Follow this pattern used by existing buttons:

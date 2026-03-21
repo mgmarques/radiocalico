@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir gunicorn==22.0.0 -r api/requirements.txt
 
 # Copy application code
 COPY api/app.py api/app.py
+COPY api/llm_service.py api/llm_service.py
 COPY static/ static/
 
 # Set ownership to non-root user
@@ -34,7 +35,7 @@ ENV FLASK_DEBUG=false
 
 USER appuser
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--chdir", "api", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "--chdir", "api", "app:app"]
 
 # ── Development target ──────────────────────────────────────────
 FROM base AS dev

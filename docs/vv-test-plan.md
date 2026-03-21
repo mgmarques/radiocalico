@@ -869,7 +869,7 @@ The following test cases require manual execution because they involve subjectiv
 
 ## 13. Test Execution Summary
 
-**Test run date**: 2026-03-20 — all automated suites executed locally (MySQL 5.7 + Docker prod stack).
+**Test run date**: 2026-03-21 — all automated suites executed locally (MySQL 5.7 + Docker prod stack).
 
 **Results**: 50 TCs verified across automated suites — **50 ✅ Approved, 0 ❌ Rejected**. 3 TCs require manual execution.
 
@@ -879,56 +879,56 @@ The following test cases require manual execution because they involve subjectiv
 
 | TC ID | Category | Test Type | Executed By | Date | Status | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| TC-101 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-20 | ✅ **Approved** | Audio output requires manual verification |
+| TC-101 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-21 | ✅ **Approved** | Audio output requires manual verification |
 | TC-102 | Audio Streaming | Manual | — | — | ⬛ **Not Executed** | Requires active audio hardware |
-| TC-103 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-20 | ✅ **Approved** | Audio quality requires manual verification |
-| TC-104 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-20 | ✅ **Approved** | Volume level requires manual verification |
-| TC-105 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-20 | ✅ **Approved** | Mute output requires manual verification |
+| TC-103 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-21 | ✅ **Approved** | Audio quality requires manual verification |
+| TC-104 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-21 | ✅ **Approved** | Volume level requires manual verification |
+| TC-105 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-21 | ✅ **Approved** | Mute output requires manual verification |
 | TC-106 | Audio Streaming | Manual | — | — | ⬛ **Not Executed** | Requires network disconnect simulation |
-| TC-201 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-20 | ✅ **Approved** |  |
-| TC-202 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-20 | ✅ **Approved** |  |
-| TC-203 | Track Metadata | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-204 | Track Metadata | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-205 | Track Metadata | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-206 | Track Metadata | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-207 | Track Metadata | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-301 | Ratings | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-20 | ✅ **Approved** |  |
-| TC-302 | Ratings | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-303 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-304 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-305 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-306 | Ratings | Integration | pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-401 | Authentication | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-20 | ✅ **Approved** |  |
-| TC-402 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-403 | Authentication | Python Unit + Integration | pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-404 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-405 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-406 | Authentication | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-20 | ✅ **Approved** |  |
-| TC-407 | Authentication | Integration | pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-501 | User Profile | Python Unit + Integration | pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-502 | User Profile | JS Unit + Python Unit | Jest + pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-503 | User Profile | Python Unit + Integration | pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-504 | User Profile | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-601 | Feedback | JS Unit + Python Unit | Jest + pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-602 | Feedback | JS Unit + Python Unit | Jest + pytest | 2026-03-20 | ✅ **Approved** |  |
-| TC-603 | Feedback | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-604 | Feedback | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-701 | Social Sharing | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-702 | Social Sharing | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-703 | Social Sharing | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-704 | Social Sharing | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-705 | Social Sharing | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-706 | Social Sharing | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-707 | Social Sharing | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-708 | Social Sharing | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-801 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-20 | ✅ **Approved** |  |
-| TC-802 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-20 | ✅ **Approved** |  |
-| TC-803 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-20 | ✅ **Approved** |  |
-| TC-804 | Theme & Settings | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-805 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-20 | ✅ **Approved** |  |
-| TC-901 | Non-Functional | E2E | pytest | 2026-03-20 | ✅ **Approved** | Docker prod stack required |
+| TC-201 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-21 | ✅ **Approved** |  |
+| TC-202 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-21 | ✅ **Approved** |  |
+| TC-203 | Track Metadata | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-204 | Track Metadata | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-205 | Track Metadata | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-206 | Track Metadata | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-207 | Track Metadata | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-301 | Ratings | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-21 | ✅ **Approved** |  |
+| TC-302 | Ratings | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-303 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-304 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-305 | Ratings | JS Unit + Python Unit | Jest + pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-306 | Ratings | Integration | pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-401 | Authentication | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-21 | ✅ **Approved** |  |
+| TC-402 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-403 | Authentication | Python Unit + Integration | pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-404 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-405 | Authentication | JS Unit + Python Unit | Jest + pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-406 | Authentication | JS Unit + Python Unit + Browser | Jest + pytest + Selenium | 2026-03-21 | ✅ **Approved** |  |
+| TC-407 | Authentication | Integration | pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-501 | User Profile | Python Unit + Integration | pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-502 | User Profile | JS Unit + Python Unit | Jest + pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-503 | User Profile | Python Unit + Integration | pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-504 | User Profile | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-601 | Feedback | JS Unit + Python Unit | Jest + pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-602 | Feedback | JS Unit + Python Unit | Jest + pytest | 2026-03-21 | ✅ **Approved** |  |
+| TC-603 | Feedback | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-604 | Feedback | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-701 | Social Sharing | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-702 | Social Sharing | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-703 | Social Sharing | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-704 | Social Sharing | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-705 | Social Sharing | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-706 | Social Sharing | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-707 | Social Sharing | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-708 | Social Sharing | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-801 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-21 | ✅ **Approved** |  |
+| TC-802 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-21 | ✅ **Approved** |  |
+| TC-803 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-21 | ✅ **Approved** |  |
+| TC-804 | Theme & Settings | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-805 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-21 | ✅ **Approved** |  |
+| TC-901 | Non-Functional | E2E | pytest | 2026-03-21 | ✅ **Approved** | Docker prod stack required |
 | TC-902 | Non-Functional | Manual | — | — | ⬛ **Not Executed** | Requires DevTools WebP inspection |
-| TC-903 | Non-Functional | E2E | pytest | 2026-03-20 | ✅ **Approved** | Docker prod stack required |
-| TC-904 | Non-Functional | E2E | pytest | 2026-03-20 | ✅ **Approved** | Docker prod stack required |
-| TC-905 | Non-Functional | JS Unit | Jest | 2026-03-20 | ✅ **Approved** |  |
-| TC-906 | Non-Functional | Skills | pytest | 2026-03-20 | ✅ **Approved** | 291 skill + agent validation tests |
+| TC-903 | Non-Functional | E2E | pytest | 2026-03-21 | ✅ **Approved** | Docker prod stack required |
+| TC-904 | Non-Functional | E2E | pytest | 2026-03-21 | ✅ **Approved** | Docker prod stack required |
+| TC-905 | Non-Functional | JS Unit | Jest | 2026-03-21 | ✅ **Approved** |  |
+| TC-906 | Non-Functional | Skills | pytest | 2026-03-21 | ✅ **Approved** | 291 skill + agent validation tests |

@@ -598,6 +598,123 @@ def update_profile():
     return jsonify({"status": "ok"})
 
 
+# ── Song Info (LLM) ─────────────────────────────────────────
+_llm_service = None
+
+
+def _get_llm():
+    """Lazy-init the LLM service so startup doesn't fail if Ollama is down."""
+    global _llm_service
+    if _llm_service is None:
+        import sys
+        from pathlib import Path
+
+        # Ensure api/ is on the import path (needed inside Docker)
+        api_dir = str(Path(__file__).resolve().parent)
+        if api_dir not in sys.path:
+            sys.path.insert(0, api_dir)
+        from llm_service import LLMService
+
+        _llm_service = LLMService()
+    return _llm_service
+
+
+@app.route("/api/song-info", methods=["POST"])
+@limiter.limit("10/minute")
+def song_info():
+    """Query the local LLM for song information.
+
+    POST /api/song-info
+
+    Request body (JSON):
+        query_type (str): One of lyrics, details, facts, merchandise, jokes, everything.
+        artist (str): Artist name.
+        track (str): Track title.
+        album (str, optional): Album name.
+        artwork_url (str, optional): Album cover URL.
+
+    Returns:
+        Response: JSON with ``ok`` (bool) and ``content`` (str, Markdown) on success,
+        or ``error`` (str) on failure. Status 200 or 503 if Ollama is unreachable.
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"ok": False, "error": "Invalid JSON"}), 400
+
+    query_type = (data.get("query_type") or "").strip().lower()
+    artist = (data.get("artist") or "").strip()
+    track = (data.get("track") or "").strip()
+    album = (data.get("album") or "").strip()
+    artwork_url = (data.get("artwork_url") or "").strip()
+    language = (data.get("language") or "").strip() or None
+
+    if not query_type or not artist or not track:
+        return jsonify({"ok": False, "error": "query_type, artist, and track are required"}), 400
+
+    svc = _get_llm()
+    result = svc.query(
+        query_type=query_type,
+        artist=artist,
+        track=track,
+        album=album,
+        artwork_url=artwork_url,
+        language=language,
+    )
+
+    if result.get("ok"):
+        logger.info("song_info_served", extra={"query_type": query_type, "artist": artist, "track": track})
+        return jsonify(result)
+    else:
+        logger.warning("song_info_error", extra={"query_type": query_type, "error": result.get("error", "")})
+        return jsonify(result), 503
+
+
+@app.route("/api/quiz/start", methods=["POST"])
+@limiter.limit("5/minute")
+def quiz_start():
+    """Generate a 5-question quiz about the current song."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"ok": False, "error": "Invalid JSON"}), 400
+
+    artist = (data.get("artist") or "").strip()
+    track = (data.get("track") or "").strip()
+    album = (data.get("album") or "").strip()
+    language = (data.get("language") or "").strip() or "English"
+
+    if not artist or not track:
+        return jsonify({"ok": False, "error": "artist and track are required"}), 400
+
+    svc = _get_llm()
+    result = svc.generate_quiz(artist=artist, track=track, album=album, language=language)
+    return jsonify(result)
+
+
+@app.route("/api/quiz/answer", methods=["POST"])
+@limiter.limit("30/minute")
+def quiz_answer():
+    """Evaluate a single quiz answer."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"ok": False, "error": "Invalid JSON"}), 400
+
+    question = data.get("question", "")
+    correct = data.get("correct", "")
+    user_answer = data.get("user_answer", "")
+    options = data.get("options", [])
+
+    svc = _get_llm()
+    result = svc.evaluate_answer(question, correct, user_answer, options)
+    return jsonify(result)
+
+
+@app.route("/api/song-info/health", methods=["GET"])
+def song_info_health():
+    """Check LLM (Ollama) availability."""
+    svc = _get_llm()
+    return jsonify(svc.health())
+
+
 if __name__ == "__main__":
     debug = os.environ.get("FLASK_DEBUG", "false").lower() in ("true", "1", "yes")
     host = os.environ.get("FLASK_HOST", "127.0.0.1")
