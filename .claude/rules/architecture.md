@@ -56,6 +56,35 @@
 - Ratings shown as plain text `[N likes / N unlikes]` in shared messages (emoji break in URL encoding)
 - All links open via `window.open(..., '_blank', 'noopener')`
 
+## Retro Radio Buttons (Song Info)
+
+- 7 vintage-styled buttons below Now Playing: Lyrics, Details, Interesting Facts, Merchandise, Jokes, Everything About, Quiz
+- Radio-button behavior — only one active at a time; pressing the same button deselects it
+- Mechanical click sound on press via `playMechanicalClick()` (Web Audio API oscillator)
+- Pressed button gets 3D "pushed in" appearance via `aria-pressed="true"` + CSS `translate`/`box-shadow`
+- Results displayed in scrollable expanding panel (`max-height: 60vh`, `overflow-y: auto`)
+- Share buttons (WhatsApp, X, Telegram) appear at bottom of info panel with per-platform text limits
+- Quiz button triggers interactive 5-question chat game with sarcastic scoring (-5 to +5)
+
+## LLM Integration (Ollama)
+
+- Backend: `api/llm_service.py` — `LLMService` class wrapping OpenAI SDK against Ollama
+- Host GPU fallback: tries `OLLAMA_BASE_URL` (host Metal GPU) first, falls back to `OLLAMA_FALLBACK_URL` (Docker CPU)
+- Query types: `lyrics`, `details`, `facts`, `merchandise`, `jokes`, `everything`, `quiz`
+- Response cache: 24h TTL keyed by `(query_type, artist, track, language)`
+- System prompts instruct LLM to keep song metadata (artist, track, album) in original language
+- Docker: `ollama/ollama:latest` service with `llama3.2` auto-pulled on first start
+
+## Internationalization (i18n)
+
+- 3 languages: English (default), Brazilian Portuguese (`pt-BR`), Spanish (`es`)
+- Settings dropdown with language radio buttons; persisted in `localStorage` key `rc-lang`
+- `_TRANSLATIONS` object in `player.js` maps keys to `{ en, pt, es }` strings
+- `t(key)` helper returns translation for current language
+- `applyLanguage()` updates all elements with `data-i18n` attributes
+- Song metadata (artist, track, album) is **never** translated — always original language
+- Quiz button label is fixed as "Quiz" in all languages
+
 ## Sticky Navbar & Footer
 
 - Navbar (`position: sticky; top: 0`), Footer (`position: sticky; bottom: 0`)

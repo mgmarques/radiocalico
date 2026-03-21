@@ -36,7 +36,9 @@ services:
       FLASK_HOST: "0.0.0.0"
       FLASK_DEBUG: "false"
       CORS_ORIGIN: ${CORS_ORIGIN}
-      OLLAMA_BASE_URL: "http://ollama:11434/v1"
+      # Tries host Ollama first (GPU), falls back to Docker Ollama (CPU)
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434/v1}"
+      OLLAMA_FALLBACK_URL: "http://ollama:11434/v1"
     depends_on:
       db:
         condition: service_healthy
@@ -84,7 +86,8 @@ services:
       FLASK_HOST: "0.0.0.0"
       FLASK_DEBUG: "true"
       CORS_ORIGIN: "*"
-      OLLAMA_BASE_URL: "http://ollama:11434/v1"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434/v1}"
+      OLLAMA_FALLBACK_URL: "http://ollama:11434/v1"
     volumes:
       - ./api:/app/api
       - ./static:/app/static

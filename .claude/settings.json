@@ -30,7 +30,11 @@
       "Bash(curl *)",
       "Bash(wc *)",
       "Bash(ls *)",
-      "Bash(mkdir *)"
+      "Bash(mkdir *)",
+      "Bash(python -m pytest test_app.py -q)",
+      "Bash(source /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico/api/venv/bin/activate)",
+      "Bash(python -m pytest /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico/tests/test_e2e.py -q)",
+      "Bash(git rebase:*)"
     ],
     "deny": [
       "Bash(rm -rf *)",

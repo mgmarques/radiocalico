@@ -78,6 +78,18 @@ function buildDOM() {
         <input type="radio" name="theme" value="dark" checked />
         <input type="radio" name="stream-quality" value="flac" checked />
         <input type="radio" name="stream-quality" value="aac" />
+        <div class="radio-buttons-row" id="radio-buttons-row">
+            <button class="retro-btn" data-query="lyrics" aria-pressed="false">Lyrics</button>
+            <button class="retro-btn" data-query="details" aria-pressed="false">Details</button>
+            <button class="retro-btn" data-query="facts" aria-pressed="false">Facts</button>
+            <button class="retro-btn" data-query="merchandise" aria-pressed="false">Merchandise</button>
+            <button class="retro-btn" data-query="jokes" aria-pressed="false">Jokes</button>
+            <button class="retro-btn" data-query="everything" aria-pressed="false">Everything</button>
+            <button class="retro-btn" data-query="quiz" aria-pressed="false">Quiz</button>
+        </div>
+        <div class="info-panel" id="info-panel">
+            <div class="info-panel-content" id="info-panel-content"></div>
+        </div>
     `;
 }
 
@@ -417,7 +429,7 @@ describe('getRecentlyPlayedText', () => {
             { artist: 'B', title: 'T2', album: '' }
         );
         const text = player.getRecentlyPlayedText();
-        expect(text).toContain('Recently Played on Radio Calico:');
+        expect(text).toContain('Recently Played - Radio Calico:');
         expect(text).toContain('1. T1 by A (Album1)');
         expect(text).toContain('2. T2 by B');
     });
@@ -667,7 +679,7 @@ describe('submitRating', () => {
     test('handles network error', async () => {
         global.fetch = jest.fn(() => Promise.reject(new Error('network')));
         await player.submitRating(1);
-        expect(document.getElementById('rating-feedback').textContent).toBe('Could not send rating');
+        expect(document.getElementById('rating-feedback').textContent).toBe('Network error. Check that the server and Ollama are running.');
     });
 });
 
@@ -2035,5 +2047,170 @@ describe('module exports state accessors', () => {
     test('MAX_HISTORY is a number', () => {
         expect(typeof player.MAX_HISTORY).toBe('number');
         expect(player.MAX_HISTORY).toBeGreaterThan(0);
+    });
+});
+
+/* ── v2: markdownToHtml ───────────────────────────────────── */
+
+describe('markdownToHtml', () => {
+    test('returns empty string for falsy input', () => {
+        expect(player.markdownToHtml('')).toBe('');
+        expect(player.markdownToHtml(null)).toBe('');
+        expect(player.markdownToHtml(undefined)).toBe('');
+    });
+
+    test('converts h1 heading', () => {
+        const html = player.markdownToHtml('# Hello');
+        expect(html).toContain('<h1>Hello</h1>');
+    });
+
+    test('converts h2 heading', () => {
+        const html = player.markdownToHtml('## Sub');
+        expect(html).toContain('<h2>Sub</h2>');
+    });
+
+    test('converts h3 heading', () => {
+        const html = player.markdownToHtml('### Third');
+        expect(html).toContain('<h3>Third</h3>');
+    });
+
+    test('converts h4 heading', () => {
+        const html = player.markdownToHtml('#### Fourth');
+        expect(html).toContain('<h4>Fourth</h4>');
+    });
+
+    test('converts h5 heading', () => {
+        const html = player.markdownToHtml('##### Fifth');
+        expect(html).toContain('<h5>Fifth</h5>');
+    });
+
+    test('converts h6 heading', () => {
+        const html = player.markdownToHtml('###### Sixth');
+        expect(html).toContain('<h6>Sixth</h6>');
+    });
+
+    test('converts bold text', () => {
+        const html = player.markdownToHtml('**bold**');
+        expect(html).toContain('<strong>bold</strong>');
+    });
+
+    test('converts italic text', () => {
+        const html = player.markdownToHtml('*italic*');
+        expect(html).toContain('<em>italic</em>');
+    });
+
+    test('converts bold+italic text', () => {
+        const html = player.markdownToHtml('***bolditalic***');
+        expect(html).toContain('<strong><em>bolditalic</em></strong>');
+    });
+
+    test('converts inline code', () => {
+        const html = player.markdownToHtml('use `npm install`');
+        expect(html).toContain('<code>npm install</code>');
+    });
+
+    test('converts unordered list with asterisks', () => {
+        const html = player.markdownToHtml('* item one\n* item two');
+        expect(html).toContain('<li>item one</li>');
+        expect(html).toContain('<li>item two</li>');
+        expect(html).toContain('<ul>');
+    });
+
+    test('converts unordered list with dashes', () => {
+        const html = player.markdownToHtml('- first\n- second');
+        expect(html).toContain('<li>first</li>');
+        expect(html).toContain('<li>second</li>');
+    });
+
+    test('escapes HTML to prevent XSS', () => {
+        const html = player.markdownToHtml('<script>alert("xss")</script>');
+        expect(html).not.toContain('<script>');
+        expect(html).toContain('&lt;script&gt;');
+    });
+
+    test('converts double newlines to paragraph breaks', () => {
+        const html = player.markdownToHtml('para one\n\npara two');
+        expect(html).toContain('</p><p>');
+    });
+});
+
+/* ── v2: buildInfoShareRow ────────────────────────────────── */
+
+describe('buildInfoShareRow', () => {
+    test('returns HTML string with share buttons', () => {
+        const html = player.buildInfoShareRow('lyrics', 'Artist', 'Track', 'Some content');
+        expect(html).toContain('info-share-row');
+        expect(html).toContain('share-whatsapp');
+        expect(html).toContain('share-twitter');
+        expect(html).toContain('share-telegram');
+    });
+
+    test('includes artist and track in share text (URL-encoded)', () => {
+        const html = player.buildInfoShareRow('facts', 'The Beatles', 'Yesterday', 'Great song');
+        expect(html).toContain('The%20Beatles');
+        expect(html).toContain('Yesterday');
+    });
+
+    test('includes query type label', () => {
+        const html = player.buildInfoShareRow('jokes', 'Artist', 'Track', 'Funny content');
+        expect(html).toContain('Jokes');
+    });
+
+    test('uses data attributes for CSP-safe share (no inline onclick)', () => {
+        const html = player.buildInfoShareRow('lyrics', 'A&B', 'Track "1"', 'Content');
+        // URLs are set via wireInfoShareButtons(), not inline onclick
+        expect(html).toContain('data-platform="whatsapp"');
+        expect(html).toContain('data-platform="twitter"');
+        expect(html).toContain('data-platform="telegram"');
+        expect(html).toContain('data-share=');
+        expect(html).not.toContain('onclick');
+    });
+
+    test('truncates long content', () => {
+        const longContent = 'A'.repeat(1000);
+        const html = player.buildInfoShareRow('details', 'Art', 'Trk', longContent);
+        // The encoded text should not contain the full 1000 chars
+        expect(html.length).toBeLessThan(5000);
+    });
+});
+
+/* ── v2: Retro buttons DOM ────────────────────────────────── */
+
+describe('Retro buttons DOM', () => {
+    test('7 retro buttons exist in DOM', () => {
+        const buttons = document.querySelectorAll('.retro-btn');
+        expect(buttons.length).toBe(7);
+    });
+
+    test('each button has a data-query attribute', () => {
+        const buttons = document.querySelectorAll('.retro-btn');
+        buttons.forEach(btn => {
+            expect(btn.dataset.query).toBeTruthy();
+        });
+    });
+
+    test('expected query types are present', () => {
+        const types = [...document.querySelectorAll('.retro-btn')].map(b => b.dataset.query);
+        expect(types).toContain('lyrics');
+        expect(types).toContain('details');
+        expect(types).toContain('facts');
+        expect(types).toContain('merchandise');
+        expect(types).toContain('jokes');
+        expect(types).toContain('everything');
+        expect(types).toContain('quiz');
+    });
+
+    test('info panel exists and starts closed', () => {
+        const panel = document.getElementById('info-panel');
+        expect(panel).not.toBeNull();
+        expect(panel.classList.contains('open')).toBe(false);
+    });
+
+    test('all buttons start unpressed', () => {
+        const buttons = document.querySelectorAll('.retro-btn');
+        buttons.forEach(btn => {
+            expect(btn.getAttribute('aria-pressed')).toBe('false');
+            expect(btn.classList.contains('pressed')).toBe(false);
+        });
     });
 });

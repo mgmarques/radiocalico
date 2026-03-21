@@ -7,7 +7,7 @@
 **A live audio streaming web player**
 Ad-free, subscription-free — 48 kHz FLAC lossless or AAC Hi-Fi 211 kbps via HLS
 
-> Study Case: Claude Code — Building Faster with AI, from Prototype to Prod (2026)
+> Study Case: Claude Code and OpenAI — Building Faster with AI, from Prototype to Prod (2026)
 
 </td>
 </tr></table>
@@ -28,6 +28,7 @@ Radio Calico is a web-based live audio streaming player that delivers audio via 
 - **Social Sharing** — share current track or recently played list via WhatsApp, X/Twitter, Telegram
 - **Music Search** — find tracks on Spotify, YouTube Music, Amazon Music
 - **Feedback System** — logged-in users can submit feedback (stored with profile data)
+- **AI Song Info** — retro radio buttons for Lyrics, Details, Interesting Facts, Merchandise, Jokes, Everything About, and an interactive Quiz — powered by Ollama (Llama 3.2)
 - **Dark/Light Theme** — toggle via settings gear, persisted in localStorage
 - **Responsive Design** — single-column layout below 700px
 
@@ -491,15 +492,16 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**670 total tests** across 7 suites:
+**735 total tests** across 8 suites:
 
 | Suite | Tests | Tool | Coverage |
 | --- | --- | --- | --- |
-| Python unit | 61 | pytest + pytest-cov | 95% |
+| Python unit | 70 | pytest + pytest-cov | 95% |
+| LLM service | 15 | pytest (mocked OpenAI SDK) | Song info + quiz endpoints |
 | Python integration | 19 | pytest | Multi-step API workflows |
-| JavaScript unit | 162 | Jest + jsdom | 90% lines (threshold) |
-| E2E (Docker) | 19 | pytest + requests | nginx → gunicorn → MySQL |
-| Browser (Selenium) | 37 | Selenium + headless Chrome | UI, themes, auth, playback |
+| JavaScript unit | 187 | Jest + jsdom | 90% lines (threshold) |
+| E2E (Docker) | 24 | pytest + requests | nginx → gunicorn → MySQL |
+| Browser (Selenium) | 47 | Selenium + headless Chrome | UI, themes, auth, buttons, quiz |
 | Skills + Agents | 333 | pytest | 19 slash commands + 10 agents + 9 agent delegations |
 | Script unit | 39 | pytest | SBOM enrichment, policy compliance, OSV cache, multi-project, DB persistence |
 
@@ -520,7 +522,7 @@ graph LR
     end
 
     subgraph Tests["🧪 Tests (need: lint)"]
-        python["python-tests\n61 unit · ≥95% coverage"]
+        python["python-tests\n70 unit · ≥95% coverage"]
         integration["integration-tests\n19 API chain tests"]
         js["js-tests\n162 Jest · ≥90% lines"]
         skills["skills-tests\n333 commands + agents"]
@@ -724,7 +726,75 @@ erDiagram
 | Security | Bandit, Safety, npm audit, Hadolint, Trivy, OWASP ZAP | SAST, dependency, Dockerfile, image, and DAST scanning |
 | Containers | Docker + Docker Compose | Dev/prod deployment with MySQL |
 | Reverse Proxy | nginx (alpine) | Static file serving + /api proxy (prod) |
-| Prod Server | gunicorn | WSGI server (4 workers) behind nginx |
+| Prod Server | gunicorn | WSGI server (4 workers, 120s timeout) behind nginx |
+| LLM | Ollama + Llama 3.2 | Song info (lyrics, facts, quiz) via OpenAI-compatible API |
+| LLM SDK | openai (Python) | OpenAI-compatible client — works with Ollama, LM Studio, vLLM, etc. |
+
+---
+
+## AI / LLM Configuration
+
+Radio Calico uses a local LLM (Ollama with Llama 3.2) for AI-powered song information. The backend uses the **OpenAI-compatible API**, so you can swap in any provider that speaks the same protocol.
+
+### Default Setup (Ollama — Free, Local)
+
+```bash
+# Install Ollama (macOS)
+brew install ollama
+ollama pull llama3.2
+
+# Docker handles this automatically via the ollama + ollama-pull services
+```
+
+### Performance: Host vs Docker
+
+| Mode | Speed | GPU | Config |
+| --- | --- | --- | --- |
+| **Host Ollama** (recommended on macOS) | Fast (3-10s) | Apple Metal GPU | `OLLAMA_BASE_URL=http://host.docker.internal:11434/v1` in `.env` |
+| **Docker Ollama** (default fallback) | Slow (30-120s) | CPU only on macOS | No config needed — auto-detected |
+| **Linux + NVIDIA** | Fast (2-8s) | CUDA GPU | Add `deploy.resources.reservations.devices` to docker-compose |
+
+The app automatically tries the configured URL first and falls back to the Docker container if unreachable.
+
+### Alternative LLM Providers
+
+Since Radio Calico uses the OpenAI-compatible API format, you can swap the backend by setting `OLLAMA_BASE_URL` and optionally `OLLAMA_MODEL` in your `.env` file.
+
+#### Free / Local (no API key needed)
+
+| Provider | Model | Speed | RAM | Config |
+| --- | --- | --- | --- | --- |
+| **Ollama + Llama 3.2** (default) | `llama3.2` (3.2B, Q4) | ⭐⭐⭐⭐ | 2 GB | Default — no config needed |
+| **Ollama + Llama 3.2:1b** | `llama3.2:1b` (1B, Q4) | ⭐⭐⭐⭐⭐ | 0.7 GB | `OLLAMA_MODEL=llama3.2:1b` — fastest, less detailed |
+| **Ollama + Gemma 3 4B** | `gemma3:4b` | ⭐⭐⭐⭐ | 3 GB | `OLLAMA_MODEL=gemma3:4b` — good quality, fast |
+| **Ollama + Mistral 7B** | `mistral` (7B, Q4) | ⭐⭐⭐ | 4 GB | `OLLAMA_MODEL=mistral` — better quality, needs more RAM |
+| **Ollama + Phi-3 Mini** | `phi3` (3.8B) | ⭐⭐⭐⭐ | 2.4 GB | `OLLAMA_MODEL=phi3` — good balance |
+| **LM Studio** | Any GGUF model | ⭐⭐⭐⭐ | Varies | `OLLAMA_BASE_URL=http://localhost:1234/v1` |
+| **vLLM** | Any HuggingFace model | ⭐⭐⭐⭐⭐ | Varies | `OLLAMA_BASE_URL=http://localhost:8000/v1` — needs GPU server |
+
+#### Cloud APIs (paid, no local GPU needed)
+
+| Provider | Model | Quality | Cost (per 1M tokens) | Config |
+| --- | --- | --- | --- | --- |
+| **OpenAI** | `gpt-4o-mini` | ⭐⭐⭐⭐⭐ | ~$0.15 input / $0.60 output | `OLLAMA_BASE_URL=https://api.openai.com/v1` + set `api_key` |
+| **OpenAI** | `gpt-4o` | ⭐⭐⭐⭐⭐ | ~$2.50 input / $10 output | Same — premium quality |
+| **Anthropic (Claude)** | `claude-haiku-4-5` | ⭐⭐⭐⭐⭐ | ~$0.80 input / $4 output | Needs Anthropic SDK (not OpenAI-compatible) |
+| **Google Gemini** | `gemini-2.0-flash` | ⭐⭐⭐⭐ | Free tier available | `OLLAMA_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai` |
+| **Groq** | `llama-3.3-70b` | ⭐⭐⭐⭐⭐ | Free tier (30 req/min) | `OLLAMA_BASE_URL=https://api.groq.com/openai/v1` — blazing fast |
+| **Together AI** | `meta-llama/Llama-3.2-3B` | ⭐⭐⭐⭐ | ~$0.06 input / $0.06 output | `OLLAMA_BASE_URL=https://api.together.xyz/v1` |
+| **Fireworks AI** | `llama-v3p2-3b` | ⭐⭐⭐⭐ | ~$0.10 per 1M tokens | `OLLAMA_BASE_URL=https://api.fireworks.ai/inference/v1` |
+
+#### Best Value Recommendations
+
+| Priority | Recommendation |
+| --- | --- |
+| **Best free + fast** | Ollama + Llama 3.2 locally (default) — zero cost, GPU-accelerated on Apple Silicon |
+| **Best free cloud** | Groq free tier — extremely fast inference, 30 req/min limit |
+| **Best cheap cloud** | Together AI or Fireworks — ~$0.06-0.10/M tokens, fast |
+| **Best quality** | OpenAI gpt-4o-mini — best answers per dollar |
+| **Fastest local** | Ollama + Llama 3.2:1b — half the model, twice the speed |
+
+> **Note**: For cloud APIs, you'll need to modify `api/llm_service.py` to pass a real `api_key` instead of the `"ollama"` placeholder. Set it via an `OLLAMA_API_KEY` environment variable.
 
 ---
 
@@ -935,7 +1005,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
 
 1. **Clone + setup**: `make install` (or `/start` in Claude Code)
 2. **Develop**: Claude reads CLAUDE.md automatically. Use `/add-endpoint` for new routes.
-3. **Test**: `/run-ci` runs lint + coverage + security. All 670 tests must pass.
+3. **Test**: `/run-ci` runs lint + coverage + security. All 735 tests must pass.
 4. **PR**: `/create-pr` creates a branch, commits, pushes, and opens a PR with summary.
 5. **Add skills**: Create `.claude/commands/your-skill.md` + `.claude/skills/your-skill/SKILL.md`, add to `tests/test_skills.py`.
 

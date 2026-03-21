@@ -1,14 +1,15 @@
 # Testing & CI/CD
 
-## Test Suite — 670 total tests across 7 suites
+## Test Suite — 735 total tests across 8 suites
 
 | Suite | File | Tests | Tool |
 |-------|------|-------|------|
-| Python unit | `api/test_app.py` | 61 | pytest (95% coverage) |
+| Python unit | `api/test_app.py` | 70 | pytest (95% coverage) |
+| LLM service | `tests/test_llm_service.py` | 15 | pytest (mocked OpenAI SDK) |
 | Python integration | `api/test_integration.py` | 19 | pytest |
-| JavaScript unit | `static/js/player.test.js` | 162 | Jest + jsdom (90% line threshold) |
-| E2E | `tests/test_e2e.py` | 19 | pytest + requests (Docker prod stack) |
-| Browser | `tests/test_browser.py` | 37 | Selenium + headless Chrome (Docker prod) |
+| JavaScript unit | `static/js/player.test.js` | 187 | Jest + jsdom (90% line threshold) |
+| E2E | `tests/test_e2e.py` | 24 | pytest + requests (Docker prod stack) |
+| Browser | `tests/test_browser.py` | 47 | Selenium + headless Chrome (Docker prod) |
 | Skills + Agents | `tests/test_skills.py` | 333 | pytest (validates 19 commands + 10 agents + 9 agent delegations) |
 | Script unit | `tests/test_generate_sbom.py` | 39 | pytest (SBOM enrichment, policy compliance, OSV cache, multi-project, DB persistence) |
 
@@ -44,6 +45,6 @@ Parallel security: `bandit, safety, npm-audit, hadolint, trivy`
 | `make ci` | Full pipeline: lint + coverage + security |
 | `make test-integration` | API integration tests (requires MySQL) |
 | `make test-skills` | Validate 19 slash commands + 10 agents |
-| `make test-browser` | 37 Selenium browser tests (Docker + Chrome) |
+| `make test-browser` | 47 Selenium browser tests (Docker + Chrome) |
 | `make test-e2e` | E2E tests (requires Docker prod running) |
 | `make docker-e2e` | Start prod, run E2E, stop prod |

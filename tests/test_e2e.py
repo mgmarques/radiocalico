@@ -158,3 +158,47 @@ class TestErrorHandling:
     def test_unauthorized_profile(self, base_url):
         res = requests.get(f'{base_url}/api/profile', timeout=10)
         assert res.status_code == 401
+
+
+# ── v2: Song Info (LLM) ─────────────────────────────────────
+
+
+class TestSongInfoE2E:
+    """POST /api/song-info and GET /api/song-info/health through full stack."""
+
+    def test_health_endpoint(self, base_url):
+        res = requests.get(f'{base_url}/api/song-info/health', timeout=10)
+        assert res.status_code == 200
+        data = res.json()
+        assert 'ok' in data
+        assert 'model' in data
+
+    def test_song_info_rejects_missing_fields(self, base_url):
+        res = requests.post(f'{base_url}/api/song-info',
+                            json={'artist': 'A'},
+                            timeout=10)
+        assert res.status_code == 400
+
+    def test_song_info_rejects_bad_json(self, base_url):
+        res = requests.post(f'{base_url}/api/song-info',
+                            data='not json',
+                            headers={'Content-Type': 'application/json'},
+                            timeout=10)
+        assert res.status_code == 400
+
+
+class TestQuizE2E:
+    """POST /api/quiz/start and /api/quiz/answer through full stack."""
+
+    def test_quiz_start_rejects_missing_fields(self, base_url):
+        res = requests.post(f'{base_url}/api/quiz/start',
+                            json={'artist': 'A'},
+                            timeout=10)
+        assert res.status_code == 400
+
+    def test_quiz_answer_rejects_bad_json(self, base_url):
+        res = requests.post(f'{base_url}/api/quiz/answer',
+                            data='not json',
+                            headers={'Content-Type': 'application/json'},
+                            timeout=10)
+        assert res.status_code == 400

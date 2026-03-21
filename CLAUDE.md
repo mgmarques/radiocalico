@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-Radio Calico is a live audio streaming web player with a Flask backend for ratings, user accounts, and feedback. Streams HLS audio from CloudFront (FLAC lossless or AAC Hi-Fi), displays track metadata, fetches artwork from iTunes, and lets users rate tracks, manage profiles, and submit feedback — all stored in MySQL.
+Radio Calico is a live audio streaming web player with a Flask backend for ratings, user accounts, feedback, and AI-powered song information. Streams HLS audio from CloudFront (FLAC lossless or AAC Hi-Fi), displays track metadata, fetches artwork from iTunes, and lets users rate tracks, manage profiles, submit feedback, and explore song details via LLM — all stored in MySQL.
 
 ## Architecture
 
@@ -50,8 +50,14 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - `POST /api/feedback` — submit `{ message }` (stores with profile snapshot)
 
 **Song Info** (LLM, rate-limited 10/min):
-- `POST /api/song-info` — `{ query_type, artist, track, album?, artwork_url? }` → `{ ok, content }` (Markdown)
+
+- `POST /api/song-info` — `{ query_type, artist, track, album?, artwork_url?, language? }` → `{ ok, content }` (Markdown)
 - `GET /api/song-info/health` — check Ollama + model availability
+
+**Quiz** (LLM, rate-limited 10/min):
+
+- `POST /api/quiz/start` — `{ artist, track, album?, language? }` → `{ ok, session_id, question, question_number, total_questions }`
+- `POST /api/quiz/answer` — `{ session_id, answer }` → `{ ok, score, feedback, question?, summary? }`
 
 **Health** (nginx only): `GET /health` → `200 "ok"`
 
@@ -70,13 +76,13 @@ make docker-prod   # Prod: gunicorn + nginx + MySQL
 make docker-down   # Stop and remove volumes
 
 # Testing & CI
-make test          # All unit tests: Python (61) + JS (162)
+make test          # All unit tests: Python (70) + JS (187)
 make lint          # All linters (Ruff + ESLint + Stylelint + HTMLHint)
 make ci            # Full pipeline: lint + coverage + security
 make test-integration  # 19 API integration tests
-make test-e2e          # 19 E2E tests (Docker prod required)
-make test-skills       # 297 skill + agent validation tests
-make test-browser      # 37 Selenium browser tests (Docker + Chrome)
+make test-e2e          # 24 E2E tests (Docker prod required)
+make test-skills       # 333 skill + agent validation tests
+make test-browser      # 47 Selenium browser tests (Docker + Chrome)
 
 # Hard refresh after static file edits: Cmd+Shift+R
 ```
@@ -153,7 +159,7 @@ Task-specific AI personalities in `.claude/agents/` with specialized knowledge a
 - **Settings**: `.claude/settings.json` — auto-approved commands, denied destructive ops, lint hooks
 - **Skills**: `.claude/skills/*/SKILL.md` — mirrored from commands for extended skill features
 - **Agents**: `.claude/agents/*.md` — 10 task-specific AI agents with specialized workflows
-- **Hooks**: auto-lint Python/JS on file edit, context reminder on compaction
+- **Hooks**: auto-lint Python/JS/CSS/HTML on file edit, static file hard-refresh reminder, SBOM reminder on dependency changes, context reminder on compaction
 - **Ignore**: `.claudeignore` — excludes node_modules, venv, coverage, caches from context
 
 ## Strict Accuracy Policy

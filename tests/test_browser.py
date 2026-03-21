@@ -414,3 +414,78 @@ class TestStreamQuality:
     def test_quality_label_shows(self, driver):
         label = driver.find_element(By.ID, "stream-quality")
         assert "Stream quality" in label.text
+
+
+# ── v2: Retro Radio Buttons ─────────────────────────────────
+
+
+class TestRetroButtons:
+    """Retro radio buttons for AI song info."""
+
+    def test_buttons_row_exists(self, driver):
+        row = driver.find_element(By.ID, "radio-buttons-row")
+        assert row.is_displayed()
+
+    def test_seven_buttons_present(self, driver):
+        buttons = driver.find_elements(By.CSS_SELECTOR, ".retro-btn")
+        assert len(buttons) == 7
+
+    def test_lyrics_button_visible(self, driver):
+        btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
+        assert btn.is_displayed()
+        assert btn.text.strip().lower() == "lyrics"
+
+    def test_quiz_button_visible(self, driver):
+        btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="quiz"]')
+        assert btn.is_displayed()
+
+    def test_info_panel_starts_closed(self, driver):
+        panel = driver.find_element(By.ID, "info-panel")
+        assert "open" not in panel.get_attribute("class")
+
+    def test_button_click_opens_panel(self, driver):
+        btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
+        btn.click()
+        time.sleep(1)
+        panel = driver.find_element(By.ID, "info-panel")
+        assert "open" in panel.get_attribute("class")
+
+    def test_button_click_adds_pressed_class(self, driver):
+        btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
+        # May already be pressed from previous test
+        if "pressed" not in btn.get_attribute("class"):
+            btn.click()
+            time.sleep(0.5)
+        assert "pressed" in btn.get_attribute("class")
+
+    def test_same_button_click_closes_panel(self, driver):
+        btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
+        # Ensure it's pressed first
+        if "pressed" not in btn.get_attribute("class"):
+            btn.click()
+            time.sleep(0.5)
+        # Click again to release
+        btn.click()
+        time.sleep(0.5)
+        panel = driver.find_element(By.ID, "info-panel")
+        assert "open" not in panel.get_attribute("class")
+        assert "pressed" not in btn.get_attribute("class")
+
+    def test_switching_buttons_releases_previous(self, driver):
+        lyrics_btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
+        facts_btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="facts"]')
+        lyrics_btn.click()
+        time.sleep(0.5)
+        facts_btn.click()
+        time.sleep(0.5)
+        assert "pressed" not in lyrics_btn.get_attribute("class")
+        assert "pressed" in facts_btn.get_attribute("class")
+        # Clean up — release facts
+        facts_btn.click()
+        time.sleep(0.3)
+
+    def test_all_buttons_have_aria_pressed(self, driver):
+        buttons = driver.find_elements(By.CSS_SELECTOR, ".retro-btn")
+        for btn in buttons:
+            val = btn.get_attribute("aria-pressed")
+            assert val in ("true", "false")

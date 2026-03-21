@@ -412,3 +412,56 @@ class TestRatingsNoIpExposure:
         res = client.get("/api/ratings")
         data = res.get_json()
         assert "ip" not in data[0]
+
+
+# ── Song Info (LLM) ──────────────────────────────────────────
+
+
+class TestSongInfo:
+    """POST /api/song-info and GET /api/song-info/health."""
+
+    def test_song_info_requires_json(self, client):
+        res = client.post("/api/song-info", data="bad", content_type="application/json")
+        assert res.status_code == 400
+
+    def test_song_info_requires_query_type(self, client):
+        res = client.post("/api/song-info", json={"artist": "A", "track": "T"})
+        assert res.status_code == 400
+        assert "query_type" in res.get_json()["error"]
+
+    def test_song_info_requires_artist(self, client):
+        res = client.post("/api/song-info", json={"query_type": "lyrics", "track": "T"})
+        assert res.status_code == 400
+
+    def test_song_info_requires_track(self, client):
+        res = client.post("/api/song-info", json={"query_type": "lyrics", "artist": "A"})
+        assert res.status_code == 400
+
+    def test_song_info_health_returns_json(self, client):
+        res = client.get("/api/song-info/health")
+        data = res.get_json()
+        assert "ok" in data
+        assert "model" in data
+
+
+# ── Quiz ─────────────────────────────────────────────────────
+
+
+class TestQuiz:
+    """POST /api/quiz/start and POST /api/quiz/answer."""
+
+    def test_quiz_start_requires_json(self, client):
+        res = client.post("/api/quiz/start", data="bad", content_type="application/json")
+        assert res.status_code == 400
+
+    def test_quiz_start_requires_artist(self, client):
+        res = client.post("/api/quiz/start", json={"track": "T"})
+        assert res.status_code == 400
+
+    def test_quiz_start_requires_track(self, client):
+        res = client.post("/api/quiz/start", json={"artist": "A"})
+        assert res.status_code == 400
+
+    def test_quiz_answer_requires_json(self, client):
+        res = client.post("/api/quiz/answer", data="bad", content_type="application/json")
+        assert res.status_code == 400

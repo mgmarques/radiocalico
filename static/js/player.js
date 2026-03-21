@@ -52,6 +52,145 @@ const SHARE_ARTWORK_SIZE = '300x300';
 const LATENCY_FALLBACK_SEC = 6;
 const LATENCY_MAX_SEC = 15;
 
+// ── i18n — Internationalization ─────────────────────────────
+const _TRANSLATIONS = {
+    en: {
+        now_playing: 'Now Playing',
+        recently_played: 'Recently Played',
+        rate_track: 'Rate this track:',
+        share: 'Share:',
+        share_list: 'Share list:',
+        filter_all: 'All',
+        filter_liked: 'Liked',
+        filter_disliked: 'Disliked',
+        btn_lyrics: 'Lyrics',
+        btn_details: 'Details',
+        btn_facts: 'Interesting Facts',
+        btn_merchandise: 'Merchandise',
+        btn_jokes: 'Jokes',
+        btn_everything: 'Everything About',
+        btn_quiz: 'Quiz',
+        settings_language: 'Language',
+        loading_ai: 'Asking the AI about this track\u2026',
+        loading_quiz: 'Generating your quiz\u2026 This might take a moment.',
+        no_track: 'No track is currently playing. Start the stream first!',
+        network_error: 'Network error. Check that the server and Ollama are running.',
+        quiz_score_legend: 'Final Score',
+        quiz_your_answer: 'Your answer',
+        quiz_send: 'Send',
+        waiting_track: 'Waiting for track data\u2026',
+        no_tracks_yet: 'No tracks yet',
+        no_matching: 'No matching tracks',
+        listening_to: 'Listening to',
+        on_radio: 'on Radio Calico!',
+        likes: 'likes',
+        unlikes: 'unlikes',
+        stream_quality: 'Stream quality',
+        via_ai: 'via Radio Calico AI',
+        scored_quiz: 'I scored',
+        on_quiz: 'on the Radio Calico Song Quiz for',
+    },
+    'pt-BR': {
+        now_playing: 'Tocando Agora',
+        recently_played: 'Tocadas Recentemente',
+        rate_track: 'Avalie esta faixa:',
+        share: 'Compartilhar:',
+        share_list: 'Compartilhar lista:',
+        filter_all: 'Todas',
+        filter_liked: 'Curtidas',
+        filter_disliked: 'N\u00e3o Curtidas',
+        btn_lyrics: 'Letras',
+        btn_details: 'Detalhes',
+        btn_facts: 'Curiosidades',
+        btn_merchandise: 'Produtos',
+        btn_jokes: 'Piadas',
+        btn_everything: 'Tudo Sobre',
+        btn_quiz: 'Quiz',
+        settings_language: 'Idioma',
+        loading_ai: 'Perguntando \u00e0 IA sobre esta faixa\u2026',
+        loading_quiz: 'Gerando seu quiz\u2026 Isso pode levar um momento.',
+        no_track: 'Nenhuma faixa tocando. Inicie o stream primeiro!',
+        network_error: 'Erro de rede. Verifique se o servidor e o Ollama est\u00e3o rodando.',
+        quiz_score_legend: 'Pontua\u00e7\u00e3o Final',
+        quiz_your_answer: 'Sua resposta',
+        quiz_send: 'Enviar',
+        waiting_track: 'Aguardando dados da faixa\u2026',
+        no_tracks_yet: 'Nenhuma faixa ainda',
+        no_matching: 'Nenhuma faixa correspondente',
+        listening_to: 'Ouvindo',
+        on_radio: 'na Radio Calico!',
+        likes: 'curtidas',
+        unlikes: 'n\u00e3o curtidas',
+        stream_quality: 'Qualidade do stream',
+        via_ai: 'via Radio Calico AI',
+        scored_quiz: 'Fiz',
+        on_quiz: 'no Quiz Musical da Radio Calico para',
+    },
+    es: {
+        now_playing: 'Reproduciendo Ahora',
+        recently_played: 'Reproducidas Recientemente',
+        rate_track: 'Califica esta pista:',
+        share: 'Compartir:',
+        share_list: 'Compartir lista:',
+        filter_all: 'Todas',
+        filter_liked: 'Gustadas',
+        filter_disliked: 'No Gustadas',
+        btn_lyrics: 'Letras',
+        btn_details: 'Detalles',
+        btn_facts: 'Datos Curiosos',
+        btn_merchandise: 'Mercanc\u00eda',
+        btn_jokes: 'Chistes',
+        btn_everything: 'Todo Sobre',
+        btn_quiz: 'Quiz',
+        settings_language: 'Idioma',
+        loading_ai: 'Preguntando a la IA sobre esta pista\u2026',
+        loading_quiz: 'Generando tu quiz\u2026 Esto puede tomar un momento.',
+        no_track: '\u00a1Ninguna pista reproduci\u00e9ndose! Inicia el stream primero.',
+        network_error: 'Error de red. Verifica que el servidor y Ollama est\u00e9n funcionando.',
+        quiz_score_legend: 'Puntuaci\u00f3n Final',
+        quiz_your_answer: 'Tu respuesta',
+        quiz_send: 'Enviar',
+        waiting_track: 'Esperando datos de la pista\u2026',
+        no_tracks_yet: 'Ninguna pista a\u00fan',
+        no_matching: 'Ninguna pista coincidente',
+        listening_to: 'Escuchando',
+        on_radio: 'en Radio Calico!',
+        likes: 'me gusta',
+        unlikes: 'no me gusta',
+        stream_quality: 'Calidad del stream',
+        via_ai: 'v\u00eda Radio Calico AI',
+        scored_quiz: 'Obtuve',
+        on_quiz: 'en el Quiz Musical de Radio Calico para',
+    },
+};
+
+// Map language codes to LLM language names
+const _LANG_TO_LLM = { en: 'English', 'pt-BR': 'Brazilian Portuguese', es: 'Spanish' };
+
+let currentLang = localStorage.getItem('rc-lang') || 'en';
+
+function t(key) {
+    return (_TRANSLATIONS[currentLang] || _TRANSLATIONS.en)[key]
+        || _TRANSLATIONS.en[key] || key;
+}
+
+function applyLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('rc-lang', lang);
+    // Translate all static data-i18n elements
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        const text = t(key);
+        if (text) el.textContent = text;
+    });
+    // Update the radio button in settings
+    const radio = document.querySelector(`input[name="language"][value="${lang}"]`);
+    if (radio) radio.checked = true;
+    // Refresh dynamic content that contains translatable strings
+    if (typeof updateStreamQualityDisplay === 'function') updateStreamQualityDisplay();
+    if (typeof renderHistory === 'function') renderHistory();
+}
+
 // ── Elements ────────────────────────────────────────────────
 const audio      = document.getElementById('audio');
 const playBtn    = document.getElementById('play-btn');
@@ -211,7 +350,7 @@ let lastSummary = {};
  */
 async function renderHistory() {
     if (!history.length) {
-        prevList.innerHTML = '<li class="prev-empty">No tracks yet</li>';
+        prevList.innerHTML = '<li class="prev-empty">' + t('no_tracks_yet') + '</li>';
         return;
     }
 
@@ -224,7 +363,7 @@ async function renderHistory() {
     const filtered = getFilteredHistory();
 
     if (!filtered.length) {
-        prevList.innerHTML = '<li class="prev-empty">No matching tracks</li>';
+        prevList.innerHTML = '<li class="prev-empty">' + t('no_matching') + '</li>';
         return;
     }
 
@@ -575,7 +714,7 @@ async function submitRating(score) {
         }
     } catch (e) {
         log.warn('rating_submit_failed', { error: e.message });
-        rateFb.textContent = 'Could not send rating';
+        rateFb.textContent = t('network_error');
     }
 }
 
@@ -605,9 +744,9 @@ function getShareText() {
     const title  = trackEl.textContent;
     const album  = albumEl.textContent;
     const artUrl = getArtworkUrl();
-    let text = `Listening to "${title}" by ${artist}`;
+    let text = `${t('listening_to')} "${title}" by ${artist}`;
     if (album) text += ` (${album})`;
-    text += ' on Radio Calico!';
+    text += ` ${t('on_radio')}`;
     if (artUrl) text += `\n\nAlbum cover: ${artUrl}`;
     return text;
 }
@@ -658,11 +797,11 @@ function getRecentlyPlayedText() {
         const key = `${h.artist} - ${h.title}`;
         const r = lastSummary[key];
         if (r && (r.likes > 0 || r.dislikes > 0)) {
-            line += ` [${r.likes} likes / ${r.dislikes} unlikes]`;
+            line += ` [${r.likes} ${t('likes')} / ${r.dislikes} ${t('unlikes')}]`;
         }
         return line;
     });
-    return `Recently Played on Radio Calico:\n${lines.join('\n')}`;
+    return `${t('recently_played')} - Radio Calico:\n${lines.join('\n')}`;
 }
 
 document.getElementById('prev-share-whatsapp').addEventListener('click', () => {
@@ -1077,7 +1216,7 @@ applyTheme(savedTheme);
  */
 function updateStreamQualityDisplay() {
     const el = document.getElementById('stream-quality');
-    if (el) el.textContent = `Stream quality: ${STREAM_LABELS[currentStreamQuality]}`;
+    if (el) el.textContent = `${t('stream_quality')}: ${STREAM_LABELS[currentStreamQuality]}`;
 }
 
 /**
@@ -1111,6 +1250,12 @@ document.querySelectorAll('input[name="stream-quality"]').forEach(radio => {
 const sqRadio = document.querySelector(`input[name="stream-quality"][value="${currentStreamQuality}"]`);
 if (sqRadio) sqRadio.checked = true;
 updateStreamQualityDisplay();
+
+// Language selector
+document.querySelectorAll('input[name="language"]').forEach(radio => {
+    radio.addEventListener('change', (e) => applyLanguage(e.target.value));
+});
+applyLanguage(currentLang);
 
 if (Hls.isSupported()) {
     initHls();
@@ -1184,7 +1329,10 @@ function markdownToHtml(md) {
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
     // Inline code
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    // Headings
+    // Headings (h6 → h1, longest prefix first)
+    html = html.replace(/^###### (.+)$/gm, '<h6>$1</h6>');
+    html = html.replace(/^##### (.+)$/gm, '<h5>$1</h5>');
+    html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
     html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
     html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
     html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
@@ -1220,6 +1368,72 @@ function markdownToHtml(md) {
 }
 
 /**
+ * Build a share-buttons row for the info panel results.
+ * Truncates content to fit URL limits (~500 chars preview).
+ */
+// Module-level: store raw content for per-platform share text generation
+let _infoShareMeta = { label: '', track: '', artist: '', content: '' };
+
+function _buildShareText(maxChars) {
+    const { label, track, artist, content } = _infoShareMeta;
+    const cleaned = content
+        .replace(/#{1,6}\s/g, '')
+        .replace(/\*\*/g, '')
+        .replace(/\*/g, '')
+        .replace(/`/g, '')
+        .replace(/\|/g, ' ')
+        .replace(/\n+/g, '\n');
+    const header = `${label} — "${track}" by ${artist} (${t('via_ai')})\n\n`;
+    const available = maxChars - header.length - 3; // 3 for "..."
+    const preview = cleaned.substring(0, Math.max(available, 100));
+    return header + preview + (cleaned.length > available ? '...' : '');
+}
+
+function buildInfoShareRow(queryType, artist, track, content) {
+    const label = { lyrics: 'Lyrics', details: 'Details', facts: 'Facts', merchandise: 'Merchandise', jokes: 'Jokes', everything: 'Everything', quiz: 'Quiz' }[queryType] || queryType;
+    _infoShareMeta = { label, track, artist, content };
+
+    return '<div class="info-share-row" id="info-share-row">'
+        + '<span class="share-label">' + t('share') + '</span>'
+        + '<button class="share-btn share-whatsapp" data-platform="whatsapp" title="Share on WhatsApp" aria-label="Share on WhatsApp">'
+        + '<svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>'
+        + '</button>'
+        + '<button class="share-btn share-twitter" data-platform="twitter" title="Share on X" aria-label="Share on X">'
+        + '<svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'
+        + '</button>'
+        + '<button class="share-btn share-telegram" data-platform="telegram" title="Share on Telegram" aria-label="Share on Telegram">'
+        + '<svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.492-1.302.48-.428-.013-1.252-.242-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>'
+        + '</button>'
+        + '</div>';
+}
+
+/**
+ * Attach click listeners to info-panel share buttons (CSP-safe, no inline onclick).
+ * Call this after inserting buildInfoShareRow HTML into the DOM.
+ */
+function wireInfoShareButtons() {
+    const row = document.getElementById('info-share-row');
+    if (!row) return;
+    // Per-platform char limits: X=280, WhatsApp~4000, Telegram~4096
+    const limits = { whatsapp: 4000, twitter: 280, telegram: 4000 };
+    row.querySelectorAll('.share-btn[data-platform]').forEach(btn => {
+        const platform = btn.dataset.platform;
+        btn.addEventListener('click', () => {
+            const text = _buildShareText(limits[platform] || 2000);
+            const encoded = encodeURIComponent(text);
+            const urls = {
+                whatsapp: 'https://wa.me/?text=' + encoded,
+                twitter: 'https://x.com/intent/tweet?text=' + encoded,
+                telegram: 'https://t.me/share/url?text=' + encoded,
+            };
+            if (urls[platform]) {
+                window.open(urls[platform], '_blank', 'noopener');
+            }
+        });
+    });
+}
+
+/**
  * Handle retro button press — toggle, exclusive selection, fetch song info.
  */
 function handleRetroButton(btn) {
@@ -1246,6 +1460,12 @@ function handleRetroButton(btn) {
     btn.setAttribute('aria-pressed', 'true');
     activeQuery = queryType;
 
+    // Quiz gets its own handler
+    if (queryType === 'quiz') {
+        startQuiz();
+        return;
+    }
+
     // Get current track info
     const artist = artistEl ? artistEl.textContent : '';
     const track = trackEl ? trackEl.textContent : '';
@@ -1254,13 +1474,13 @@ function handleRetroButton(btn) {
     const artworkUrl = artworkImg ? artworkImg.src : '';
 
     if (!artist || artist === 'Radio Calico' || !track || track === 'Live Stream') {
-        infoPanelContent.innerHTML = '<p style="text-align:center;color:#888">No track is currently playing. Start the stream first!</p>';
+        infoPanelContent.innerHTML = '<p style="text-align:center;color:#888">' + t('no_track') + '</p>';
         infoPanel.classList.add('open');
         return;
     }
 
     // Show loading state
-    infoPanelContent.innerHTML = '<div class="info-panel-loading"><span class="spinner"></span>Asking the AI about this track&hellip;</div>';
+    infoPanelContent.innerHTML = '<div class="info-panel-loading"><span class="spinner"></span>' + t('loading_ai') + '</div>';
     infoPanel.classList.add('open');
 
     // Call the API
@@ -1273,13 +1493,16 @@ function handleRetroButton(btn) {
             track: track,
             album: album,
             artwork_url: artworkUrl,
+            language: _LANG_TO_LLM[currentLang] || 'English',
         }),
     })
     .then(r => r.json())
     .then(data => {
         if (activeQuery !== queryType) return; // user switched buttons
         if (data.ok) {
-            infoPanelContent.innerHTML = '<div class="info-panel-content">' + markdownToHtml(data.content) + '</div>';
+            infoPanelContent.innerHTML = '<div class="info-panel-content">' + markdownToHtml(data.content) + '</div>'
+                + buildInfoShareRow(queryType, artist, track, data.content);
+            wireInfoShareButtons();
         } else {
             infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">' +
                 escHtml(data.error || 'Failed to get song info. Is Ollama running?') + '</p>';
@@ -1287,9 +1510,167 @@ function handleRetroButton(btn) {
     })
     .catch(err => {
         if (activeQuery !== queryType) return;
-        infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">Network error. Check that the server and Ollama are running.</p>';
+        infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">' + t('network_error') + '</p>';
         log.error('song_info_fetch_error', { error: err.message });
     });
+}
+
+// ── Quiz Interactive Game ────────────────────────────────────
+let quizState = null; // { questions, current, scores, total }
+
+function startQuiz() {
+    const artist = artistEl ? artistEl.textContent : '';
+    const track = trackEl ? trackEl.textContent : '';
+    const album = albumEl ? albumEl.textContent : '';
+
+    if (!artist || artist === 'Radio Calico' || !track || track === 'Live Stream') {
+        infoPanelContent.innerHTML = '<p style="text-align:center;color:#888">' + t('no_track') + '</p>';
+        infoPanel.classList.add('open');
+        return;
+    }
+
+    infoPanelContent.innerHTML = '<div class="info-panel-loading"><span class="spinner"></span>' + t('loading_quiz') + '</div>';
+    infoPanel.classList.add('open');
+
+    fetch('/api/quiz/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artist, track, album, language: _LANG_TO_LLM[currentLang] || 'English' }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.ok || !data.questions || data.questions.length === 0) {
+            infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">' +
+                escHtml(data.error || 'Could not generate quiz. Is Ollama running?') + '</p>';
+            return;
+        }
+        quizState = { questions: data.questions, current: 0, scores: [], total: 0 };
+        renderQuizQuestion();
+    })
+    .catch(() => {
+        infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">Network error. Check that the server and Ollama are running.</p>';
+    });
+}
+
+function renderQuizQuestion() {
+    if (!quizState) return;
+    const q = quizState.questions[quizState.current];
+    const num = quizState.current + 1;
+
+    let html = '<div class="quiz-chat" id="quiz-chat">';
+    // Show previous exchanges
+    for (let i = 0; i < quizState.scores.length; i++) {
+        const prev = quizState.questions[i];
+        const sc = quizState.scores[i];
+        html += `<div class="quiz-bubble system"><strong>Q${i + 1}:</strong> ${escHtml(prev.q)}<br>${prev.options.map(o => escHtml(o)).join('<br>')}</div>`;
+        html += `<div class="quiz-bubble user">${escHtml(sc.userAnswer)}</div>`;
+        html += `<div class="quiz-bubble system"><strong>${sc.score > 0 ? '+' : ''}${sc.score} pts</strong> — ${escHtml(sc.reaction)}</div>`;
+    }
+    // Current question
+    html += `<div class="quiz-bubble system"><strong>Q${num}/5:</strong> ${escHtml(q.q)}<br><br>${q.options.map(o => escHtml(o)).join('<br>')}</div>`;
+    html += '</div>';
+    html += '<div class="quiz-input-row"><input type="text" class="quiz-input" id="quiz-answer" placeholder="' + t('quiz_your_answer') + ' (A, B, C, D)..." autofocus>';
+    html += '<button class="quiz-send-btn" id="quiz-send">' + t('quiz_send') + '</button></div>';
+
+    infoPanelContent.innerHTML = html;
+
+    // Scroll chat to bottom
+    const chat = document.getElementById('quiz-chat');
+    if (chat) chat.scrollTop = chat.scrollHeight;
+
+    // Wire up send
+    const sendBtn = document.getElementById('quiz-send');
+    const input = document.getElementById('quiz-answer');
+    const submit = () => submitQuizAnswer(input.value);
+    sendBtn.addEventListener('click', submit);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+    input.focus();
+}
+
+function submitQuizAnswer(answer) {
+    if (!quizState || !answer.trim()) return;
+    const q = quizState.questions[quizState.current];
+
+    // Disable input
+    const sendBtn = document.getElementById('quiz-send');
+    const input = document.getElementById('quiz-answer');
+    if (sendBtn) sendBtn.disabled = true;
+    if (input) input.disabled = true;
+
+    // Show user bubble immediately
+    const chat = document.getElementById('quiz-chat');
+    if (chat) {
+        chat.innerHTML += `<div class="quiz-bubble user">${escHtml(answer)}</div>`;
+        chat.innerHTML += '<div class="quiz-bubble system"><em>Evaluating&hellip;</em></div>';
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    fetch('/api/quiz/answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            question: q.q,
+            correct: q.answer,
+            user_answer: answer.trim(),
+            options: q.options,
+        }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        const score = data.score || 0;
+        const reaction = data.reaction || (score > 0 ? 'Not bad!' : 'Ouch!');
+
+        quizState.scores.push({ userAnswer: answer.trim(), score, reaction });
+        quizState.total += score;
+        quizState.current++;
+
+        if (quizState.current >= 5) {
+            renderQuizSummary();
+        } else {
+            renderQuizQuestion();
+        }
+    })
+    .catch(() => {
+        quizState.scores.push({ userAnswer: answer.trim(), score: 0, reaction: 'I crashed. Let\'s call this one a draw.' });
+        quizState.current++;
+        if (quizState.current >= 5) renderQuizSummary();
+        else renderQuizQuestion();
+    });
+}
+
+function renderQuizSummary() {
+    if (!quizState) return;
+    const total = quizState.total;
+    const max = 25;
+    let emoji, verdict;
+    if (total >= 20) { emoji = '🏆'; verdict = 'You are a LEGEND! Are you the artist themselves?!'; }
+    else if (total >= 12) { emoji = '🎸'; verdict = 'Rock solid! You clearly know your stuff.'; }
+    else if (total >= 5) { emoji = '🎵'; verdict = 'Not bad! You\'ve got some music cred.'; }
+    else if (total >= 0) { emoji = '🤷'; verdict = 'Meh. Maybe stick to listening, not trivia.'; }
+    else { emoji = '💀'; verdict = 'Impressively wrong. That takes talent, honestly.'; }
+
+    let html = '<div class="quiz-chat" id="quiz-chat">';
+    for (let i = 0; i < quizState.scores.length; i++) {
+        const q = quizState.questions[i];
+        const sc = quizState.scores[i];
+        html += `<div class="quiz-bubble system"><strong>Q${i + 1}:</strong> ${escHtml(q.q)}</div>`;
+        html += `<div class="quiz-bubble user">${escHtml(sc.userAnswer)}</div>`;
+        html += `<div class="quiz-bubble system"><strong>${sc.score > 0 ? '+' : ''}${sc.score}</strong> — ${escHtml(sc.reaction)}</div>`;
+    }
+    html += '</div>';
+    html += `<div class="quiz-score">${emoji} Final Score: ${total} / ${max} — ${verdict}</div>`;
+
+    // Share quiz results
+    const artist = artistEl ? artistEl.textContent : '';
+    const track = trackEl ? trackEl.textContent : '';
+    const quizShareText = `${emoji} ${t('scored_quiz')} ${total}/${max} ${t('on_quiz')} "${track}" by ${artist}! ${verdict}`;
+    html += buildInfoShareRow('quiz', artist, track, quizShareText);
+
+    infoPanelContent.innerHTML = html;
+    wireInfoShareButtons();
+
+    const chat = document.getElementById('quiz-chat');
+    if (chat) chat.scrollTop = chat.scrollHeight;
 }
 
 retroButtons.forEach(btn => {
@@ -1299,7 +1680,7 @@ retroButtons.forEach(btn => {
 // ── Test exports (Node.js only) ──────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory, markdownToHtml, handleRetroButton, playMechanicalClick,
+        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory, markdownToHtml, buildInfoShareRow, handleRetroButton, playMechanicalClick, applyLanguage, t, _TRANSLATIONS,
         getShareText, getRecentlyPlayedText, getArtworkUrl,
         showPlayIcon, updateTrack, pushHistory, renderHistory,
         fetchArtwork, handleMetadataFields, togglePlay,
