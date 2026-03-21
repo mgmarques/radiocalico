@@ -27,8 +27,8 @@ CACHE_DIR = Path(os.environ.get("LLM_CACHE_DIR", "/tmp/radiocalico-llm-cache"))
 CACHE_TTL_SECONDS = int(os.environ.get("LLM_CACHE_TTL", 86400))  # 24 h
 
 # ── LLM generation parameters ────────────────────────────────────────────────
-_MAX_TOKENS = 800       # keep responses concise and fast
-_TEMPERATURE = 0.5      # lower = faster + more focused
+_MAX_TOKENS = 800  # keep responses concise and fast
+_TEMPERATURE = 0.5  # lower = faster + more focused
 _QUIZ_MAX_TOKENS = 600  # quizzes need less text
 _EVAL_MAX_TOKENS = 150  # evaluations are short
 
@@ -83,9 +83,7 @@ class LLMService:
         language: str = "English",
         timeout: float = 120.0,
     ):
-        self.base_url = base_url or os.environ.get(
-            "OLLAMA_BASE_URL", "http://localhost:11434/v1"
-        )
+        self.base_url = base_url or os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
         self._fallback_url = os.environ.get("OLLAMA_FALLBACK_URL", "")
         self.model = model or os.environ.get("OLLAMA_MODEL", "llama3.2")
         self.language = language
@@ -248,7 +246,7 @@ RULES:
                     {
                         "role": "user",
                         "content": (
-                            f'Generate a 5-question music trivia quiz about '
+                            f"Generate a 5-question music trivia quiz about "
                             f'"{track}" by {artist} (album: "{album or "Unknown"}").'
                         ),
                     },
@@ -268,9 +266,7 @@ RULES:
             logger.error("quiz_generate_error", extra={"error": str(exc)})
             return {"ok": False, "error": str(exc)}
 
-    def evaluate_answer(
-        self, question: str, correct: str, user_answer: str, options: list
-    ) -> dict:
+    def evaluate_answer(self, question: str, correct: str, user_answer: str, options: list) -> dict:
         """Evaluate a user's quiz answer. Returns score and reaction."""
         self._ensure_connection()
         try:
@@ -280,9 +276,7 @@ RULES:
                     {"role": "system", "content": self._EVAL_SYSTEM},
                     {
                         "role": "user",
-                        "content": (
-                            f"Q: {question}\nCorrect: {correct}\nUser: {user_answer}\nScore it."
-                        ),
+                        "content": (f"Q: {question}\nCorrect: {correct}\nUser: {user_answer}\nScore it."),
                     },
                 ],
                 max_tokens=_EVAL_MAX_TOKENS,
@@ -297,7 +291,12 @@ RULES:
             return {"ok": True, **data}
         except (json.JSONDecodeError, Exception) as exc:
             logger.error("quiz_eval_error", extra={"error": str(exc)})
-            return {"ok": False, "score": 0, "reaction": "Hmm, I crashed trying to judge you. Let's call it a draw.", "error": str(exc)}
+            return {
+                "ok": False,
+                "score": 0,
+                "reaction": "Hmm, I crashed trying to judge you. Let's call it a draw.",
+                "error": str(exc),
+            }
 
     # ── Health check ─────────────────────────────────────────────────────────
 
