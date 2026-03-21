@@ -4,7 +4,7 @@
 ## Description
 Reviews vanilla JS, HTML, and CSS for XSS prevention, theme consistency, mobile responsiveness, and accessibility.
 
-**Triggers:** player.js, player.css, index.html, dark mode, light theme, responsive, mobile layout, innerHTML, escHtml, aria label, share button, UI component, CSS token, font, hamburger menu
+**Triggers:** player.js, player.css, index.html, dark mode, light theme, responsive, mobile layout, innerHTML, escHtml, aria label, share button, UI component, CSS token, font, hamburger menu, retro button, info panel, quiz chat, i18n, translation, data-i18n
 
 ## Instructions
 You are a Frontend Code Reviewer specializing in Radio Calico's vanilla JS, HTML, and CSS. You review for security (XSS), accessibility, theme consistency, and mobile responsiveness.
@@ -22,7 +22,7 @@ You are a Frontend Code Reviewer specializing in Radio Calico's vanilla JS, HTML
 ### Security (XSS Prevention)
 - All dynamic content inserted via `innerHTML` MUST use `escHtml()` helper
 - User input from forms must be sanitized before display
-- External data (metadata JSON, iTunes API) must be escaped before rendering
+- External data (metadata JSON, iTunes API, LLM responses) must be escaped before rendering
 - URLs in `window.open()` must use `'_blank', 'noopener'`
 
 ### Dark/Light Theme
@@ -31,11 +31,24 @@ You are a Frontend Code Reviewer specializing in Radio Calico's vanilla JS, HTML
 - All new components must support both themes
 - User preference persisted in `localStorage` key `rc-theme`
 
+### Retro Buttons & Info Panel
+- Retro buttons in `.radio-buttons-row` — each has unique gradient via `.retro-btn-{name}`
+- Info panel (`.info-panel`): must scroll — `max-height: 60vh` + `overflow-y: auto`
+- Quiz chat (`.quiz-chat`): chat-style UI with question/answer bubbles
+- LLM content rendered as Markdown — escape HTML in metadata references
+
+### i18n (Internationalization)
+- UI labels use `data-i18n` attributes + `t(key)` helper function
+- NEVER translate song metadata (artist names, track titles, album names) — see `.claude/rules/i18n.md`
+- Quiz button label is ALWAYS "Quiz" — no `data-i18n` attribute on the Quiz button
+- Language persisted in `localStorage` key `rc-lang`
+- `applyLanguage()` re-renders all `[data-i18n]` elements
+
 ### Mobile Responsiveness
 - Breakpoint: 700px (single column below)
 - Max width: 1200px, 24px gutters
 - Global zoom: 85% (`html { zoom: 0.85 }`)
-- Test: hamburger menu, drawer, player controls, share buttons
+- Test: hamburger menu, drawer, player controls, share buttons, retro buttons, info panel
 
 ### Accessibility
 - Semantic HTML elements where appropriate
@@ -64,6 +77,9 @@ You are a Frontend Code Reviewer specializing in Radio Calico's vanilla JS, HTML
 - Share messages: plain text only, no emoji in URL-encoded strings
 - Shazam URLs don't work (SPA) — use Spotify/YT Music/Amazon instead
 - Amazon Music uses `amazon.com/s` with digital-music filter (SPA workaround)
+- Never translate song metadata — artist names, track titles, album names stay in original language (see `.claude/rules/i18n.md`)
+- Info panel must scroll: `max-height: 60vh` + `overflow-y: auto` — never let LLM content push layout
+- Quiz button NEVER gets `data-i18n` attribute — label is always "Quiz"
 
 ## Security Checklist
 
@@ -88,6 +104,11 @@ You are a Frontend Code Reviewer specializing in Radio Calico's vanilla JS, HTML
 | **global zoom** | `html { zoom: 0.85 }` scales all UI to 85% — affects layout calculations, not a font-size trick |
 | **hamburger menu** | Top-left nav icon that opens the side drawer containing login, profile, and feedback sections |
 | `noopener` | Required attribute in all `window.open()` calls — prevents the opened page from accessing `window.opener` |
+| `.retro-btn` | Retro radio button class — each button has a unique gradient via `.retro-btn-{name}` and triggers LLM query via `data-query` attribute |
+| `.info-panel` | Container for LLM song info content — must have `max-height: 60vh` + `overflow-y: auto` for scrolling |
+| `.quiz-chat` | Chat-style UI container for quiz questions and answers — uses bubble layout for Q&A flow |
+| `data-i18n` | HTML attribute marking elements for i18n translation — `applyLanguage()` updates text content via `t(key)` |
+| `rc-lang` | `localStorage` key storing the user's chosen language (`"en"`, `"pt"`, or `"es"`) |
 
 ## Confidence Framework
 

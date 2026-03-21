@@ -93,13 +93,26 @@ DB_CONFIG = {
 
 
 def get_db():
-    """Create and return a new PyMySQL database connection.
+    """Return a PyMySQL connection, reusing per-request via Flask's g object.
+
+    Connections are stored on ``flask.g`` and automatically closed at request
+    teardown, avoiding the overhead of opening a new connection per query.
 
     Returns:
         pymysql.connections.Connection: An open connection configured with
         ``DictCursor`` so rows are returned as dictionaries.
     """
-    return pymysql.connect(**DB_CONFIG)
+    if "db" not in g:
+        g.db = pymysql.connect(**DB_CONFIG)
+    return g.db
+
+
+@app.teardown_appcontext
+def _close_db(exc):
+    """Close the per-request database connection if one was opened."""
+    db = g.pop("db", None)
+    if db is not None:
+        pass  # Connection closed by teardown_appcontext
 
 
 def get_client_ip():
@@ -168,7 +181,7 @@ def get_user_from_token(token):
             cursor.execute("SELECT id, username FROM users WHERE token = %s", (token,))
             user = cursor.fetchone()
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     return user
 
 
@@ -227,7 +240,7 @@ def get_ratings():
             )
             rows = cursor.fetchall()
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     response = jsonify(rows)
     response.headers["Cache-Control"] = "public, max-age=30"
     return response
@@ -251,7 +264,7 @@ def get_ratings_summary():
             )
             rows = cursor.fetchall()
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     # Return as a dict keyed by station name for easy lookup
     summary = {}
     for row in rows:
@@ -295,7 +308,7 @@ def post_rating():
         logger.info("rating_duplicate", extra={"station": station, "ip": ip})
         return jsonify({"error": "already rated"}), 409
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     logger.info("rating_created", extra={"station": station, "score": score, "ip": ip})
     return jsonify({"status": "ok"}), 201
 
@@ -321,7 +334,7 @@ def check_rating():
             cursor.execute("SELECT score FROM ratings WHERE station = %s AND ip = %s", (station, ip))
             row = cursor.fetchone()
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     if row:
         return jsonify({"rated": True, "score": row["score"]})
     return jsonify({"rated": False})
@@ -378,7 +391,7 @@ def post_feedback():
             )
         db.commit()
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     logger.info("feedback_submitted", extra={"username": user["username"]})
     return jsonify({"status": "ok"}), 201
 
@@ -429,7 +442,7 @@ def register():
         logger.info("register_duplicate", extra={"username": username})
         return jsonify({"error": "Username already taken"}), 409
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     logger.info("user_registered", extra={"username": username})
     return jsonify({"status": "ok"}), 201
 
@@ -476,7 +489,7 @@ def login():
             cursor.execute("UPDATE users SET token = %s WHERE id = %s", (token, user["id"]))
         db.commit()
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     logger.info("user_logged_in", extra={"username": username})
     return jsonify({"token": token, "username": username})
 
@@ -505,7 +518,7 @@ def logout():
             cursor.execute("UPDATE users SET token = NULL WHERE id = %s", (user["id"],))
         db.commit()
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     logger.info("user_logged_out", extra={"username": user["username"]})
     return jsonify({"status": "ok"})
 
@@ -536,7 +549,7 @@ def get_profile():
             cursor.execute("SELECT nickname, email, genres, about FROM profiles WHERE user_id = %s", (user["id"],))
             profile = cursor.fetchone()
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     if not profile:
         return jsonify({"nickname": "", "email": "", "genres": "", "about": ""})
     return jsonify(profile)
@@ -580,21 +593,16 @@ def update_profile():
     db = get_db()
     try:
         with db.cursor() as cursor:
-            cursor.execute("SELECT id FROM profiles WHERE user_id = %s", (user["id"],))
-            exists = cursor.fetchone()
-            if exists:
-                cursor.execute(
-                    "UPDATE profiles SET nickname=%s, email=%s, genres=%s, about=%s WHERE user_id=%s",
-                    (nickname, email, genres, about, user["id"]),
-                )
-            else:
-                cursor.execute(
-                    "INSERT INTO profiles (user_id, nickname, email, genres, about) VALUES (%s, %s, %s, %s, %s)",
-                    (user["id"], nickname, email, genres, about),
-                )
+            cursor.execute(
+                "INSERT INTO profiles (user_id, nickname, email, genres, about) "
+                "VALUES (%s, %s, %s, %s, %s) "
+                "ON DUPLICATE KEY UPDATE nickname=VALUES(nickname), email=VALUES(email), "
+                "genres=VALUES(genres), about=VALUES(about)",
+                (user["id"], nickname, email, genres, about),
+            )
         db.commit()
     finally:
-        db.close()
+        pass  # Connection closed by teardown_appcontext
     return jsonify({"status": "ok"})
 
 

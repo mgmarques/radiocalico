@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS ratings (
     score TINYINT NOT NULL,
     ip VARCHAR(45) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_rating (station, ip)
+    UNIQUE KEY unique_rating (station, ip),
+    INDEX idx_station (station)
 );
 
 CREATE TABLE IF NOT EXISTS users (

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Radio Calico uses two complementary Claude Code extension mechanisms: **19 slash commands (skills)** for task automation and **10 custom agents** for persistent expert personas. This document explains the differences, current implementation, and future improvement roadmap.
+Radio Calico uses two complementary Claude Code extension mechanisms: **22 slash commands (skills)** for task automation and **10 custom agents** for persistent expert personas. This document explains the differences, current implementation, and future improvement roadmap.
 
 ---
 
@@ -17,8 +17,8 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **19 slash
 | **Analogy** | A recipe card you follow once | A team member you consult repeatedly |
 | **Statefulness** | Stateless — each run is independent | Context-aware — remembers conversation history |
 | **Best for** | Repeatable automation (CI, PR, scaffolding) | Judgment calls (code review, architecture, triage) |
-| **Count** | 19 skills | 10 agents |
-| **Tests** | 333 tests (structure, versions, references, agent delegation) | included in 333 |
+| **Count** | 22 skills | 10 agents |
+| **Tests** | 351 tests (structure, versions, references, agent delegation) | included in 351 |
 | **Version header** | `<!-- Radio Calico Skill v2.0.0 -->` | `<!-- Radio Calico Agent v2.0.0 -->` |
 
 ### When to Use Which
@@ -37,9 +37,9 @@ Radio Calico uses two complementary Claude Code extension mechanisms: **19 slash
 
 ---
 
-## Current Skills (19)
+## Current Skills (22)
 
-9 of the 19 skills delegate their execution to a specialized agent subagent. This keeps verbose test output, scan results, and doc generation out of the main context window — only a concise summary returns.
+9 of the 22 skills delegate their execution to a specialized agent subagent. This keeps verbose test output, scan results, and doc generation out of the main context window — only a concise summary returns.
 
 | Category | Skills | What they automate | Delegated To |
 |----------|---------|--------------------|--------------|
@@ -339,8 +339,8 @@ Skills invoke the default agent. Custom agents run **as** subagents — each inv
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
 - [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents)
 - Project agents: `.claude/agents/*.md` (10 files)
-- Project skills: `.claude/commands/*.md` (19 files) + `.claude/skills/*/SKILL.md` (mirrors)
-- Agent + skills tests: `tests/test_skills.py` (333 tests)
+- Project skills: `.claude/commands/*.md` (22 files) + `.claude/skills/*/SKILL.md` (mirrors)
+- Agent + skills tests: `tests/test_skills.py` (351 tests)
 - V&V plan update script: `scripts/update_vv_plan.py`
 - V&V plan CI workflow: `.github/workflows/update-vv-plan.yml`
 - Bootstrap script: `scripts/init-claude-code.sh` (creates 3 starter agents + 3 skills)

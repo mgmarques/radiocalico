@@ -17,7 +17,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
 - **LLM**: Ollama (Llama 3.2) via OpenAI SDK for song info (lyrics, details, facts, merchandise, jokes, quiz). Docker service with host GPU fallback. Response cache (24h TTL).
 - **i18n**: English (default), Brazilian Portuguese, Spanish. UI labels translated; song metadata always in original language.
-- **Testing**: 843 tests (81 unit + 62 LLM + 19 integration + 238 JS + 24 E2E + 47 browser + 333 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
+- **Testing**: 861 tests (81 unit + 62 LLM + 19 integration + 238 JS + 24 E2E + 47 browser + 351 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
 - **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination, LLM response cache (24h TTL).
 
@@ -85,7 +85,7 @@ make lint          # All linters (Ruff + ESLint + Stylelint + HTMLHint)
 make ci            # Full pipeline: lint + coverage + security
 make test-integration  # 19 API integration tests
 make test-e2e          # 24 E2E tests (Docker prod required)
-make test-skills       # 333 skill + agent validation tests
+make test-skills       # 351 skill + agent validation tests
 make test-browser      # 47 Selenium browser tests (Docker + Chrome)
 
 # Hard refresh after static file edits: Cmd+Shift+R
@@ -114,7 +114,7 @@ make test-browser      # 47 Selenium browser tests (Docker + Chrome)
 7. **Emoji in URL encoding**: Use plain text `[N likes / N unlikes]`.
 8. **mailto: in `window.open`**: Use `window.location.href` instead.
 
-## Slash Commands (19 total, all v2.0.0)
+## Slash Commands (22 total, all v2.0.0)
 
 9 heavy skills delegate to a specialized subagent (isolated context window).
 
@@ -139,6 +139,9 @@ make test-browser      # 47 Selenium browser tests (Docker + Chrome)
 | `/add-dark-style` | Add dark mode for new components | — |
 | `/update-claude-md` | Refresh CLAUDE.md from codebase | — |
 | `/generate-sbom` | Generate SBOM.md with all packages + CVE status | Security Auditor |
+| `/check-llm` | Diagnose Ollama/LLM connectivity and model availability | — |
+| `/add-language` | Scaffold a new i18n language across all files | — |
+| `/add-retro-button` | Add a new retro radio button + query type | — |
 
 ## Custom Agents (10 total, all v2.0.0)
 
@@ -159,7 +162,7 @@ Task-specific AI personalities in `.claude/agents/` with specialized knowledge a
 
 ## Claude Code Configuration
 
-- **Rules**: `.claude/rules/` — architecture, testing, database, style-guide, security-baseline (loaded on relevant topics)
+- **Rules**: `.claude/rules/` — architecture, testing, database, style-guide, security-baseline, i18n, llm (loaded on relevant topics)
 - **Settings**: `.claude/settings.json` — auto-approved commands, denied destructive ops, lint hooks
 - **Skills**: `.claude/skills/*/SKILL.md` — mirrored from commands for extended skill features
 - **Agents**: `.claude/agents/*.md` — 10 task-specific AI agents with specialized workflows
