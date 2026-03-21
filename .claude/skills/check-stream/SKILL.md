@@ -1,4 +1,4 @@
-<!-- Radio Calico Skill v1.0.0 -->
+<!-- Radio Calico Skill v2.0.0 -->
 Check the current status of the Radio Calico stream and metadata.
 
 Detect the environment: if Docker is running (`docker compose --profile dev ps` shows healthy containers), use port 5050. Otherwise use port 5000.

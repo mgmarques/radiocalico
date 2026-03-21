@@ -110,7 +110,7 @@ make test-browser      # 47 Selenium browser tests (Docker + Chrome)
 7. **Emoji in URL encoding**: Use plain text `[N likes / N unlikes]`.
 8. **mailto: in `window.open`**: Use `window.location.href` instead.
 
-## Slash Commands (19 total, all v1.0.0)
+## Slash Commands (19 total, all v2.0.0)
 
 9 heavy skills delegate to a specialized subagent (isolated context window).
 
@@ -136,7 +136,7 @@ make test-browser      # 47 Selenium browser tests (Docker + Chrome)
 | `/update-claude-md` | Refresh CLAUDE.md from codebase | — |
 | `/generate-sbom` | Generate SBOM.md with all packages + CVE status | Security Auditor |
 
-## Custom Agents (10 total, all v1.0.0)
+## Custom Agents (10 total, all v2.0.0)
 
 Task-specific AI personalities in `.claude/agents/` with specialized knowledge and workflows.
 

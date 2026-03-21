@@ -1680,7 +1680,7 @@ retroButtons.forEach(btn => {
 // ── Test exports (Node.js only) ──────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory, markdownToHtml, buildInfoShareRow, handleRetroButton, playMechanicalClick, applyLanguage, t, _TRANSLATIONS,
+        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory, markdownToHtml, buildInfoShareRow, _buildShareText, _infoShareMeta, handleRetroButton, playMechanicalClick, applyLanguage, t, _TRANSLATIONS,
         getShareText, getRecentlyPlayedText, getArtworkUrl,
         showPlayIcon, updateTrack, pushHistory, renderHistory,
         fetchArtwork, handleMetadataFields, togglePlay,

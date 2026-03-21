@@ -1,4 +1,4 @@
-<!-- Radio Calico Skill v1.0.0 -->
+<!-- Radio Calico Skill v2.0.0 -->
 Run all 6 security scanning tools and report findings with fix suggestions.
 
 ## Agent

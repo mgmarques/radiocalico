@@ -34,7 +34,11 @@
       "Bash(python -m pytest test_app.py -q)",
       "Bash(source /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico/api/venv/bin/activate)",
       "Bash(python -m pytest /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico/tests/test_e2e.py -q)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)",
+      "Bash(git pull:*)",
+      "Bash(find .claude/commands .claude/agents .claude/skills -name \"*.md\" -exec sed -i '' 's/v1\\\\.0\\\\.0/v2.0.0/g' {} +)"
     ],
     "deny": [
       "Bash(rm -rf *)",

@@ -1,4 +1,4 @@
-<!-- Radio Calico Skill v1.0.0 -->
+<!-- Radio Calico Skill v2.0.0 -->
 Run the full Radio Calico CI pipeline (lint + tests + coverage + security).
 
 ## Agent

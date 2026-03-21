@@ -1,4 +1,4 @@
-<!-- Radio Calico Skill v1.0.0 -->
+<!-- Radio Calico Skill v2.0.0 -->
 Update README.md with architecture diagrams from docs/architecture.md.
 
 ### Diagrams to sync (6 total)

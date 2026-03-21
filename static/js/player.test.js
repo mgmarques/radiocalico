@@ -2145,24 +2145,26 @@ describe('buildInfoShareRow', () => {
         expect(html).toContain('share-telegram');
     });
 
-    test('includes artist and track in share text (URL-encoded)', () => {
-        const html = player.buildInfoShareRow('facts', 'The Beatles', 'Yesterday', 'Great song');
-        expect(html).toContain('The%20Beatles');
-        expect(html).toContain('Yesterday');
+    test('stores artist and track in module-level _infoShareMeta', () => {
+        player.buildInfoShareRow('facts', 'The Beatles', 'Yesterday', 'Great song');
+        // Share text is built at click time via _buildShareText(), stored in _infoShareMeta
+        const text = player._buildShareText(4000);
+        expect(text).toContain('The Beatles');
+        expect(text).toContain('Yesterday');
     });
 
-    test('includes query type label', () => {
-        const html = player.buildInfoShareRow('jokes', 'Artist', 'Track', 'Funny content');
-        expect(html).toContain('Jokes');
+    test('stores query type label in share meta', () => {
+        player.buildInfoShareRow('jokes', 'Artist', 'Track', 'Funny content');
+        const text = player._buildShareText(4000);
+        expect(text).toContain('Jokes');
     });
 
-    test('uses data attributes for CSP-safe share (no inline onclick)', () => {
+    test('uses data-platform attributes for CSP-safe share (no inline onclick)', () => {
         const html = player.buildInfoShareRow('lyrics', 'A&B', 'Track "1"', 'Content');
         // URLs are set via wireInfoShareButtons(), not inline onclick
         expect(html).toContain('data-platform="whatsapp"');
         expect(html).toContain('data-platform="twitter"');
         expect(html).toContain('data-platform="telegram"');
-        expect(html).toContain('data-share=');
         expect(html).not.toContain('onclick');
     });
 

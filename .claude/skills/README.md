@@ -1,6 +1,6 @@
 # Radio Calico — Skill Catalog
 
-> All skills are v1.0.0. Type `/skill-name` in Claude Code to invoke.
+> All skills are v2.0.0. Type `/skill-name` in Claude Code to invoke.
 
 ## Development
 

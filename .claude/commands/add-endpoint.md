@@ -1,4 +1,4 @@
-<!-- Radio Calico Skill v1.0.0 -->
+<!-- Radio Calico Skill v2.0.0 -->
 Scaffold a new Flask API endpoint with tests and documentation.
 
 The user should provide: the endpoint path, HTTP method, and what it does.
