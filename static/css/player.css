@@ -1297,6 +1297,22 @@ h1, h2, h3 {
     border-bottom-right-radius: 4px;
 }
 
+.quiz-options {
+    list-style: none;
+    padding: 8px 0 0 4px;
+    margin: 0;
+}
+
+.quiz-options li {
+    padding: 3px 0;
+    font-weight: 600;
+}
+
+.quiz-options li::before {
+    content: "▸ ";
+    color: var(--orange);
+}
+
 .quiz-input-row {
     display: flex;
     gap: 8px;
