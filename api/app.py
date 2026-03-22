@@ -10,6 +10,7 @@ database accessed through PyMySQL with parameterized queries.
 
 import hashlib
 import hmac
+import json
 import logging
 import os
 import secrets
@@ -18,7 +19,7 @@ import uuid
 
 import pymysql
 from dotenv import load_dotenv
-from flask import Flask, g, jsonify, request, send_from_directory
+from flask import Flask, Response, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -674,6 +675,126 @@ def song_info():
         return jsonify(result)
     else:
         logger.warning("song_info_error", extra={"query_type": query_type, "error": result.get("error", "")})
+        return jsonify(result), 503
+
+
+@app.route("/api/song-info/stream", methods=["POST"])
+@limiter.limit("10/minute")
+def song_info_stream():
+    """Stream song information as Server-Sent Events (SSE).
+
+    Same parameters as /api/song-info but returns text/event-stream.
+    Each chunk is sent as a 'data:' SSE line. Final event is 'event: done'.
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"ok": False, "error": "Invalid JSON"}), 400
+
+    query_type = (data.get("query_type") or "").strip().lower()
+    artist = (data.get("artist") or "").strip()
+    track = (data.get("track") or "").strip()
+    album = (data.get("album") or "").strip()
+    artwork_url = (data.get("artwork_url") or "").strip()
+    language = (data.get("language") or "").strip() or None
+
+    if not query_type or not artist or not track:
+        return jsonify({"ok": False, "error": "query_type, artist, and track are required"}), 400
+
+    svc = _get_llm()
+
+    def generate():
+        for chunk in svc.query_stream(
+            query_type=query_type,
+            artist=artist,
+            track=track,
+            album=album,
+            artwork_url=artwork_url,
+            language=language,
+        ):
+            if chunk.startswith("ERROR:"):
+                yield f"event: error\ndata: {json.dumps(chunk[6:])}\n\n"
+                return
+            yield f"data: {json.dumps(chunk)}\n\n"
+        yield "event: done\ndata: \n\n"
+
+    return Response(
+        generate(), mimetype="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    )
+
+
+@app.route("/api/chat", methods=["POST"])
+@limiter.limit("10/minute")
+def chat():
+    """Follow-up conversation about a song. Streams SSE responses.
+
+    Request body (JSON):
+        messages (list): [{"role": "user", "content": "..."}, ...]
+        artist (str): Current artist.
+        track (str): Current track.
+        album (str, optional): Current album.
+        language (str, optional): Response language.
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"ok": False, "error": "Invalid JSON"}), 400
+
+    messages = data.get("messages", [])
+    artist = (data.get("artist") or "").strip()
+    track = (data.get("track") or "").strip()
+    album = (data.get("album") or "").strip()
+    language = (data.get("language") or "").strip() or None
+
+    if not messages or not artist or not track:
+        return jsonify({"ok": False, "error": "messages, artist, and track are required"}), 400
+
+    svc = _get_llm()
+
+    def generate():
+        for chunk in svc.chat(
+            messages=messages,
+            artist=artist,
+            track=track,
+            album=album,
+            language=language,
+        ):
+            if chunk.startswith("ERROR:"):
+                yield f"event: error\ndata: {json.dumps(chunk[6:])}\n\n"
+                return
+            yield f"data: {json.dumps(chunk)}\n\n"
+        yield "event: done\ndata: \n\n"
+
+    return Response(
+        generate(), mimetype="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    )
+
+
+@app.route("/api/taste-profile", methods=["POST"])
+@limiter.limit("5/minute")
+def taste_profile():
+    """Generate a music taste personality profile from user's ratings.
+
+    Request body (JSON):
+        liked (list): ["Artist - Track", ...]
+        disliked (list): ["Artist - Track", ...]
+        language (str, optional): Response language.
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"ok": False, "error": "Invalid JSON"}), 400
+
+    liked = data.get("liked", [])
+    disliked = data.get("disliked", [])
+    language = (data.get("language") or "").strip() or None
+
+    if not liked and not disliked:
+        return jsonify({"ok": False, "error": "No rated songs provided"}), 400
+
+    svc = _get_llm()
+    result = svc.taste_profile(liked_songs=liked, disliked_songs=disliked, language=language)
+
+    if result.get("ok"):
+        return jsonify(result)
+    else:
         return jsonify(result), 503
 
 

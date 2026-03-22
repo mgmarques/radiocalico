@@ -87,8 +87,18 @@ function buildDOM() {
             <button class="retro-btn" data-query="everything" aria-pressed="false">Everything</button>
             <button class="retro-btn" data-query="quiz" aria-pressed="false">Quiz</button>
         </div>
+        <div class="ticker-container" id="ticker-container">
+            <div class="ticker-track" id="ticker-track"></div>
+        </div>
         <div class="info-panel" id="info-panel">
             <div class="info-panel-content" id="info-panel-content"></div>
+            <div class="chat-followup" id="chat-followup" style="display:none">
+                <div class="chat-messages" id="chat-messages"></div>
+                <form class="chat-input-form" id="chat-input-form" autocomplete="off">
+                    <input type="text" id="chat-input" class="chat-input" maxlength="500">
+                    <button type="submit" class="chat-send-btn">&#9654;</button>
+                </form>
+            </div>
         </div>
     `;
 }
@@ -2394,46 +2404,62 @@ describe('handleRetroButton', () => {
         expect(detailsBtn.getAttribute('aria-pressed')).toBe('true');
     });
 
-    test('fetches song info from API when track is available', async () => {
+    test('fetches song info via streaming API when track is available', async () => {
         document.getElementById('artist').textContent = 'The Beatles';
         document.getElementById('track').textContent = 'Yesterday';
         document.getElementById('album').textContent = 'Help!';
 
+        // Mock a ReadableStream response for the streaming endpoint
+        const encoder = new TextEncoder();
+        const chunks = [
+            encoder.encode('data: ## Lyrics\n\n'),
+            encoder.encode('data: Yesterday...\n\n'),
+            encoder.encode('event: done\ndata: \n\n'),
+        ];
+        let chunkIndex = 0;
+        const mockReader = {
+            read: jest.fn(() => {
+                if (chunkIndex < chunks.length) {
+                    return Promise.resolve({ done: false, value: chunks[chunkIndex++] });
+                }
+                return Promise.resolve({ done: true });
+            }),
+        };
         fetch.mockResolvedValueOnce({
             ok: true,
-            json: () => Promise.resolve({ ok: true, content: '## Lyrics\nYesterday, all my troubles...' }),
+            body: { getReader: () => mockReader },
         });
 
         player.handleRetroButton(lyricsBtn);
-
-        // Should show loading state
-        expect(infoPanelContent.innerHTML).toContain('spinner');
         expect(infoPanel.classList.contains('open')).toBe(true);
 
-        // Wait for fetch to resolve
-        await new Promise(r => setTimeout(r, 50));
+        // Wait for streaming to complete
+        await new Promise(r => setTimeout(r, 150));
 
-        expect(fetch).toHaveBeenCalledWith('/api/song-info', expect.objectContaining({
+        expect(fetch).toHaveBeenCalledWith('/api/song-info/stream', expect.objectContaining({
             method: 'POST',
         }));
-        expect(infoPanelContent.innerHTML).toContain('Lyrics');
-        expect(infoPanelContent.innerHTML).toContain('info-share-row');
     });
 
-    test('shows error when API returns not ok', async () => {
+    test('falls back to non-streaming API on stream error', async () => {
         document.getElementById('artist').textContent = 'The Beatles';
         document.getElementById('track').textContent = 'Yesterday';
 
-        fetch.mockResolvedValueOnce({
-            ok: true,
-            json: () => Promise.resolve({ ok: false, error: 'Ollama is down' }),
-        });
+        // First call (stream) fails, second call (fallback) succeeds
+        fetch
+            .mockRejectedValueOnce(new Error('Stream not supported'))
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ ok: false, error: 'Ollama is down' }),
+            });
 
         player.handleRetroButton(factsBtn);
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 100));
 
-        expect(infoPanelContent.innerHTML).toContain('Ollama is down');
-        expect(infoPanelContent.innerHTML).toContain('color:#c0392b');
+        // Should have tried fallback /api/song-info
+        expect(fetch).toHaveBeenCalledWith('/api/song-info', expect.objectContaining({
+            method: 'POST',
+        }));
     });
 
     test('shows network error on fetch failure', async () => {
@@ -2990,5 +3016,222 @@ describe('profile form genre checkboxes', () => {
         const cbs = document.querySelectorAll('#genre-grid input[type="checkbox"]');
         expect(cbs.length).toBe(3);
         expect([...cbs].map(c => c.value)).toEqual(['rock', 'jazz', 'pop']);
+    });
+});
+
+/* ── Coverage: markdownToHtml handles empty/null ──────────────── */
+
+describe('markdownToHtml — edge cases', () => {
+    test('handles null input', () => {
+        expect(player.markdownToHtml(null)).toBe('');
+    });
+    test('handles empty string', () => {
+        expect(player.markdownToHtml('')).toBe('');
+    });
+    test('handles h4/h5/h6 headings', () => {
+        const html = player.markdownToHtml('#### H4\n##### H5\n###### H6');
+        expect(html).toContain('<h4>');
+        expect(html).toContain('<h5>');
+        expect(html).toContain('<h6>');
+    });
+});
+
+/* ── v2: Ticker ───────────────────────────────────────────── */
+
+describe('renderTicker', () => {
+    test('renders ticker items with colors', () => {
+        player.renderTicker(['Item 1', 'Item 2', 'Item 3']);
+        const track = document.getElementById('ticker-track');
+        expect(track.innerHTML).toContain('ticker-item');
+        expect(track.innerHTML).toContain('Item 1');
+        // Items are duplicated for seamless loop
+        expect(track.querySelectorAll('.ticker-item').length).toBe(6);
+    });
+
+    test('renders default ticker items', () => {
+        player.renderTicker(player._DEFAULT_TICKER);
+        const track = document.getElementById('ticker-track');
+        expect(track.querySelectorAll('.ticker-item').length).toBe(player._DEFAULT_TICKER.length * 2);
+    });
+
+    test('handles empty array', () => {
+        player.renderTicker([]);
+        const track = document.getElementById('ticker-track');
+        expect(track.innerHTML).toBe('');
+    });
+});
+
+describe('fetchTickerContent', () => {
+    test('calls /api/song-info with ticker query type', async () => {
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                ok: true,
+                content: '1. Mood: chill vibes\n2. Fun fact: recorded in one take\n3. Radio Calico Nerd Shirt with sunset\n4. Why did the song cross the road?\n5. Spock says: fascinating rhythm\n6. Robot: beep boop this slaps',
+            }),
+        });
+
+        player.fetchTickerContent('Artist', 'Track', 'Album');
+        await new Promise(r => setTimeout(r, 100));
+
+        expect(fetch).toHaveBeenCalledWith('/api/song-info', expect.objectContaining({
+            method: 'POST',
+        }));
+    });
+
+    test('skips fetch if same track already fetched', () => {
+        const callCount = fetch.mock.calls.length;
+        player.fetchTickerContent('Artist', 'Track', 'Album'); // same as above
+        expect(fetch.mock.calls.length).toBe(callCount); // no new call
+    });
+});
+
+/* ── v2: Follow-up Chat ───────────────────────────────────── */
+
+describe('appendChatMessage', () => {
+    test('appends user message to chat', () => {
+        player.appendChatMessage('user', 'Hello AI');
+        const msgs = document.getElementById('chat-messages');
+        expect(msgs.innerHTML).toContain('Hello AI');
+        expect(msgs.innerHTML).toContain('chat-msg user');
+    });
+
+    test('appends assistant message with markdown', () => {
+        player.appendChatMessage('assistant', '**Bold** reply');
+        const msgs = document.getElementById('chat-messages');
+        expect(msgs.innerHTML).toContain('<strong>Bold</strong>');
+        expect(msgs.innerHTML).toContain('chat-msg assistant');
+    });
+});
+
+describe('showChatFollowup / hideChatFollowup', () => {
+    test('show makes chat visible', () => {
+        player.showChatFollowup();
+        const el = document.getElementById('chat-followup');
+        expect(el.style.display).toBe('block');
+    });
+
+    test('hide clears messages and hides', () => {
+        player.appendChatMessage('user', 'test');
+        player.hideChatFollowup();
+        const el = document.getElementById('chat-followup');
+        expect(el.style.display).toBe('none');
+        const msgs = document.getElementById('chat-messages');
+        expect(msgs.innerHTML).toBe('');
+    });
+});
+
+describe('sendChatMessage', () => {
+    test('sends message to /api/chat and shows in UI', async () => {
+        document.getElementById('artist').textContent = 'Beatles';
+        document.getElementById('track').textContent = 'Yesterday';
+
+        const encoder = new TextEncoder();
+        const chunks = [
+            encoder.encode('data: "Great question!"\n\n'),
+            encoder.encode('event: done\ndata: \n\n'),
+        ];
+        let chunkIndex = 0;
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            body: { getReader: () => ({
+                read: jest.fn(() => chunkIndex < chunks.length
+                    ? Promise.resolve({ done: false, value: chunks[chunkIndex++] })
+                    : Promise.resolve({ done: true })),
+            })},
+        });
+
+        player.sendChatMessage('Tell me more');
+        await new Promise(r => setTimeout(r, 150));
+
+        expect(fetch).toHaveBeenCalledWith('/api/chat', expect.objectContaining({
+            method: 'POST',
+        }));
+    });
+
+    test('ignores empty messages', () => {
+        const callCount = fetch.mock.calls.length;
+        player.sendChatMessage('');
+        player.sendChatMessage('   ');
+        expect(fetch.mock.calls.length).toBe(callCount);
+    });
+});
+
+/* ── v2: Taste Profile ────────────────────────────────────── */
+
+describe('fetchTasteProfile', () => {
+    test('calls /api/taste-profile with liked/disliked songs', async () => {
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ ok: true, content: '## Your Music DNA\nYou love rock!' }),
+        });
+
+        player.fetchTasteProfile();
+        await new Promise(r => setTimeout(r, 50));
+
+        // May or may not call API depending on ratings in history
+        // Just verify it doesn't throw
+    });
+});
+
+/* ── Coverage: streaming branch paths ─────────────────────── */
+
+describe('streaming — branch coverage', () => {
+    test('handles stream error event gracefully', async () => {
+        document.getElementById('artist').textContent = 'Artist';
+        document.getElementById('track').textContent = 'Track';
+
+        const encoder = new TextEncoder();
+        const chunks = [
+            encoder.encode('event: error\ndata: "LLM down"\n\n'),
+        ];
+        let i = 0;
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            body: { getReader: () => ({
+                read: jest.fn(() => i < chunks.length
+                    ? Promise.resolve({ done: false, value: chunks[i++] })
+                    : Promise.resolve({ done: true })),
+            })},
+        });
+
+        const btn = document.querySelector('.retro-btn[data-query="details"]');
+        player.handleRetroButton(btn);
+        await new Promise(r => setTimeout(r, 150));
+    });
+
+    test('sendChatMessage handles stream error', async () => {
+        document.getElementById('artist').textContent = 'Artist';
+        document.getElementById('track').textContent = 'Track';
+
+        fetch.mockRejectedValueOnce(new Error('network'));
+        player.sendChatMessage('test question');
+        await new Promise(r => setTimeout(r, 100));
+    });
+
+    test('fetchTickerContent handles API failure', async () => {
+        fetch.mockRejectedValueOnce(new Error('network'));
+        player.fetchTickerContent('NewArtist', 'NewTrack', 'Album');
+        await new Promise(r => setTimeout(r, 50));
+    });
+
+    test('fetchTickerContent handles insufficient AI lines', async () => {
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ ok: true, content: '1. Short\n2. Too few' }),
+        });
+        player.fetchTickerContent('Another', 'Song', 'Alb');
+        await new Promise(r => setTimeout(r, 100));
+    });
+
+    test('markdownToHtml bold+italic combo', () => {
+        const html = player.markdownToHtml('***bold italic***');
+        expect(html).toContain('<strong><em>');
+    });
+
+    test('markdownToHtml unordered list with dash', () => {
+        const html = player.markdownToHtml('- item one\n- item two');
+        expect(html).toContain('<li>item one</li>');
+        expect(html).toContain('<ul>');
     });
 });

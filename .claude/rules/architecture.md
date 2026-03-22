@@ -70,10 +70,45 @@
 
 - Backend: `api/llm_service.py` — `LLMService` class wrapping OpenAI SDK against Ollama
 - Host GPU fallback: tries `OLLAMA_BASE_URL` (host Metal GPU) first, falls back to `OLLAMA_FALLBACK_URL` (Docker CPU)
-- Query types: `lyrics`, `details`, `facts`, `merchandise`, `jokes`, `everything`, `quiz`
+- Query types: `lyrics`, `details`, `facts`, `merchandise`, `jokes`, `everything`, `quiz`, `ticker`
 - Response cache: 24h TTL keyed by `(query_type, artist, track, language)`
 - System prompts instruct LLM to keep song metadata (artist, track, album) in original language
 - Docker: `ollama/ollama:latest` service with `llama3.2` auto-pulled on first start
+
+## Streaming Responses (SSE)
+
+- `POST /api/song-info/stream` — Server-Sent Events endpoint for streaming LLM output
+- Each token sent as `data: JSON_STRING\n\n` (JSON-encoded to preserve newlines)
+- Frontend uses `ReadableStream` reader (not `EventSource`, since POST is needed)
+- Blinking ▌ cursor during streaming, markdown rendered on each chunk
+- Final render replaces streaming content with full markdown + share buttons
+- Falls back to non-streaming `/api/song-info` if SSE fails
+
+## Follow-up Chat
+
+- `POST /api/chat` — multi-turn conversation about the current song, also SSE-streamed
+- Chat input appears below info panel after any AI response
+- Conversation history maintained in `_chatHistory` array (client-side, per session)
+- System prompt includes current song context (artist, track, album)
+- Chat bubbles: user (teal, right-aligned), assistant (mint, left-aligned)
+- Hidden when info panel closes; cleared on new panel open
+
+## Music Taste Profile
+
+- `POST /api/taste-profile` — generates a personality profile from rated songs
+- Collects liked/disliked songs from `lastSummary` ratings cache
+- LLM generates: personality title, music DNA, witty analysis, recommendation, sarcastic observation
+- Result displayed in info panel with share buttons
+
+## Ticker / Marquee
+
+- Auto-scrolling horizontal bar between share buttons and player bar
+- 30 default messages: game character quotes (Mario, Kratos, Kirk, Data, Ms. Pac-Man, GLaDOS, Yoda, etc.), Radio Calico merch, geeky jokes
+- On track change, fetches AI-generated ticker items (`query_type: 'ticker'`): mood, artist news, game character reactions, robot opinions
+- AI items mixed with defaults for variety
+- Each message styled with a different color from `_TICKER_COLORS` palette
+- CSS `@keyframes ticker-scroll` animation; pauses on hover
+- Animation duration auto-calculated based on content width (~40px/sec)
 
 ## Internationalization (i18n)
 

@@ -476,8 +476,8 @@ class TestCLAUDEmdConsistency:
         version = (ROOT / "VERSION").read_text().strip()
         assert version in self.content or "v1.0.0" in self.content or "VERSION" in self.content
 
-    def test_test_count_is_1002(self):
-        assert "1002" in self.content, "CLAUDE.md should mention 1002 total tests"
+    def test_test_count_is_1017(self):
+        assert "1017" in self.content, "CLAUDE.md should mention 1017 total tests"
 
     def test_mentions_structured_logging(self):
         assert "structured" in self.content.lower() or "json log" in self.content.lower()

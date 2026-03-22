@@ -994,16 +994,48 @@ h1, h2, h3 {
 .info-panel-content h5,
 .info-panel-content h6 {
     font-family: "Montserrat", sans-serif;
-    margin-top: 16px;
-    margin-bottom: 8px;
+    margin-top: 18px;
+    margin-bottom: 6px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.06);
 }
 
-.info-panel-content h1 { font-size: 1.3rem; }
-.info-panel-content h2 { font-size: 1.1rem; }
-.info-panel-content h3 { font-size: 0.95rem; }
+.info-panel-content h1:first-child,
+.info-panel-content h2:first-child,
+.info-panel-content h3:first-child {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.info-panel-content h1 { font-size: 1.3rem; color: var(--forest); }
+.info-panel-content h2 { font-size: 1.1rem; color: var(--forest); }
+.info-panel-content h3 { font-size: 0.95rem; color: var(--teal); }
 .info-panel-content h4 { font-size: 0.88rem; color: var(--forest); }
 .info-panel-content h5 { font-size: 0.82rem; color: var(--teal); }
 .info-panel-content h6 { font-size: 0.78rem; color: #888; }
+
+[data-theme="dark"] .info-panel-content h1,
+[data-theme="dark"] .info-panel-content h2 { color: #7ecf84; }
+[data-theme="dark"] .info-panel-content h3,
+[data-theme="dark"] .info-panel-content h4 { color: #5bb8b3; }
+[data-theme="dark"] .info-panel-content h1,
+[data-theme="dark"] .info-panel-content h2,
+[data-theme="dark"] .info-panel-content h3,
+[data-theme="dark"] .info-panel-content h4,
+[data-theme="dark"] .info-panel-content h5,
+[data-theme="dark"] .info-panel-content h6 {
+    border-top-color: rgba(255,255,255,0.06);
+}
+
+.info-panel-content p {
+    margin: 4px 0;
+}
+
+.info-panel-content p:empty,
+.info-panel-content br + br {
+    display: none;
+}
 
 .info-panel-content table {
     width: 100%;
@@ -1022,6 +1054,143 @@ h1, h2, h3 {
 .info-panel-content th {
     background: rgba(0,0,0,0.04);
     font-weight: 600;
+}
+
+/* ── Follow-up chat ─────────────────────────────────────── */
+
+.chat-followup {
+    border-top: 1px solid rgba(0,0,0,0.08);
+    margin-top: 12px;
+    padding-top: 12px;
+}
+
+.chat-messages {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 8px;
+}
+
+.chat-msg {
+    margin: 6px 0;
+    padding: 8px 12px;
+    border-radius: 12px;
+    max-width: 85%;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.chat-msg.user {
+    background: var(--teal);
+    color: #fff;
+    margin-left: auto;
+    text-align: right;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-msg.assistant {
+    background: var(--mint);
+    color: var(--charcoal);
+    border-bottom-left-radius: 4px;
+}
+
+.chat-input-form {
+    display: flex;
+    gap: 6px;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.chat-input:focus {
+    border-color: var(--teal);
+}
+
+.chat-send-btn {
+    background: var(--teal);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.chat-send-btn:hover {
+    opacity: 0.85;
+}
+
+[data-theme="dark"] .chat-followup {
+    border-color: rgba(255,255,255,0.08);
+}
+
+[data-theme="dark"] .chat-input {
+    background: #2a2a2a;
+    border-color: #444;
+    color: #e0e0e0;
+}
+
+/* ── Ticker / Marquee ──────────────────────────────────────── */
+
+.ticker-container {
+    overflow: hidden;
+    width: 100%;
+    margin: 6px 0;
+    height: 22px;
+    position: relative;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.03);
+}
+
+[data-theme="dark"] .ticker-container {
+    background: rgba(255,255,255,0.04);
+}
+
+.ticker-track {
+    display: flex;
+    gap: 60px;
+    white-space: nowrap;
+    animation: ticker-scroll 30s linear infinite;
+    position: absolute;
+    top: 0;
+    left: 100%;
+}
+
+.ticker-track:hover {
+    animation-play-state: paused;
+}
+
+.ticker-item {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 12px;
+    border-radius: 10px;
+    line-height: 16px;
+    font-family: "Montserrat", sans-serif;
+}
+
+@keyframes ticker-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
+
+.streaming-cursor {
+    display: inline;
+    animation: blink-cursor 0.8s step-end infinite;
+    color: var(--orange);
+    font-weight: bold;
+}
+
+@keyframes blink-cursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 .info-panel-loading {

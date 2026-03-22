@@ -436,6 +436,46 @@ Submit an answer to the current quiz question.
 
 Scoring: -5 to +5 per question. The LLM evaluates how close the answer is and provides sarcastic feedback.
 
+#### POST /api/song-info/stream
+
+Streaming version of `/api/song-info`. Returns Server-Sent Events (SSE) with JSON-encoded chunks.
+
+Same request body as `/api/song-info`. Response is `text/event-stream`:
+
+- `data: "chunk text"\n\n` — each token as JSON string (preserves newlines)
+- `event: error\ndata: "message"\n\n` — on error
+- `event: done\ndata: \n\n` — stream complete
+
+Falls back to cached response (single chunk) if available.
+
+#### POST /api/chat
+
+Follow-up conversation about a song. Returns SSE-streamed response.
+
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `messages` | array | Yes | `[{"role": "user", "content": "..."}]` conversation history |
+| `artist` | string | Yes | Current artist |
+| `track` | string | Yes | Current track |
+| `album` | string | No | Current album |
+| `language` | string | No | Response language |
+
+Response: SSE stream (same format as `/api/song-info/stream`).
+
+#### POST /api/taste-profile
+
+Generate a music taste personality profile from rated songs.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `liked` | array | No | `["Artist - Track", ...]` |
+| `disliked` | array | No | `["Artist - Track", ...]` |
+| `language` | string | No | Response language |
+
+**Response:** `{ "ok": true, "content": "## Your Music DNA\n..." }`
+
+Generates: personality title, music DNA bullets, witty analysis, song recommendation, sarcastic observation about dislikes.
+
 ---
 
 ### 4.8 Static Files

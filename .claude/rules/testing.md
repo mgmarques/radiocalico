@@ -1,13 +1,13 @@
 # Testing & CI/CD
 
-## Test Suite — 1002 total tests across 8 suites
+## Test Suite — 1017 total tests across 8 suites
 
 | Suite | File | Tests | Tool |
 |-------|------|-------|------|
 | Python unit | `api/test_app.py` | 81 | pytest (95% coverage) |
 | LLM service | `tests/test_llm_service.py` | 62 | pytest (mocked OpenAI SDK) |
 | Python integration | `api/test_integration.py` | 19 | pytest |
-| JavaScript unit | `static/js/player.test.js` | 238 | Jest + jsdom (95% statement, 97% line) |
+| JavaScript unit | `static/js/player.test.js` | 253 | Jest + jsdom (95% statement, 97% line) |
 | E2E | `tests/test_e2e.py` | 24 | pytest + requests (Docker prod stack) |
 | Browser | `tests/test_browser.py` | 47 | Selenium + headless Chrome (Docker prod) |
 | Skills + Agents | `tests/test_skills.py` | 492 | pytest (validates 24 commands + 11 agents + 10 delegations + YAML frontmatter) |

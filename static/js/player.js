@@ -89,6 +89,9 @@ const _TRANSLATIONS = {
         via_ai: 'via Radio Calico AI',
         scored_quiz: 'I scored',
         on_quiz: 'on the Radio Calico Song Quiz for',
+        chat_placeholder: 'Ask a follow-up question...',
+        no_ratings_for_profile: 'Rate some songs first to generate your music taste profile!',
+        generating_profile: 'Analyzing your music taste...',
     },
     'pt-BR': {
         now_playing: 'Tocando Agora',
@@ -125,6 +128,9 @@ const _TRANSLATIONS = {
         via_ai: 'via Radio Calico AI',
         scored_quiz: 'Fiz',
         on_quiz: 'no Quiz Musical da Radio Calico para',
+        chat_placeholder: 'Fa\u00e7a uma pergunta...',
+        no_ratings_for_profile: 'Avalie algumas m\u00fasicas primeiro para gerar seu perfil musical!',
+        generating_profile: 'Analisando seu gosto musical...',
     },
     es: {
         now_playing: 'Reproduciendo Ahora',
@@ -161,6 +167,9 @@ const _TRANSLATIONS = {
         via_ai: 'v\u00eda Radio Calico AI',
         scored_quiz: 'Obtuve',
         on_quiz: 'en el Quiz Musical de Radio Calico para',
+        chat_placeholder: 'Haz una pregunta de seguimiento...',
+        no_ratings_for_profile: '\u00a1Califica algunas canciones primero para generar tu perfil musical!',
+        generating_profile: 'Analizando tu gusto musical...',
     },
 };
 
@@ -196,6 +205,16 @@ function applyLanguage(lang) {
         const activeBtn = document.querySelector(`.retro-btn[data-query="${activeQuery}"]`);
         if (activeBtn) handleRetroButton(activeBtn);
     }
+    // Re-fetch ticker in the new language
+    try {
+        const a = document.getElementById('artist');
+        const tr = document.getElementById('track');
+        const al = document.getElementById('album');
+        if (a && tr && a.textContent !== 'Radio Calico' && tr.textContent !== 'Live Stream') {
+            _tickerFetched = '';  // force re-fetch regardless of previous state
+            fetchTickerContent(a.textContent, tr.textContent, al ? al.textContent : '');
+        }
+    } catch (_) { /* _tickerFetched not yet declared during initial applyLanguage */ }
 }
 
 // ── Elements ────────────────────────────────────────────────
@@ -329,6 +348,11 @@ function updateTrack(artist, title, album) {
 
     // Update rating UI for the new track
     updateRatingUI();
+
+    // Update ticker with AI-generated content for the new track
+    if (artist && artist !== 'Radio Calico' && title && title !== 'Live Stream') {
+        fetchTickerContent(artist, title, album || '');
+    }
 }
 
 /**
@@ -1231,7 +1255,7 @@ document.querySelectorAll('input[name="theme"]').forEach(radio => {
 const savedTheme = localStorage.getItem('rc-theme') || 'dark';
 applyTheme(savedTheme);
 
-// ── Stream quality toggle ─────────────────────────────────────
+// ── Stream quality toggle ─────────────────────────────��───────
 /**
  * Updates the stream quality label in the UI to reflect the current selection.
  */
@@ -1360,16 +1384,22 @@ function markdownToHtml(md) {
     html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    // Tables
-    html = html.replace(/^\|(.+)\|$/gm, (match) => {
-        const cells = match.split('|').filter(c => c.trim());
-        if (cells.every(c => /^[\s-:]+$/.test(c))) return ''; // separator row
-        const tag = 'td';
-        return '<tr>' + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('') + '</tr>';
-    });
-    html = html.replace(/(<tr>[\s\S]*?<\/tr>)/g, (block) => {
-        if (!block.includes('<table>')) return '<table>' + block + '</table>';
-        return block;
+    // Tables — collect consecutive pipe rows into a single <table>
+    html = html.replace(/(^\|.+\|$\n?)+/gm, (block) => {
+        const rows = block.trim().split('\n').filter(r => r.startsWith('|'));
+        if (rows.length === 0) return block;
+        let tableHtml = '<table>';
+        let isHeader = true;
+        for (const row of rows) {
+            const cells = row.split('|').filter(c => c.trim() !== '');
+            // Skip separator row (---|---|---)
+            if (cells.every(c => /^[\s-:]+$/.test(c))) { isHeader = false; continue; }
+            const tag = isHeader ? 'th' : 'td';
+            tableHtml += '<tr>' + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('') + '</tr>';
+            if (isHeader) isHeader = false;
+        }
+        tableHtml += '</table>';
+        return tableHtml;
     });
     // Unordered lists
     html = html.replace(/^\* (.+)$/gm, '<li>$1</li>');
@@ -1377,12 +1407,16 @@ function markdownToHtml(md) {
     html = html.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
     // Clean up nested <ul>
     html = html.replace(/<\/ul>\s*<ul>/g, '');
-    // Line breaks
+    // Line breaks — collapse 3+ newlines to double, then convert
+    html = html.replace(/\n{3,}/g, '\n\n');
     html = html.replace(/\n\n/g, '</p><p>');
     html = html.replace(/\n/g, '<br>');
     html = '<p>' + html + '</p>';
-    // Clean empty paragraphs
+    // Clean empty paragraphs and consecutive breaks
     html = html.replace(/<p>\s*<\/p>/g, '');
+    html = html.replace(/<p>\s*<br>\s*<\/p>/g, '');
+    html = html.replace(/<br>\s*<br>/g, '<br>');
+    html = html.replace(/<\/p>\s*<p>\s*<\/p>/g, '</p>');
 
     return html;
 }
@@ -1402,7 +1436,10 @@ function _buildShareText(maxChars) {
         .replace(/\*/g, '')
         .replace(/`/g, '')
         .replace(/\|/g, ' ')
-        .replace(/\n+/g, '\n');
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{2,}/g, '\n\n')
+        .replace(/\n {2,}/g, '\n')
+        .trim();
     const header = `${label} — "${track}" by ${artist} (${t('via_ai')})\n\n`;
     const available = maxChars - header.length - 3; // 3 for "..."
     const preview = cleaned.substring(0, Math.max(available, 100));
@@ -1465,6 +1502,7 @@ function handleRetroButton(btn) {
         btn.classList.remove('pressed');
         btn.setAttribute('aria-pressed', 'false');
         infoPanel.classList.remove('open');
+        hideChatFollowup();
         activeQuery = null;
         return;
     }
@@ -1503,8 +1541,12 @@ function handleRetroButton(btn) {
     infoPanelContent.innerHTML = '<div class="info-panel-loading"><span class="spinner"></span>' + t('loading_ai') + '</div>';
     infoPanel.classList.add('open');
 
-    // Call the API
-    fetch('/api/song-info', {
+    // Call the streaming API
+    infoPanelContent.innerHTML = '<div class="info-panel-content"><span class="streaming-cursor">▌</span></div>';
+    infoPanel.classList.add('open');
+
+    let accumulated = '';
+    fetch('/api/song-info/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1516,22 +1558,345 @@ function handleRetroButton(btn) {
             language: _LANG_TO_LLM[currentLang] || 'English',
         }),
     })
-    .then(r => r.json())
-    .then(data => {
-        if (activeQuery !== queryType) return; // user switched buttons
-        if (data.ok) {
-            infoPanelContent.innerHTML = '<div class="info-panel-content">' + markdownToHtml(data.content) + '</div>'
-                + buildInfoShareRow(queryType, artist, track, data.content);
-            wireInfoShareButtons();
-        } else {
-            infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">' +
-                escHtml(data.error || 'Failed to get song info. Is Ollama running?') + '</p>';
+    .then(response => {
+        if (!response.ok || !response.body) throw new Error('Stream failed');
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        function read() {
+            reader.read().then(({ done, value }) => {
+                if (done || activeQuery !== queryType) {
+                    // Stream complete — render final markdown + share buttons
+                    if (accumulated) {
+                        infoPanelContent.innerHTML = '<div class="info-panel-content">'
+                            + markdownToHtml(accumulated) + '</div>'
+                            + buildInfoShareRow(queryType, artist, track, accumulated);
+                        wireInfoShareButtons();
+                        showChatFollowup();
+                    }
+                    return;
+                }
+                const text = decoder.decode(value, { stream: true });
+                // Parse SSE lines
+                const lines = text.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ') && line.length > 6) {
+                        try { accumulated += JSON.parse(line.slice(6)); } catch (_) { accumulated += line.slice(6); }
+                    } else if (line.startsWith('event: error')) {
+                        infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">'
+                            + t('network_error') + '</p>';
+                        return;
+                    }
+                }
+                // Update display with streaming content + cursor
+                infoPanelContent.innerHTML = '<div class="info-panel-content">'
+                    + markdownToHtml(accumulated) + '<span class="streaming-cursor">▌</span></div>';
+                read();
+            });
         }
+        read();
     })
     .catch(err => {
         if (activeQuery !== queryType) return;
+        // Fallback to non-streaming API
+        fetch('/api/song-info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query_type: queryType, artist: artist, track: track,
+                album: album, artwork_url: artworkUrl,
+                language: _LANG_TO_LLM[currentLang] || 'English',
+            }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (activeQuery !== queryType) return;
+            if (data.ok) {
+                infoPanelContent.innerHTML = '<div class="info-panel-content">' + markdownToHtml(data.content) + '</div>'
+                    + buildInfoShareRow(queryType, artist, track, data.content);
+                wireInfoShareButtons();
+            } else {
+                infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">'
+                    + escHtml(data.error || 'Failed to get song info') + '</p>';
+            }
+        })
+        .catch(() => {
+            infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">' + t('network_error') + '</p>';
+        });
+        log.error('song_info_stream_error', { error: err.message });
+    });
+}
+
+// ── Ticker / Marquee ─────────────────────────────────────────
+
+const _TICKER_COLORS = [
+    { bg: '#EFA63C', color: '#1a1a1a' },  // orange
+    { bg: '#38A29D', color: '#fff' },      // teal
+    { bg: '#c85040', color: '#fff' },      // crimson
+    { bg: '#1F4E23', color: '#fff' },      // forest
+    { bg: '#6c5ce7', color: '#fff' },      // purple
+    { bg: '#d4a017', color: '#1a1a1a' },   // gold
+    { bg: '#2d6a4f', color: '#fff' },      // emerald
+    { bg: '#e17055', color: '#fff' },      // coral
+];
+
+const _DEFAULT_TICKER = [
+    '🎵 Radio Calico — Where every song tells a story',
+    '🐱 Calico Cat says: "If music be the food of love, play on!"',
+    '🤖 "I find your lack of bass disturbing." — Darth Vinyl',
+    '🚀 "Live long and listen to Radio Calico." — Mr. Spock',
+    '🛸 "Radio Calico: The music is out there." — Fox Mulder',
+    '👾 "It\'s dangerous to go alone! Take this playlist." — Link',
+    '🎸 Get your Radio Calico Nerd Shirt at radiocalico.com/merch',
+    '🧠 "I think, therefore I jam." — René Descartunes',
+    '🎮 "War. War never changes. But this playlist does." — Fallout Narrator',
+    '⚔️ "Fus Ro DAH! ...sorry, this beat drop hit me hard." — Dragonborn',
+    '🍄 "It\'s-a me, Mario! And this is-a great song!" — Mario',
+    '🏎️ "I am Speed. And this track is fire." — Lightning McQueen',
+    '🕹️ "Had to take an arrow to the knee, but this song healed me." — Skyrim Guard',
+    '🧟 "Even the undead can appreciate a good tune." — Resident Evil Zombie',
+    '🏴‍☠️ "You are without doubt the worst pirate I\'ve heard of. But great DJ." — Jack Sparrow',
+    '🦸 "With great power comes great playlists." — Uncle Ben (probably)',
+    '⚡ "BOY! Turn up that volume. NOW." — Kratos',
+    '🖖 "Beam me up, Scotty. This song is out of this world." — Captain Kirk',
+    '🤖 "I am fully functional and I approve this song." — Lt. Cmdr. Data',
+    '👻 "Waka waka waka... this beat slaps!" — Ms. Pac-Man',
+    '🪟 My neighbor is at the window shouting about this song again...',
+    '🎧 "Resistance to this groove is futile." — The Borg',
+    '🧙 "You shall not skip this track!" — Gandalf',
+    '👽 "In space, no one can hear you sing along. But I\'m trying." — Ripley',
+    '🐉 "Dracarys! ...I mean, this track is absolute fire." — Daenerys',
+    '🤠 "There\'s a snake in my boot, but this song makes it worth it." — Woody',
+    '🎵 Radio Calico Vinyl Collection — Because some songs deserve to spin forever',
+    '🏆 "Finish him! ...with this incredible playlist." — Mortal Kombat Announcer',
+    '🧪 "The cake is a lie, but this playlist is real." — GLaDOS',
+    '🌌 "Do or do not listen. There is no skip." — Yoda',
+];
+
+let _tickerItems = [..._DEFAULT_TICKER];
+let _tickerFetched = '';  // track key for which ticker was fetched
+
+function renderTicker(items) {
+    const track = document.getElementById('ticker-track');
+    if (!track) return;
+    // Duplicate items for seamless loop
+    const allItems = [...items, ...items];
+    track.innerHTML = allItems.map((text, i) => {
+        const c = _TICKER_COLORS[i % _TICKER_COLORS.length];
+        return `<span class="ticker-item" style="background:${c.bg};color:${c.color}">${escHtml(text)}</span>`;
+    }).join('');
+    // Adjust animation duration based on content width
+    window.requestAnimationFrame(() => {
+        const width = track.scrollWidth;
+        const duration = Math.max(20, width / 40);  // ~40px/sec
+        track.style.animationDuration = duration + 's';
+    });
+}
+
+function fetchTickerContent(artist, track, album) {
+    const key = artist + ' - ' + track;
+    if (_tickerFetched === key) return;  // already fetched for this track
+    _tickerFetched = key;
+
+    // Show defaults immediately
+    renderTicker(_DEFAULT_TICKER);
+
+    // Fetch AI-generated ticker items in background
+    fetch('/api/song-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query_type: 'ticker',
+            artist: artist,
+            track: track,
+            album: album,
+            language: _LANG_TO_LLM[currentLang] || 'English',
+        }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok && data.content) {
+            // Parse numbered or line-separated items
+            const lines = data.content.split('\n')
+                .map(l => l.replace(/^\d+[.)]\s*/, '').trim())
+                .filter(l => l.length > 5 && l.length < 120);
+            if (lines.length >= 3) {
+                // Mix AI items with default geek quotes
+                const mixed = [];
+                for (let i = 0; i < Math.max(lines.length, _DEFAULT_TICKER.length); i++) {
+                    if (i < lines.length) mixed.push(lines[i]);
+                    if (i < _DEFAULT_TICKER.length) mixed.push(_DEFAULT_TICKER[i]);
+                }
+                _tickerItems = mixed;
+                renderTicker(_tickerItems);
+            }
+        }
+    })
+    .catch(() => {}); // silently keep defaults
+}
+
+// Initialize ticker with defaults
+renderTicker(_DEFAULT_TICKER);
+
+// ── Follow-up Chat ───────────────────────────────────────────
+
+let _chatHistory = []; // {role, content} array for multi-turn
+
+function showChatFollowup() {
+    const el = document.getElementById('chat-followup');
+    if (el) el.style.display = 'block';
+}
+
+function hideChatFollowup() {
+    const el = document.getElementById('chat-followup');
+    if (el) el.style.display = 'none';
+    const msgs = document.getElementById('chat-messages');
+    if (msgs) msgs.innerHTML = '';
+    _chatHistory = [];
+}
+
+function appendChatMessage(role, text) {
+    const msgs = document.getElementById('chat-messages');
+    if (!msgs) return;
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + role;
+    div.innerHTML = role === 'assistant' ? markdownToHtml(text) : escHtml(text);
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function sendChatMessage(userText) {
+    if (!userText.trim()) return;
+
+    const artist = artistEl ? artistEl.textContent : '';
+    const track = trackEl ? trackEl.textContent : '';
+    const album = albumEl ? albumEl.textContent : '';
+
+    _chatHistory.push({ role: 'user', content: userText });
+    appendChatMessage('user', userText);
+
+    // Show typing indicator
+    const typingId = 'chat-typing-' + Date.now();
+    const msgs = document.getElementById('chat-messages');
+    if (msgs) {
+        const typing = document.createElement('div');
+        typing.className = 'chat-msg assistant';
+        typing.id = typingId;
+        typing.innerHTML = '<span class="streaming-cursor">▌</span>';
+        msgs.appendChild(typing);
+        msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    let accumulated = '';
+    fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            messages: _chatHistory,
+            artist: artist,
+            track: track,
+            album: album,
+            language: _LANG_TO_LLM[currentLang] || 'English',
+        }),
+    })
+    .then(response => {
+        if (!response.ok || !response.body) throw new Error('Chat stream failed');
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        const typingEl = document.getElementById(typingId);
+
+        function read() {
+            reader.read().then(({ done, value }) => {
+                if (done) {
+                    if (typingEl) typingEl.remove();
+                    if (accumulated) {
+                        _chatHistory.push({ role: 'assistant', content: accumulated });
+                        appendChatMessage('assistant', accumulated);
+                    }
+                    return;
+                }
+                const text = decoder.decode(value, { stream: true });
+                for (const line of text.split('\n')) {
+                    if (line.startsWith('data: ')) accumulated += line.slice(6);
+                    else if (line.startsWith('event: error')) {
+                        if (typingEl) typingEl.remove();
+                        appendChatMessage('assistant', t('network_error'));
+                        return;
+                    }
+                }
+                if (typingEl) typingEl.innerHTML = markdownToHtml(accumulated) + '<span class="streaming-cursor">▌</span>';
+                read();
+            });
+        }
+        read();
+    })
+    .catch(() => {
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+        appendChatMessage('assistant', t('network_error'));
+    });
+}
+
+// Wire up chat form
+const chatForm = document.getElementById('chat-input-form');
+if (chatForm) {
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        if (input && input.value.trim()) {
+            sendChatMessage(input.value.trim());
+            input.value = '';
+        }
+    });
+}
+
+// ── Taste Profile ────────────────────────────────────────────
+
+function fetchTasteProfile() {
+    const liked = [];
+    const disliked = [];
+
+    // Gather from history ratings
+    (history || []).forEach(h => {
+        const key = h.artist + ' - ' + h.title;
+        const r = lastSummary[key];
+        if (r && r.likes > 0) liked.push(key);
+        if (r && r.dislikes > 0) disliked.push(key);
+    });
+
+    if (!liked.length && !disliked.length) {
+        infoPanelContent.innerHTML = '<p style="text-align:center;color:#888">' +
+            t('no_ratings_for_profile') + '</p>';
+        infoPanel.classList.add('open');
+        return;
+    }
+
+    infoPanelContent.innerHTML = '<div class="info-panel-loading"><span class="spinner"></span>' +
+        t('generating_profile') + '</div>';
+    infoPanel.classList.add('open');
+
+    fetch('/api/taste-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            liked: liked,
+            disliked: disliked,
+            language: _LANG_TO_LLM[currentLang] || 'English',
+        }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            infoPanelContent.innerHTML = '<div class="info-panel-content">' + markdownToHtml(data.content) + '</div>'
+                + buildInfoShareRow('taste', '', '', data.content);
+            wireInfoShareButtons();
+        } else {
+            infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">'
+                + escHtml(data.error || 'Failed to generate profile') + '</p>';
+        }
+    })
+    .catch(() => {
         infoPanelContent.innerHTML = '<p style="text-align:center;color:#c0392b">' + t('network_error') + '</p>';
-        log.error('song_info_fetch_error', { error: err.message });
     });
 }
 
@@ -1699,7 +2064,7 @@ retroButtons.forEach(btn => {
 // ── Test exports (Node.js only) ──────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory, markdownToHtml, buildInfoShareRow, _buildShareText, _infoShareMeta, wireInfoShareButtons, handleRetroButton, playMechanicalClick, applyLanguage, t, _TRANSLATIONS, startQuiz, submitQuizAnswer, renderQuizQuestion, renderQuizSummary, setupMetadataTextTracks,
+        log, fetchItunesCached, escHtml, formatTime, parseID3Frames, getFilteredHistory, markdownToHtml, buildInfoShareRow, _buildShareText, _infoShareMeta, wireInfoShareButtons, handleRetroButton, playMechanicalClick, applyLanguage, t, _TRANSLATIONS, startQuiz, submitQuizAnswer, renderQuizQuestion, renderQuizSummary, setupMetadataTextTracks, showChatFollowup, hideChatFollowup, sendChatMessage, appendChatMessage, fetchTasteProfile, renderTicker, fetchTickerContent, _DEFAULT_TICKER,
         getShareText, getRecentlyPlayedText, getArtworkUrl,
         showPlayIcon, updateTrack, pushHistory, renderHistory,
         fetchArtwork, handleMetadataFields, togglePlay,
