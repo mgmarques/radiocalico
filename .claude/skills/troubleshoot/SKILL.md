@@ -1,4 +1,7 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: troubleshoot
+description: Diagnose common Radio Calico issues
+---
 Diagnose common Radio Calico issues by running through the debugging checklist.
 
 ### Local development checks

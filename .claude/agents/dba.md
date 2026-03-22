@@ -1,8 +1,11 @@
-<!-- Radio Calico Agent v2.0.0 -->
-# DBA Agent
+---
+name: dba
+description: Reviews MySQL queries for performance, validates schema changes, suggests indexes. Use for database, SQL, migration, index, and query optimization tasks.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
 
-## Description
-Reviews MySQL queries for performance, validates schema changes, suggests indexes, and ensures all SQL uses parameterized placeholders.
+# DBA Agent
 
 **Triggers:** database, MySQL, SQL query, schema change, migration, add column, ALTER TABLE, index, slow query, db performance, query optimization, db/init.sql
 

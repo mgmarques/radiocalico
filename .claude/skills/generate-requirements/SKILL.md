@@ -1,4 +1,9 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: generate-requirements
+description: Generate requirements documentation (FR/NFR)
+context: fork
+agent: documentation-writer
+---
 Generate or update the requirements documentation for Radio Calico.
 
 ## Agent

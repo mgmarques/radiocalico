@@ -1,8 +1,11 @@
-<!-- Radio Calico Agent v2.0.0 -->
-# API Designer Agent
+---
+name: api-designer
+description: Designs and reviews Flask REST API endpoints for consistency, security, and proper status codes. Use for new endpoints, REST design, rate limiting, auth patterns.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
 
-## Description
-Designs and reviews Flask REST API endpoints for consistency, security, proper status codes, and adherence to existing patterns.
+# API Designer Agent
 
 **Triggers:** new endpoint, API route, REST design, HTTP status code, Flask route, add endpoint, API prefix, rate limit, Bearer token, /api/, app.py, add-endpoint
 

@@ -1,4 +1,9 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: generate-sbom
+description: Generate SBOM with all packages and CVE status
+context: fork
+agent: security-auditor
+---
 # Generate SBOM
 
 ## Agent

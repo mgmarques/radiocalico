@@ -1,4 +1,7 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: update-readme-diagrams
+description: Sync architecture diagrams to README.md
+---
 Update README.md with architecture diagrams from docs/architecture.md.
 
 ### Diagrams to sync (6 total)

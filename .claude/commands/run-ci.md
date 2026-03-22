@@ -1,4 +1,9 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: run-ci
+description: Run full CI pipeline: lint, tests, coverage, security
+context: fork
+agent: qa-engineer
+---
 Run the full Radio Calico CI pipeline (lint + tests + coverage + security).
 
 ## Agent

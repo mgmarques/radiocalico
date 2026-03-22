@@ -1,8 +1,11 @@
-<!-- Radio Calico Agent v2.0.0 -->
-# Frontend Reviewer Agent
+---
+name: frontend-reviewer
+description: Reviews vanilla JS, HTML, and CSS for XSS, theme consistency, retro buttons, info panel, i18n, quiz chat UI, responsive layout, and accessibility.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
 
-## Description
-Reviews vanilla JS, HTML, and CSS for XSS prevention, theme consistency, mobile responsiveness, and accessibility.
+# Frontend Reviewer Agent
 
 **Triggers:** player.js, player.css, index.html, dark mode, light theme, responsive, mobile layout, innerHTML, escHtml, aria label, share button, UI component, CSS token, font, hamburger menu, retro button, info panel, quiz chat, i18n, translation, data-i18n
 

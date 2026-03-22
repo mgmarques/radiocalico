@@ -1,8 +1,11 @@
-<!-- Radio Calico Agent v2.0.0 -->
-# V&V Plan Updater Agent
+---
+name: vv-plan-updater
+description: Runs all test suites, fills V&V plan execution summary with real results, detects coverage gaps. Use for update V&V, TC missing, test coverage gap.
+tools: Read, Grep, Glob, Bash, Write, Edit
+model: sonnet
+---
 
-## Description
-Keeps `docs/vv-test-plan.md` current: runs all automated test suites, fills the Test Execution Summary with real results, detects new tests without TC entries, and identifies feature gaps with no automated coverage.
+# V&V Plan Updater Agent
 
 **Triggers:** update V&V plan, vv-test-plan out of date, test execution results, new tests added, coverage gap, fill test results, sync test plan, TC missing, vv-plan, test plan stale
 

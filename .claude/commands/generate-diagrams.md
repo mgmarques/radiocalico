@@ -1,4 +1,9 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: generate-diagrams
+description: Generate Mermaid architecture diagrams
+context: fork
+agent: documentation-writer
+---
 Generate system architecture diagrams in Mermaid format for Radio Calico.
 
 ## Agent

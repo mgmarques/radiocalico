@@ -1,4 +1,9 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: docker-verify
+description: Rebuild and verify the Docker production stack
+context: fork
+agent: devops
+---
 Rebuild and verify the Docker production stack.
 
 ## Agent

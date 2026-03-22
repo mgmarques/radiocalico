@@ -1,4 +1,9 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: test-browser
+description: Run Selenium browser tests against Docker prod stack
+context: fork
+agent: qa-engineer
+---
 Run Selenium browser tests against the Docker production stack.
 
 ## Agent
