@@ -160,9 +160,9 @@ class LLMService:
 
     # ── Cache helpers ────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _cache_key(query_type: str, artist: str, track: str) -> str:
-        raw = f"{query_type}:{artist}:{track}".lower()
+    def _cache_key(self, query_type: str, artist: str, track: str, language: str | None = None) -> str:
+        lang = language or self.language
+        raw = f"{query_type}:{artist}:{track}:{lang}".lower()
         return hashlib.sha256(raw.encode()).hexdigest()[:24]
 
     def _get_cached(self, key: str) -> str | None:
@@ -212,14 +212,12 @@ class LLMService:
             return {"ok": False, "error": "artist and track are required"}
 
         # Check cache
-        cache_key = self._cache_key(query_type, artist, track)
+        lang = language or self.language
+        cache_key = self._cache_key(query_type, artist, track, lang)
         cached = self._get_cached(cache_key)
         if cached:
             logger.info("llm_cache_hit", extra={"query_type": query_type, "artist": artist, "track": track})
             return {"ok": True, "content": cached, "cached": True}
-
-        # Build messages
-        lang = language or self.language
         system_msg = _SYSTEM_PROMPT + f"\nRespond in {lang}."
         user_msg = _QUERY_PROMPTS[query_type].format(artist=artist, track=track, album=album or "Unknown")
         if artwork_url:
@@ -274,7 +272,8 @@ class LLMService:
             return
 
         # Check cache — return full content immediately
-        cache_key = self._cache_key(query_type, artist, track)
+        lang = language or self.language
+        cache_key = self._cache_key(query_type, artist, track, lang)
         cached = self._get_cached(cache_key)
         if cached:
             logger.info("llm_cache_hit_stream", extra={"query_type": query_type})
@@ -282,7 +281,6 @@ class LLMService:
             return
 
         # Build messages
-        lang = language or self.language
         system_msg = _SYSTEM_PROMPT + f"\nRespond in {lang}."
         user_msg = _QUERY_PROMPTS[query_type].format(artist=artist, track=track, album=album or "Unknown")
         if artwork_url:

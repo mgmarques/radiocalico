@@ -3173,3 +3173,65 @@ describe('fetchTasteProfile', () => {
         // Just verify it doesn't throw
     });
 });
+
+/* ── Coverage: streaming branch paths ─────────────────────── */
+
+describe('streaming — branch coverage', () => {
+    test('handles stream error event gracefully', async () => {
+        document.getElementById('artist').textContent = 'Artist';
+        document.getElementById('track').textContent = 'Track';
+
+        const encoder = new TextEncoder();
+        const chunks = [
+            encoder.encode('event: error\ndata: "LLM down"\n\n'),
+        ];
+        let i = 0;
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            body: { getReader: () => ({
+                read: jest.fn(() => i < chunks.length
+                    ? Promise.resolve({ done: false, value: chunks[i++] })
+                    : Promise.resolve({ done: true })),
+            })},
+        });
+
+        const btn = document.querySelector('.retro-btn[data-query="details"]');
+        player.handleRetroButton(btn);
+        await new Promise(r => setTimeout(r, 150));
+    });
+
+    test('sendChatMessage handles stream error', async () => {
+        document.getElementById('artist').textContent = 'Artist';
+        document.getElementById('track').textContent = 'Track';
+
+        fetch.mockRejectedValueOnce(new Error('network'));
+        player.sendChatMessage('test question');
+        await new Promise(r => setTimeout(r, 100));
+    });
+
+    test('fetchTickerContent handles API failure', async () => {
+        fetch.mockRejectedValueOnce(new Error('network'));
+        player.fetchTickerContent('NewArtist', 'NewTrack', 'Album');
+        await new Promise(r => setTimeout(r, 50));
+    });
+
+    test('fetchTickerContent handles insufficient AI lines', async () => {
+        fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ ok: true, content: '1. Short\n2. Too few' }),
+        });
+        player.fetchTickerContent('Another', 'Song', 'Alb');
+        await new Promise(r => setTimeout(r, 100));
+    });
+
+    test('markdownToHtml bold+italic combo', () => {
+        const html = player.markdownToHtml('***bold italic***');
+        expect(html).toContain('<strong><em>');
+    });
+
+    test('markdownToHtml unordered list with dash', () => {
+        const html = player.markdownToHtml('- item one\n- item two');
+        expect(html).toContain('<li>item one</li>');
+        expect(html).toContain('<ul>');
+    });
+});

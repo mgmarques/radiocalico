@@ -617,3 +617,140 @@ class TestQuiz:
         assert res.status_code == 200
         data = res.get_json()
         assert data["score"] == -3
+
+
+class TestSongInfoStream:
+    """Tests for POST /api/song-info/stream (SSE streaming)."""
+
+    def test_requires_json(self, client):
+        res = client.post("/api/song-info/stream")
+        assert res.status_code == 400
+
+    def test_requires_query_type(self, client):
+        res = client.post("/api/song-info/stream", json={"artist": "A", "track": "T"})
+        assert res.status_code == 400
+
+    def test_requires_artist(self, client):
+        res = client.post("/api/song-info/stream", json={"query_type": "lyrics", "track": "T"})
+        assert res.status_code == 400
+
+    def test_requires_track(self, client):
+        res = client.post("/api/song-info/stream", json={"query_type": "lyrics", "artist": "A"})
+        assert res.status_code == 400
+
+    @patch("app._get_llm")
+    def test_streams_content(self, mock_llm, client):
+        svc = MagicMock()
+        svc.query_stream.return_value = iter(["Hello ", "World"])
+        mock_llm.return_value = svc
+        res = client.post("/api/song-info/stream", json={
+            "query_type": "lyrics", "artist": "A", "track": "T"
+        })
+        assert res.status_code == 200
+        assert res.content_type == "text/event-stream; charset=utf-8"
+        data = res.get_data(as_text=True)
+        assert "Hello" in data
+        assert "World" in data
+        assert "event: done" in data
+
+    @patch("app._get_llm")
+    def test_streams_error(self, mock_llm, client):
+        svc = MagicMock()
+        svc.query_stream.return_value = iter(["ERROR:Ollama down"])
+        mock_llm.return_value = svc
+        res = client.post("/api/song-info/stream", json={
+            "query_type": "facts", "artist": "A", "track": "T"
+        })
+        data = res.get_data(as_text=True)
+        assert "event: error" in data
+
+
+class TestChat:
+    """Tests for POST /api/chat (follow-up conversation)."""
+
+    def test_requires_json(self, client):
+        res = client.post("/api/chat")
+        assert res.status_code == 400
+
+    def test_requires_messages(self, client):
+        res = client.post("/api/chat", json={"artist": "A", "track": "T"})
+        assert res.status_code == 400
+
+    def test_requires_artist(self, client):
+        res = client.post("/api/chat", json={"messages": [{"role": "user", "content": "Hi"}], "track": "T"})
+        assert res.status_code == 400
+
+    @patch("app._get_llm")
+    def test_streams_response(self, mock_llm, client):
+        svc = MagicMock()
+        svc.chat.return_value = iter(["Sure ", "thing"])
+        mock_llm.return_value = svc
+        res = client.post("/api/chat", json={
+            "messages": [{"role": "user", "content": "Tell me more"}],
+            "artist": "Beatles", "track": "Yesterday"
+        })
+        assert res.status_code == 200
+        assert res.content_type == "text/event-stream; charset=utf-8"
+        data = res.get_data(as_text=True)
+        assert "Sure" in data
+        assert "event: done" in data
+
+    @patch("app._get_llm")
+    def test_chat_with_language(self, mock_llm, client):
+        svc = MagicMock()
+        svc.chat.return_value = iter(["Claro"])
+        mock_llm.return_value = svc
+        res = client.post("/api/chat", json={
+            "messages": [{"role": "user", "content": "Dime mas"}],
+            "artist": "Beatles", "track": "Yesterday",
+            "language": "Spanish"
+        })
+        data = res.get_data(as_text=True)
+        assert "Claro" in data
+
+
+class TestTasteProfile:
+    """Tests for POST /api/taste-profile."""
+
+    def test_requires_json(self, client):
+        res = client.post("/api/taste-profile")
+        assert res.status_code == 400
+
+    def test_requires_rated_songs(self, client):
+        res = client.post("/api/taste-profile", json={"liked": [], "disliked": []})
+        assert res.status_code == 400
+
+    @patch("app._get_llm")
+    def test_success(self, mock_llm, client):
+        svc = MagicMock()
+        svc.taste_profile.return_value = {"ok": True, "content": "## Your Music DNA"}
+        mock_llm.return_value = svc
+        res = client.post("/api/taste-profile", json={
+            "liked": ["Beatles - Yesterday"],
+            "disliked": ["Bieber - Baby"]
+        })
+        assert res.status_code == 200
+        data = res.get_json()
+        assert data["ok"] is True
+        assert "Music DNA" in data["content"]
+
+    @patch("app._get_llm")
+    def test_failure(self, mock_llm, client):
+        svc = MagicMock()
+        svc.taste_profile.return_value = {"ok": False, "error": "LLM down"}
+        mock_llm.return_value = svc
+        res = client.post("/api/taste-profile", json={
+            "liked": ["Beatles - Yesterday"]
+        })
+        assert res.status_code == 503
+
+    @patch("app._get_llm")
+    def test_with_language(self, mock_llm, client):
+        svc = MagicMock()
+        svc.taste_profile.return_value = {"ok": True, "content": "## Seu DNA Musical"}
+        mock_llm.return_value = svc
+        res = client.post("/api/taste-profile", json={
+            "liked": ["Beatles - Yesterday"],
+            "language": "Portuguese"
+        })
+        assert res.status_code == 200

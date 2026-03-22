@@ -207,14 +207,12 @@ function applyLanguage(lang) {
     }
     // Re-fetch ticker in the new language
     try {
-        if (_tickerFetched) {
-            _tickerFetched = '';  // reset so fetchTickerContent will re-fetch
-            const a = document.getElementById('artist');
-            const tr = document.getElementById('track');
-            const al = document.getElementById('album');
-            if (a && tr && a.textContent !== 'Radio Calico' && tr.textContent !== 'Live Stream') {
-                fetchTickerContent(a.textContent, tr.textContent, al ? al.textContent : '');
-            }
+        const a = document.getElementById('artist');
+        const tr = document.getElementById('track');
+        const al = document.getElementById('album');
+        if (a && tr && a.textContent !== 'Radio Calico' && tr.textContent !== 'Live Stream') {
+            _tickerFetched = '';  // force re-fetch regardless of previous state
+            fetchTickerContent(a.textContent, tr.textContent, al ? al.textContent : '');
         }
     } catch (_) { /* _tickerFetched not yet declared during initial applyLanguage */ }
 }
