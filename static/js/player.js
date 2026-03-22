@@ -1402,7 +1402,8 @@ function _buildShareText(maxChars) {
         .replace(/\*/g, '')
         .replace(/`/g, '')
         .replace(/\|/g, ' ')
-        .replace(/\n+/g, '\n');
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/\n(?=[A-Z])/g, '\n\n');
     const header = `${label} — "${track}" by ${artist} (${t('via_ai')})\n\n`;
     const available = maxChars - header.length - 3; // 3 for "..."
     const preview = cleaned.substring(0, Math.max(available, 100));

@@ -83,14 +83,18 @@ _QUERY_PROMPTS = {
     "jokes": (
         'Tell funny jokes about "{track}" by {artist}.\n'
         "Include a joke about a robot listening to this song. "
-        "End with a funny closing note in a random language."
+        "End with a funny closing note in a random language.\n"
+        'IMPORTANT: Keep the song title "{track}", artist name "{artist}", '
+        'and album name "{album}" EXACTLY as written — do NOT translate them.'
     ),
     "everything": (
         'Give me EVERYTHING about "{track}" by {artist} (album: "{album}").\n'
         "Include: song meaning, full lyrics, interesting facts about the song/album/artists, "
         "a table of the album tracklist with durations, merchandise ideas "
         "(including a Radio Calico Nerd Shirt with the album cover), "
-        "a robot joke about this song, and a funny closing note in another language."
+        "a robot joke about this song, and a funny closing note in another language.\n"
+        'IMPORTANT: Keep the song title "{track}", artist name "{artist}", '
+        'and album name "{album}" EXACTLY as written — do NOT translate them.'
     ),
 }
 

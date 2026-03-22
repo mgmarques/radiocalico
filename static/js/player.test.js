@@ -2992,3 +2992,20 @@ describe('profile form genre checkboxes', () => {
         expect([...cbs].map(c => c.value)).toEqual(['rock', 'jazz', 'pop']);
     });
 });
+
+/* ── Coverage: markdownToHtml handles empty/null ──────────────── */
+
+describe('markdownToHtml — edge cases', () => {
+    test('handles null input', () => {
+        expect(player.markdownToHtml(null)).toBe('');
+    });
+    test('handles empty string', () => {
+        expect(player.markdownToHtml('')).toBe('');
+    });
+    test('handles h4/h5/h6 headings', () => {
+        const html = player.markdownToHtml('#### H4\n##### H5\n###### H6');
+        expect(html).toContain('<h4>');
+        expect(html).toContain('<h5>');
+        expect(html).toContain('<h6>');
+    });
+});
