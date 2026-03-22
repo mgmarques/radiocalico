@@ -432,6 +432,41 @@ RULES:
 - Format: {{"score": N, "reaction": "your funny reaction", "correct_answer": "the right answer explanation"}}\
 """
 
+    @staticmethod
+    def _fix_json(raw: str) -> dict:
+        """Best-effort fix of malformed LLM JSON output."""
+        import re
+
+        # Extract from markdown code blocks
+        if "```" in raw:
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        raw = raw.strip()
+        # Try parsing as-is first
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            pass
+        # Fix common LLM JSON errors
+        fixed = raw
+        fixed = fixed.replace("'", '"')  # single → double quotes
+        fixed = re.sub(r",\s*([}\]])", r"\1", fixed)  # trailing commas
+        fixed = re.sub(r"\\(?![\"\\nrtbfu/])", r"\\\\", fixed)  # bad escapes
+        fixed = re.sub(r'(?<=: )"([^"]*)"([^",}\]\n]*)"', r'"\1\2"', fixed)  # unescaped inner quotes
+        try:
+            return json.loads(fixed)
+        except json.JSONDecodeError:
+            pass
+        # Last resort: find first { ... } or [ ... ] block
+        match = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", fixed)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except json.JSONDecodeError:
+                pass
+        raise json.JSONDecodeError("Could not parse LLM JSON", raw, 0)
+
     def generate_quiz(self, artist: str, track: str, album: str = "", language: str = "English") -> dict:
         """Generate 5 quiz questions about a song. Returns JSON with questions list."""
         self._ensure_connection()
@@ -453,16 +488,28 @@ RULES:
                 temperature=0.7,
             )
             raw = response.choices[0].message.content
-            # Extract JSON from response (handle markdown code blocks)
-            if "```" in raw:
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-            data = json.loads(raw.strip())
+            try:
+                data = self._fix_json(raw)
+            except json.JSONDecodeError:
+                # Retry once — LLM output is non-deterministic
+                logger.warning("quiz_json_retry", extra={"raw_len": len(raw or "")})
+                response2 = self._client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {
+                            "role": "user",
+                            "content": "Generate the quiz again. ONLY output valid JSON, no markdown, no explanation.",
+                        },
+                    ],
+                    max_tokens=_QUIZ_MAX_TOKENS,
+                    temperature=0.3,
+                )
+                data = self._fix_json(response2.choices[0].message.content)
             return {"ok": True, "questions": data.get("questions", [])}
         except (json.JSONDecodeError, Exception) as exc:
             logger.error("quiz_generate_error", extra={"error": str(exc)})
-            return {"ok": False, "error": str(exc)}
+            return {"ok": False, "error": "Quiz generation failed — please try again."}
 
     def evaluate_answer(self, question: str, correct: str, user_answer: str, options: list) -> dict:
         """Evaluate a user's quiz answer. Returns score and reaction."""
@@ -481,13 +528,22 @@ RULES:
                 temperature=0.5,
             )
             raw = response.choices[0].message.content
-            if "```" in raw:
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-            data = json.loads(raw.strip())
+            try:
+                data = self._fix_json(raw)
+            except json.JSONDecodeError:
+                logger.warning("quiz_eval_json_retry")
+                # Simple fallback: check if user answer starts with the correct letter
+                is_correct = user_answer.strip().upper().startswith(correct.strip()[0].upper())
+                return {
+                    "ok": True,
+                    "score": 1 if is_correct else -1,
+                    "reaction": "My brain glitched, but I'll give you the benefit of the doubt!"
+                    if is_correct
+                    else "My brain glitched... but that answer didn't look right either.",
+                    "correct_answer": correct,
+                }
             return {"ok": True, **data}
-        except (json.JSONDecodeError, Exception) as exc:
+        except Exception as exc:
             logger.error("quiz_eval_error", extra={"error": str(exc)})
             return {
                 "ok": False,

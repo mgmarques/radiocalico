@@ -1946,12 +1946,12 @@ function renderQuizQuestion() {
     for (let i = 0; i < quizState.scores.length; i++) {
         const prev = quizState.questions[i];
         const sc = quizState.scores[i];
-        html += `<div class="quiz-bubble system"><strong>Q${i + 1}:</strong> ${escHtml(prev.q)}<br>${prev.options.map(o => escHtml(o)).join('<br>')}</div>`;
+        html += `<div class="quiz-bubble system"><strong>Q${i + 1}:</strong> ${escHtml(prev.q)}<ul class="quiz-options">${prev.options.map(o => '<li>' + escHtml(o) + '</li>').join('')}</ul></div>`;
         html += `<div class="quiz-bubble user">${escHtml(sc.userAnswer)}</div>`;
         html += `<div class="quiz-bubble system"><strong>${sc.score > 0 ? '+' : ''}${sc.score} pts</strong> — ${escHtml(sc.reaction)}</div>`;
     }
     // Current question
-    html += `<div class="quiz-bubble system"><strong>Q${num}/5:</strong> ${escHtml(q.q)}<br><br>${q.options.map(o => escHtml(o)).join('<br>')}</div>`;
+    html += `<div class="quiz-bubble system"><strong>Q${num}/5:</strong> ${escHtml(q.q)}<ul class="quiz-options">${q.options.map(o => '<li>' + escHtml(o) + '</li>').join('')}</ul></div>`;
     html += '</div>';
     html += '<div class="quiz-input-row"><input type="text" class="quiz-input" id="quiz-answer" placeholder="' + t('quiz_your_answer') + ' (A, B, C, D)..." autofocus>';
     html += '<button class="quiz-send-btn" id="quiz-send">' + t('quiz_send') + '</button></div>';
