@@ -1,4 +1,7 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: add-retro-button
+description: Add a new retro radio button for a new LLM query type
+---
 Add a new retro radio button for a new LLM query type.
 
 The user will specify a query type name (e.g., "trivia"). Follow this process:

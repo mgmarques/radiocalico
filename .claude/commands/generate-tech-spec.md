@@ -1,4 +1,9 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: generate-tech-spec
+description: Generate full technical specification
+context: fork
+agent: documentation-writer
+---
 Generate or update the technical specification document for Radio Calico.
 
 ## Agent

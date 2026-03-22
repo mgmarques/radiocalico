@@ -1,8 +1,11 @@
-<!-- Radio Calico Agent v2.0.0 -->
-# DevOps Agent
+---
+name: devops
+description: Manages Docker, nginx, CI/CD pipeline, Ollama service, and deployment. Use for 502 errors, docker-compose issues, pipeline failures, Dockerfile review.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
 
-## Description
-Manages Docker, nginx, CI/CD pipeline, and deployment infrastructure. Optimizes builds, reviews configs, and troubleshoots deployment issues.
+# DevOps Agent
 
 **Triggers:** Docker, nginx, 502 Bad Gateway, container, CI/CD, GitHub Actions, gunicorn, docker-compose, make docker, deploy, pipeline failing, Dockerfile, health check, CI job
 

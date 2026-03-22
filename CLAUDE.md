@@ -17,55 +17,17 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
 - **LLM**: Ollama (Llama 3.2) via OpenAI SDK for song info (lyrics, details, facts, merchandise, jokes, quiz). Docker service with host GPU fallback. Response cache (24h TTL).
 - **i18n**: English (default), Brazilian Portuguese, Spanish. UI labels translated; song metadata always in original language.
-- **Testing**: 861 tests (81 unit + 62 LLM + 19 integration + 238 JS + 24 E2E + 47 browser + 351 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
+- **Testing**: 1002 tests (81 unit + 62 LLM + 19 integration + 238 JS + 24 E2E + 47 browser + 492 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
 - **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination, LLM response cache (24h TTL).
 
 ## Key URLs & Endpoints
 
-### External
+> Full endpoint reference in `.claude/rules/endpoints.md`.
 
+- **All API routes use the `/api` prefix**. Flask :5000 (local), :5050 (Docker).
 - **HLS Stream**: `https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8`
 - **Metadata JSON**: `https://d3d4yli4hf5bmh.cloudfront.net/metadatav2.json` (root, NOT `/hls/`)
-- **iTunes Search**: `https://itunes.apple.com/search?term=...&entity=song&limit=1`
-
-### Local API (Flask :5000, Docker :5050)
-
-**Ratings** (no auth):
-
-- `GET /api/ratings` — paginated list (`?limit=100&offset=0`, max 500). No IPs exposed.
-- `GET /api/ratings/summary` — likes/dislikes by station
-- `GET /api/ratings/check?station=...` — check if current IP rated
-- `POST /api/ratings` — submit `{ station, score }` (score 0 or 1, 409 on duplicate)
-
-**Auth**:
-
-- `POST /api/register` — `{ username, password }` (8-128 chars, rate-limited 5/min)
-- `POST /api/login` — `{ username, password }` → `{ token, username }` (rate-limited 5/min)
-- `POST /api/logout` — invalidate token (requires Bearer token)
-
-**Profile** (requires Bearer token):
-
-- `GET /api/profile` — get profile (nickname, email, genres, about)
-- `PUT /api/profile` — update profile
-
-**Feedback** (requires Bearer token):
-
-- `POST /api/feedback` — submit `{ message }` (stores with profile snapshot)
-
-**Song Info** (LLM, rate-limited 10/min):
-
-- `POST /api/song-info` — `{ query_type, artist, track, album?, artwork_url?, language? }` → `{ ok, content }` (Markdown)
-- `GET /api/song-info/health` — check Ollama + model availability
-
-**Quiz** (LLM, rate-limited 10/min):
-
-- `POST /api/quiz/start` — `{ artist, track, album?, language? }` → `{ ok, session_id, question, question_number, total_questions }`
-- `POST /api/quiz/answer` — `{ session_id, answer }` → `{ ok, score, feedback, question?, summary? }`
-
-**Health** (nginx only): `GET /health` → `200 "ok"`
-
-**IMPORTANT**: All API routes use the `/api` prefix.
 
 ## Common Tasks
 
@@ -85,36 +47,29 @@ make lint          # All linters (Ruff + ESLint + Stylelint + HTMLHint)
 make ci            # Full pipeline: lint + coverage + security
 make test-integration  # 19 API integration tests
 make test-e2e          # 24 E2E tests (Docker prod required)
-make test-skills       # 351 skill + agent validation tests
+make test-skills       # 492 skill + agent validation tests
 make test-browser      # 47 Selenium browser tests (Docker + Chrome)
+make test-scripts      # 39 SBOM script unit tests
 
 # Hard refresh after static file edits: Cmd+Shift+R
 ```
 
 ## Important Notes
 
-- **Metadata from CloudFront JSON**, not ID3 tags. ID3 parser is fallback only.
-- **DB credentials from env vars** via python-dotenv (`api/.env.example`).
-- **Debug mode off by default**, controlled by `FLASK_DEBUG`.
 - **Run `make ci` before merging**. CI runs on push/PR (13 GitHub Actions jobs).
-- **iTunes API cached** in localStorage (24h TTL) via `fetchItunesCached()`.
-- **Ratings are local only** — not sent to CloudFront host.
-- **Cache issues** — hard refresh (`Cmd+Shift+R`) after editing static files.
-- **Port 5000** (local) or **5050** (Docker). Do NOT use port 8080.
 - **Docker** uses MySQL 8.0, non-root `appuser`, nginx → gunicorn (4 workers).
+- **DB credentials from env vars** via python-dotenv (`api/.env.example`).
+- **Ratings are local only** — not sent to CloudFront host.
 
 ## Known Gotchas
 
-1. **`/ratings/summary` 404**: Cached old JS. Hard refresh.
-2. **Port 8080**: Old static server running. Kill it, use Flask on 5000/5050.
-3. **Metadata 404**: Root `/metadatav2.json`, NOT `/hls/`.
-4. **`audio.currentTime` wrong**: Use `Date.now() - songStartTime` instead.
-5. **Metadata updates too early**: `pendingTrackUpdate` delay compensates. Do NOT remove.
-6. **Shazam URLs don't work**: Use Spotify/YT Music/Amazon instead.
-7. **Emoji in URL encoding**: Use plain text `[N likes / N unlikes]`.
-8. **mailto: in `window.open`**: Use `window.location.href` instead.
+> 10 common issues with fixes in `.claude/rules/gotchas.md`. Top 3:
 
-## Slash Commands (22 total, all v2.0.0)
+1. **Cache issues** — hard refresh (`Cmd+Shift+R`) after editing static files.
+2. **Port 5000** (local) or **5050** (Docker). Do NOT use port 8080.
+3. **Metadata from CloudFront JSON** at root `/metadatav2.json`, NOT `/hls/`.
+
+## Slash Commands (24 total, all v2.0.0)
 
 9 heavy skills delegate to a specialized subagent (isolated context window).
 
@@ -134,7 +89,7 @@ make test-browser      # 47 Selenium browser tests (Docker + Chrome)
 | `/generate-requirements` | Requirements documentation (FR/NFR) | Documentation Writer |
 | `/generate-vv-plan` | V&V test plan with user test cases | V&V Plan Updater |
 | `/update-readme-diagrams` | Sync diagrams to README | — |
-| `/test-browser` | Run 37 Selenium browser tests (headless Chrome) | QA Engineer |
+| `/test-browser` | Run 47 Selenium browser tests (headless Chrome) | QA Engineer |
 | `/add-share-button` | Add new share platform | — |
 | `/add-dark-style` | Add dark mode for new components | — |
 | `/update-claude-md` | Refresh CLAUDE.md from codebase | — |
@@ -142,8 +97,10 @@ make test-browser      # 47 Selenium browser tests (Docker + Chrome)
 | `/check-llm` | Diagnose Ollama/LLM connectivity and model availability | — |
 | `/add-language` | Scaffold a new i18n language across all files | — |
 | `/add-retro-button` | Add a new retro radio button + query type | — |
+| `/verify-deploy` | Verify Docker containers match local files | — |
+| `/claude-qa` | Audit all Claude Code components, fix violations, update docs | Claude Code Housekeeper |
 
-## Custom Agents (10 total, all v2.0.0)
+## Custom Agents (11 total, all v2.0.0)
 
 Task-specific AI personalities in `.claude/agents/` with specialized knowledge and workflows.
 
@@ -159,15 +116,51 @@ Task-specific AI personalities in `.claude/agents/` with specialized knowledge a
 | Performance Analyst | `performance-analyst.md` | Caching, CDN, pagination, resource optimization |
 | Documentation Writer | `documentation-writer.md` | Docs generation, cross-document consistency, Mermaid diagrams |
 | V&V Plan Updater | `vv-plan-updater.md` | Run all test suites, fill execution summary, detect coverage gaps |
+| Claude Code Housekeeper | `claude-code-housekeeper.md` | Audit .claude/ components, fix violations, update tests and docs |
 
 ## Claude Code Configuration
 
-- **Rules**: `.claude/rules/` — architecture, testing, database, style-guide, security-baseline, i18n, llm (loaded on relevant topics)
+- **Rules**: `.claude/rules/` — architecture, testing, database, style-guide, security-baseline, i18n, llm, endpoints, gotchas, rebase-safety, deploy-verify (loaded on relevant topics)
 - **Settings**: `.claude/settings.json` — auto-approved commands, denied destructive ops, lint hooks
 - **Skills**: `.claude/skills/*/SKILL.md` — mirrored from commands for extended skill features
-- **Agents**: `.claude/agents/*.md` — 10 task-specific AI agents with specialized workflows
+- **Agents**: `.claude/agents/*.md` — 11 task-specific AI agents with specialized workflows
 - **Hooks**: auto-lint Python/JS/CSS/HTML on file edit, static file hard-refresh reminder, SBOM reminder on dependency changes, context reminder on compaction
 - **Ignore**: `.claudeignore` — excludes node_modules, venv, coverage, caches from context
+
+## Code Style & Conventions
+
+> Full details in `.claude/rules/style-guide.md`.
+
+- **JavaScript**: Vanilla ES2020, no framework, no build step. Always use `escHtml()` for innerHTML. `log.info/warn/error()` for structured logging.
+- **Python**: Flask + PyMySQL. Parameterized SQL (`%s` placeholders, never f-strings). Ruff for format + lint.
+- **CSS**: CSS custom properties (`--mint`, `--forest`, `--teal`, `--orange`, `--charcoal`). Dark/light via `data-theme`. Breakpoint: 700px.
+- **i18n**: Use `data-i18n` attributes + `t(key)` helper. **Never translate song metadata** (artist, track, album). Quiz button always "Quiz".
+- **Commits**: Conventional Commits. One sentence summary, details in body.
+- **PRs**: Short title (<70 chars), `## Summary` + `## Test plan` in body. Run `make ci` before merging.
+- **Linting**: `make lint` must pass (Ruff + ESLint + Stylelint + HTMLHint). `make fix-py` auto-fixes Python.
+
+**Commit example:**
+
+```text
+feat: add quiz interactive game with 5-question chat UI
+
+- POST /api/quiz/start and /api/quiz/answer endpoints
+- Sarcastic scoring system (-5 to +5)
+- Chat-style bubble UI in info panel
+```
+
+**PR example:**
+
+```markdown
+## Summary
+- Add interactive quiz game triggered by the Quiz retro button
+- 5 multiple-choice questions per song with sarcastic LLM scoring
+
+## Test plan
+- [ ] `make test` — 81 Python + 238 JS tests pass
+- [ ] `make lint` — all linters clean
+- [ ] Manual: press Quiz button, answer 5 questions, verify score summary
+```
 
 ## Strict Accuracy Policy
 

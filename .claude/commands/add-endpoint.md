@@ -1,4 +1,7 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: add-endpoint
+description: Scaffold a new Flask API endpoint with tests and documentation
+---
 Scaffold a new Flask API endpoint with tests and documentation.
 
 The user should provide: the endpoint path, HTTP method, and what it does.

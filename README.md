@@ -498,7 +498,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**861 total tests** across 8 suites:
+**1002 total tests** across 8 suites:
 
 | Suite | Tests | Tool | Coverage |
 | --- | --- | --- | --- |
@@ -667,13 +667,24 @@ radiocalico/
 | ----- | ---------- | ------- |
 | CDN | AWS CloudFront | Audio stream + metadata delivery |
 | Streaming | HLS (M3U8 + TS) | Adaptive audio streaming (FLAC or AAC) |
-| Frontend | Vanilla JS + HTML5 + CSS | Player UI (no framework, no build step) |
+| Frontend | Vanilla JS + HTML5 + CSS | Player UI, retro buttons, quiz game, i18n (no framework) |
 | Streaming Lib | HLS.js v1.x (CDN) | HLS decoding in non-Safari browsers |
 | Metadata | CloudFront JSON | Track info (metadatav2.json) |
 | Artwork | iTunes Search API | Album artwork + track duration |
 | Fonts | Google Fonts | Montserrat (headings), Open Sans (body) |
-| Backend | Python Flask | REST API for all endpoints |
-| Database | MySQL 5.7 | Ratings, users, profiles, feedback |
+| Backend | Python 3.11 + Flask 3.x | REST API for ratings, auth, profiles, feedback, song info, quiz |
+| Backend | PyMySQL + Flask-CORS + Flask-Limiter | DB queries, CORS, rate limiting (5/min auth, 10/min LLM) |
+| Backend | python-json-logger + python-dotenv | Structured JSON logging, env var loading |
+| LLM | Ollama + Llama 3.2 | Local LLM for song info (lyrics, details, facts, merch, jokes, quiz) |
+| LLM SDK | OpenAI SDK (Python) | OpenAI-compatible client — works with Ollama, LM Studio, vLLM, etc. |
+| Database | MySQL 5.7 (local) / 8.0 (Docker) | Ratings, users, profiles, feedback, SBOM history (8 tables) |
+| Web Server | nginx:alpine | Static files, reverse proxy, gzip (level 6), security headers |
+| App Server | gunicorn 22.0 | WSGI server, 4 workers in production |
+| Containerization | Docker + Docker Compose | Multi-stage builds, dev/prod profiles, Ollama service |
+| CI/CD | GitHub Actions | 13+ jobs: lint, test, security, E2E, browser, DAST, SBOM, V&V |
+| Testing | pytest + Jest + Selenium | 1002 tests across 8 suites (95%+ coverage) |
+| Linting | Ruff, ESLint, Stylelint, HTMLHint | Code quality across Python, JS, CSS, HTML |
+| Security | Bandit, Safety, npm audit, Hadolint, Trivy, ZAP | SAST, deps, Docker image, DAST |
 
 ### Database Schema
 

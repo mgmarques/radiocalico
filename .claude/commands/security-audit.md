@@ -1,4 +1,9 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: security-audit
+description: Run all 6 security tools and report findings
+context: fork
+agent: security-auditor
+---
 Run all 6 security scanning tools and report findings with fix suggestions.
 
 ## Agent

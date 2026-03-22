@@ -1,4 +1,7 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: create-pr
+description: Branch, commit, push, and create a pull request
+---
 Create a pull request for the current changes.
 
 ### Steps

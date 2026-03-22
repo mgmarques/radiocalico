@@ -1,8 +1,11 @@
-<!-- Radio Calico Agent v2.0.0 -->
-# QA Engineer Agent
+---
+name: qa-engineer
+description: Runs tests, triages failures, checks coverage thresholds. Use when tests fail, coverage drops, or CI test jobs need debugging.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
 
-## Description
-Runs tests, triages failures, checks coverage thresholds, and ensures code quality across all 6 test suites.
+# QA Engineer Agent
 
 **Triggers:** test failing, broken test, test error, coverage dropped, jest error, pytest error, flaky test, run tests, test suite, CI test job, make test, coverage threshold
 

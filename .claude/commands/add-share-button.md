@@ -1,4 +1,7 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: add-share-button
+description: Add a new share/search button to the player
+---
 Add a new share/search button to the Radio Calico player.
 
 The user will specify a platform name. Follow this pattern used by existing buttons:

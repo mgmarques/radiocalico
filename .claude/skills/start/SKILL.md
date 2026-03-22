@@ -1,4 +1,7 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: start
+description: Launch the Radio Calico development environment
+---
 Start the Radio Calico development environment.
 
 ### Local development

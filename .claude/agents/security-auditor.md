@@ -1,8 +1,11 @@
-<!-- Radio Calico Agent v2.0.0 -->
-# Security Auditor Agent
+---
+name: security-auditor
+description: Runs 6 security scanning tools, triages findings by severity, assesses OWASP top 10. Use for CVE, vulnerability, OWASP, security audit, SBOM generation.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
 
-## Description
-Runs 6 security scanning tools, triages findings by severity, assesses OWASP top 10 risks, and recommends specific fixes across code, dependencies, and containers.
+# Security Auditor Agent
 
 **Triggers:** security audit, vulnerability, CVE, XSS, SQL injection, hardcoded secret, bandit, safety check, trivy, ZAP scan, OWASP, insecure, exploit, make security
 

@@ -44,9 +44,11 @@ EXPECTED_COMMANDS = [
     "check-llm.md",
     "add-language.md",
     "add-retro-button.md",
+    "verify-deploy.md",
+    "claude-qa.md",
 ]
 
-# ── All 10 expected agents ──────────────────────────────────────
+# ── All 11 expected agents ──────────────────────────────────────
 
 EXPECTED_AGENTS = [
     "qa-engineer.md",
@@ -59,6 +61,7 @@ EXPECTED_AGENTS = [
     "performance-analyst.md",
     "documentation-writer.md",
     "vv-plan-updater.md",
+    "claude-code-housekeeper.md",
 ]
 
 
@@ -97,23 +100,29 @@ class TestVersionHeaders:
     @pytest.mark.parametrize("filename", EXPECTED_COMMANDS)
     def test_has_version_header(self, filename):
         content = (COMMANDS_DIR / filename).read_text()
-        assert "<!-- Radio Calico Skill v" in content, f"{filename} missing version header"
+        has_html = "<!-- Radio Calico Skill v" in content
+        has_yaml = content.startswith("---") and "name:" in content
+        assert has_html or has_yaml, f"{filename} missing version header or YAML frontmatter"
 
     @pytest.mark.parametrize("filename", EXPECTED_COMMANDS)
     def test_version_is_semver(self, filename):
         content = (COMMANDS_DIR / filename).read_text()
+        if content.startswith("---") and "name:" in content:
+            return  # YAML frontmatter skills use name/description instead of version comment
         match = re.search(r"v(\d+\.\d+\.\d+)", content)
         assert match, f"{filename} has no semver version"
 
     def test_all_versions_consistent(self):
-        """All commands should be at the same version."""
+        """All commands should be at the same version or use YAML frontmatter."""
         versions = set()
         for filename in EXPECTED_COMMANDS:
             content = (COMMANDS_DIR / filename).read_text()
+            if content.startswith("---") and "name:" in content:
+                continue  # YAML frontmatter
             match = re.search(r"v(\d+\.\d+\.\d+)", content)
             if match:
                 versions.add(match.group(1))
-        assert len(versions) == 1, f"Inconsistent versions across commands: {versions}"
+        assert len(versions) <= 1, f"Inconsistent versions across commands: {versions}"
 
 
 class TestProjectVersionFile:
@@ -129,6 +138,8 @@ class TestProjectVersionFile:
     def test_version_matches_commands(self):
         project_version = (ROOT / "VERSION").read_text().strip()
         content = (COMMANDS_DIR / "start.md").read_text()
+        if content.startswith("---") and "name:" in content:
+            return  # YAML frontmatter skills don't have version comments
         match = re.search(r"v(\d+\.\d+\.\d+)", content)
         assert match and match.group(1) == project_version
 
@@ -465,8 +476,8 @@ class TestCLAUDEmdConsistency:
         version = (ROOT / "VERSION").read_text().strip()
         assert version in self.content or "v1.0.0" in self.content or "VERSION" in self.content
 
-    def test_test_count_is_861(self):
-        assert "861" in self.content, "CLAUDE.md should mention 861 total tests"
+    def test_test_count_is_1002(self):
+        assert "1002" in self.content, "CLAUDE.md should mention 1002 total tests"
 
     def test_mentions_structured_logging(self):
         assert "structured" in self.content.lower() or "json log" in self.content.lower()
@@ -475,7 +486,8 @@ class TestCLAUDEmdConsistency:
         assert "pagination" in self.content.lower() or "limit" in self.content.lower()
 
     def test_mentions_health_endpoint(self):
-        assert "/health" in self.content
+        # /health endpoint moved to .claude/rules/endpoints.md; CLAUDE.md references endpoints rule
+        assert "/health" in self.content or "endpoints" in self.content
 
     def test_mentions_all_agents(self):
         for agent in EXPECTED_AGENTS:
@@ -511,28 +523,39 @@ class TestAgentVersionHeaders:
     @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
     def test_has_version_header(self, filename):
         content = (AGENTS_DIR / filename).read_text()
-        assert "<!-- Radio Calico Agent v" in content, f"{filename} missing version header"
+        has_html = "<!-- Radio Calico Agent v" in content
+        has_yaml = content.startswith("---") and "name:" in content
+        assert has_html or has_yaml, f"{filename} missing version header or YAML frontmatter"
 
     @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
     def test_version_is_semver(self, filename):
         content = (AGENTS_DIR / filename).read_text()
+        has_yaml = content.startswith("---") and "name:" in content
+        if has_yaml:
+            return  # YAML frontmatter agents use name/description instead of version comment
         match = re.search(r"v(\d+\.\d+\.\d+)", content)
         assert match, f"{filename} has no semver version"
 
     def test_all_agent_versions_consistent(self):
-        """All agents should be at the same version."""
+        """All agents should be at the same version or use YAML frontmatter."""
         versions = set()
+        yaml_count = 0
         for filename in EXPECTED_AGENTS:
             content = (AGENTS_DIR / filename).read_text()
+            if content.startswith("---") and "name:" in content:
+                yaml_count += 1
+                continue
             match = re.search(r"v(\d+\.\d+\.\d+)", content)
             if match:
                 versions.add(match.group(1))
-        assert len(versions) == 1, f"Inconsistent agent versions: {versions}"
+        assert len(versions) <= 1, f"Inconsistent agent versions: {versions}"
 
     def test_agent_version_matches_project(self):
-        """Agent versions should match the project VERSION file."""
-        project_version = (ROOT / "VERSION").read_text().strip()
+        """Agent versions should match the project VERSION file or use YAML frontmatter."""
         content = (AGENTS_DIR / "qa-engineer.md").read_text()
+        if content.startswith("---") and "name:" in content:
+            return  # YAML frontmatter agents don't use version comments
+        project_version = (ROOT / "VERSION").read_text().strip()
         match = re.search(r"v(\d+\.\d+\.\d+)", content)
         assert match and match.group(1) == project_version
 
@@ -563,6 +586,84 @@ class TestAgentContent:
         assert "## Key Files" in content or "## Available" in content, (
             f"{filename} missing Key Files or Available section"
         )
+
+
+# ── YAML Frontmatter Validation ───────────────────────────────
+
+
+class TestCommandFrontmatter:
+    """Commands with YAML frontmatter must have required fields."""
+
+    @pytest.mark.parametrize("filename", EXPECTED_COMMANDS)
+    def test_yaml_has_name(self, filename):
+        content = (COMMANDS_DIR / filename).read_text()
+        if content.startswith("---"):
+            assert "name:" in content, f"{filename} YAML frontmatter missing 'name:'"
+
+    @pytest.mark.parametrize("filename", EXPECTED_COMMANDS)
+    def test_yaml_has_description(self, filename):
+        content = (COMMANDS_DIR / filename).read_text()
+        if content.startswith("---"):
+            assert "description:" in content, f"{filename} YAML frontmatter missing 'description:'"
+
+
+# Delegated commands that must have context: fork + agent:
+DELEGATED_COMMANDS = [
+    "run-ci.md", "test-browser.md", "security-audit.md", "generate-sbom.md",
+    "docker-verify.md", "generate-diagrams.md", "generate-tech-spec.md",
+    "generate-requirements.md", "generate-vv-plan.md", "claude-qa.md",
+]
+
+
+class TestDelegatedCommandFrontmatter:
+    """Delegated commands must have context: fork and agent: field."""
+
+    @pytest.mark.parametrize("filename", DELEGATED_COMMANDS)
+    def test_has_context_fork(self, filename):
+        content = (COMMANDS_DIR / filename).read_text()
+        assert "context: fork" in content, f"{filename} missing 'context: fork'"
+
+    @pytest.mark.parametrize("filename", DELEGATED_COMMANDS)
+    def test_has_agent_field(self, filename):
+        content = (COMMANDS_DIR / filename).read_text()
+        assert "agent:" in content, f"{filename} missing 'agent:' field"
+
+    @pytest.mark.parametrize("filename", DELEGATED_COMMANDS)
+    def test_agent_references_valid_agent(self, filename):
+        content = (COMMANDS_DIR / filename).read_text()
+        match = re.search(r"agent:\s*(\S+)", content)
+        if match:
+            agent_name = match.group(1)
+            agent_file = AGENTS_DIR / f"{agent_name}.md"
+            assert agent_file.exists(), f"{filename} references agent '{agent_name}' but {agent_file} doesn't exist"
+
+
+class TestAgentFrontmatter:
+    """Agents with YAML frontmatter must have required fields."""
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_yaml_has_name(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        if content.startswith("---"):
+            assert "name:" in content, f"{filename} YAML frontmatter missing 'name:'"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_yaml_has_description(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        if content.startswith("---"):
+            assert "description:" in content, f"{filename} YAML frontmatter missing 'description:'"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_yaml_has_tools(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        if content.startswith("---"):
+            assert "tools:" in content, f"{filename} YAML frontmatter missing 'tools:'"
+
+    @pytest.mark.parametrize("filename", EXPECTED_AGENTS)
+    def test_yaml_has_model(self, filename):
+        content = (AGENTS_DIR / filename).read_text()
+        if content.startswith("---"):
+            assert "model:" in content, f"{filename} YAML frontmatter missing 'model:'"
 
 
 class TestQAEngineerAgent:

@@ -1,4 +1,7 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: check-stream
+description: Check stream and server status
+---
 Check the current status of the Radio Calico stream and metadata.
 
 Detect the environment: if Docker is running (`docker compose --profile dev ps` shows healthy containers), use port 5050. Otherwise use port 5000.

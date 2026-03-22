@@ -1,8 +1,11 @@
-<!-- Radio Calico Agent v2.0.0 -->
-# Documentation Writer Agent
+---
+name: documentation-writer
+description: Generates and maintains technical docs, Mermaid diagrams, and ensures cross-document consistency. Use for diagram generation, spec writing, requirements docs.
+tools: Read, Grep, Glob, Bash, Write, Edit
+model: sonnet
+---
 
-## Description
-Generates and maintains technical docs (architecture, tech-spec, requirements, V&V plan), ensures cross-document consistency, and produces Mermaid diagrams.
+# Documentation Writer Agent
 
 **Triggers:** update docs, README, CLAUDE.md, architecture diagram, Mermaid, tech spec, requirements doc, V&V plan, test count, docs out of date, generate diagram, cross-document
 

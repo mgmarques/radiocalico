@@ -1,4 +1,7 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: add-language
+description: Scaffold a new i18n language across all files
+---
 Scaffold a new i18n language for Radio Calico.
 
 The user will specify a language name and code (e.g., "French" / "fr"). Follow this process:

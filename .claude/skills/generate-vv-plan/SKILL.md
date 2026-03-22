@@ -1,4 +1,9 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: generate-vv-plan
+description: Generate or update V&V test plan with user test cases
+context: fork
+agent: vv-plan-updater
+---
 Generate or update the Verification & Validation (V&V) test plan for Radio Calico.
 
 ## Agent

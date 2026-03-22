@@ -1,4 +1,7 @@
-<!-- Radio Calico Skill v2.0.0 -->
+---
+name: check-llm
+description: Diagnose Ollama/LLM connectivity and model availability
+---
 Diagnose LLM/Ollama connectivity and model availability.
 
 Run the following checks in order and report results:
