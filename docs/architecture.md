@@ -49,7 +49,7 @@ graph TD
         nginx["nginx\n(reverse proxy + static files)"]
         gunicorn["gunicorn\n(4 workers · Flask API :5000)"]
         mysql["MySQL 8.0\n(ratings · users · profiles · feedback)"]
-        ollama["Ollama\n(Llama 3.2 · song info · quiz)"]
+        ollama["Ollama\n(Llama 3.2 · song info · quiz · chat · ticker)"]
     end
 
     subgraph External["🔌 External APIs"]
@@ -65,7 +65,7 @@ graph TD
     Browser -->|"API calls\n(/api/*)"| nginx
     nginx -->|"proxy_pass /api/"| gunicorn
     gunicorn -->|"PyMySQL queries\n(parameterized)"| mysql
-    gunicorn -->|"OpenAI SDK\n(song info · quiz)"| ollama
+    gunicorn -->|"OpenAI SDK · SSE streaming\n(song info · quiz · chat · ticker · taste)"| ollama
 ```
 
 ---
@@ -226,11 +226,13 @@ graph TD
         LangToggle -->|"en / pt-BR / es"| i18n["translate data-i18n elements\nre-fetch active AI content"]
     end
 
-    subgraph SongInfo["🎵 Song Info (LLM)"]
+    subgraph SongInfo["🎵 Song Info (LLM · SSE Streaming)"]
         RetroBtn["retro radio buttons\n(Lyrics · Details · Facts\nMerchandise · Jokes · Everything)"]
-        InfoPanel["expanding info panel\nPOST /api/song-info\n(Ollama + Llama 3.2)"]
+        InfoPanel["streaming info panel\nPOST /api/song-info/stream\n(SSE · typewriter cursor)"]
         InfoShare["share AI content\nWhatsApp · X · Telegram"]
+        FollowupChat["follow-up chat\nPOST /api/chat (SSE)\nmulti-turn conversation"]
         RetroBtn --> InfoPanel --> InfoShare
+        InfoPanel --> FollowupChat
     end
 
     subgraph QuizGame["🎮 Quiz"]
@@ -238,6 +240,18 @@ graph TD
         QuizChat["chat-style 5 questions\nPOST /api/quiz/answer"]
         QuizScore["score summary\n(-5 to +5 per question)"]
         QuizBtn --> QuizChat --> QuizScore
+    end
+
+    subgraph Ticker["📰 Auto-Scrolling Ticker"]
+        TickerDefault["30 default messages\n(game quotes · geek humor · merch)"]
+        TickerAI["AI-generated per track\nPOST /api/song-info (ticker)\n(mood · news · character quotes)"]
+        TickerDefault --> TickerAI
+    end
+
+    subgraph TasteProfile["🎭 Music Taste Profile"]
+        TasteBtn["POST /api/taste-profile\n(liked + disliked songs)"]
+        TasteResult["personality analysis\nmusic DNA · recommendation"]
+        TasteBtn --> TasteResult
     end
 ```
 

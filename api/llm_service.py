@@ -96,6 +96,22 @@ _QUERY_PROMPTS = {
         'IMPORTANT: Keep the song title "{track}", artist name "{artist}", '
         'and album name "{album}" EXACTLY as written — do NOT translate them.'
     ),
+    "ticker": (
+        'Generate exactly 8 short one-liner messages (max 100 chars each) about "{track}" by {artist}.\n'
+        "Include:\n"
+        "1. A mood/vibe description (e.g., 'This song feels like a sunset road trip')\n"
+        "2. A fun fact or recent news about {artist}\n"
+        "3. A Radio Calico merchandise idea (nerd shirt, vinyl, mug)\n"
+        "4. A music joke related to this song\n"
+        "5. A famous VIDEO GAME character quote reacting to this song "
+        "(e.g., Mario, Link, Master Chief, Solid Snake, Kratos, GLaDOS)\n"
+        "6. A sarcastic robot opinion about this song\n"
+        "7. A trending or little-known fact about {artist} or their latest project\n"
+        "8. A sci-fi/fantasy character quote about this song "
+        "(e.g., Gandalf, Yoda, Captain Picard, The Doctor)\n"
+        "Output ONLY the 8 lines, numbered 1-8. No headers, no markdown.\n"
+        'Keep "{track}" and "{artist}" in their original language.'
+    ),
 }
 
 
@@ -231,6 +247,164 @@ class LLMService:
                 "llm_query_error",
                 extra={"query_type": query_type, "error": str(exc)},
             )
+            return {"ok": False, "error": str(exc)}
+
+    # ── Streaming query ────────────────────────────────────────────────────
+
+    def query_stream(
+        self,
+        query_type: str,
+        artist: str,
+        track: str,
+        album: str = "",
+        artwork_url: str = "",
+        language: str | None = None,
+    ):
+        """Streaming version of query(). Yields content chunks as they arrive.
+
+        Yields strings. On error, yields a single error message prefixed with "ERROR:".
+        If cached, yields the full content in one chunk.
+        """
+        self._ensure_connection()
+        if query_type not in _QUERY_PROMPTS:
+            yield f"ERROR:Unknown query type: {query_type}"
+            return
+        if not artist or not track:
+            yield "ERROR:artist and track are required"
+            return
+
+        # Check cache — return full content immediately
+        cache_key = self._cache_key(query_type, artist, track)
+        cached = self._get_cached(cache_key)
+        if cached:
+            logger.info("llm_cache_hit_stream", extra={"query_type": query_type})
+            yield cached
+            return
+
+        # Build messages
+        lang = language or self.language
+        system_msg = _SYSTEM_PROMPT + f"\nRespond in {lang}."
+        user_msg = _QUERY_PROMPTS[query_type].format(artist=artist, track=track, album=album or "Unknown")
+        if artwork_url:
+            user_msg += f"\n\nAlbum cover: {artwork_url}"
+
+        try:
+            stream = self._client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_msg},
+                ],
+                max_tokens=_MAX_TOKENS,
+                temperature=_TEMPERATURE,
+                stream=True,
+            )
+            full_content = []
+            for chunk in stream:
+                delta = chunk.choices[0].delta
+                if delta.content:
+                    full_content.append(delta.content)
+                    yield delta.content
+            # Cache the complete response
+            complete = "".join(full_content)
+            self._set_cached(cache_key, complete)
+            logger.info(
+                "llm_stream_ok",
+                extra={"query_type": query_type, "artist": artist, "track": track},
+            )
+        except Exception as exc:
+            logger.error("llm_stream_error", extra={"error": str(exc)})
+            yield f"ERROR:{exc}"
+
+    # ── Follow-up chat ────────────────────────────────────────────────────
+
+    def chat(
+        self,
+        messages: list,
+        artist: str = "",
+        track: str = "",
+        album: str = "",
+        language: str | None = None,
+    ):
+        """Multi-turn conversation about a song. Streams response chunks.
+
+        ``messages`` is a list of {"role": "user"|"assistant", "content": "..."}.
+        The system prompt is prepended automatically.
+        """
+        self._ensure_connection()
+        lang = language or self.language
+        system_msg = (
+            _SYSTEM_PROMPT + f"\nRespond in {lang}.\n"
+            f'The user is asking about "{track}" by {artist}'
+            + (f' (album: "{album}")' if album else "")
+            + ". Answer concisely based on your music knowledge."
+        )
+        full_messages = [{"role": "system", "content": system_msg}] + messages
+
+        try:
+            stream = self._client.chat.completions.create(
+                model=self.model,
+                messages=full_messages,
+                max_tokens=_MAX_TOKENS,
+                temperature=_TEMPERATURE,
+                stream=True,
+            )
+            for chunk in stream:
+                delta = chunk.choices[0].delta
+                if delta.content:
+                    yield delta.content
+        except Exception as exc:
+            logger.error("llm_chat_error", extra={"error": str(exc)})
+            yield f"ERROR:{exc}"
+
+    # ── Taste profile ─────────────────────────────────────────────────────
+
+    def taste_profile(self, liked_songs: list, disliked_songs: list, language: str | None = None) -> dict:
+        """Generate a music taste personality profile from rated songs.
+
+        Returns {"ok": True, "content": "markdown..."} or {"ok": False, "error": "..."}.
+        """
+        self._ensure_connection()
+        lang = language or self.language
+
+        if not liked_songs and not disliked_songs:
+            return {"ok": False, "error": "No rated songs to analyze"}
+
+        likes_text = "\n".join(f"- {s}" for s in liked_songs[:20]) or "None"
+        dislikes_text = "\n".join(f"- {s}" for s in disliked_songs[:20]) or "None"
+
+        system_msg = (
+            "You are a witty music personality analyst. Based on a user's liked and disliked songs, "
+            "create a fun, shareable music taste profile. Be specific, humorous, and insightful.\n"
+            "IMPORTANT: NEVER translate song titles, album names, or artist names.\n"
+            f"Respond in {lang}."
+        )
+        user_msg = (
+            "Analyze my music taste and give me a personality profile:\n\n"
+            f"## Songs I liked:\n{likes_text}\n\n"
+            f"## Songs I disliked:\n{dislikes_text}\n\n"
+            "Give me:\n"
+            "1. A fun title for my music personality (e.g., 'The Nostalgic Riff Chaser')\n"
+            "2. My music DNA in 3 bullet points\n"
+            "3. What my taste says about me (be witty)\n"
+            "4. A song recommendation I'd probably love\n"
+            "5. A sarcastic observation about my dislikes"
+        )
+
+        try:
+            response = self._client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_msg},
+                ],
+                max_tokens=800,
+                temperature=0.8,
+            )
+            content = response.choices[0].message.content
+            return {"ok": True, "content": content}
+        except Exception as exc:
+            logger.error("llm_taste_error", extra={"error": str(exc)})
             return {"ok": False, "error": str(exc)}
 
     # ── Quiz ─────────────────────────────────────────────────────────────────

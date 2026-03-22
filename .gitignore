@@ -2,6 +2,9 @@
 .env
 .mcp.json
 
+# Local-only docs (not for git)
+docs/OpenAI_Improvements.md
+
 # Python
 __pycache__/
 *.pyc

@@ -113,6 +113,10 @@
                         </button>
                     </div>
 
+                    <div class="ticker-container" id="ticker-container">
+                        <div class="ticker-track" id="ticker-track"></div>
+                    </div>
+
                     <div class="player-bar">
                         <button class="bar-play" id="play-btn" disabled aria-label="Play">
                             <svg aria-hidden="true" id="icon-play" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
@@ -147,6 +151,13 @@
         </div>
         <div class="info-panel" id="info-panel" aria-live="polite">
             <div class="info-panel-content" id="info-panel-content"></div>
+            <div class="chat-followup" id="chat-followup" style="display:none">
+                <div class="chat-messages" id="chat-messages"></div>
+                <form class="chat-input-form" id="chat-input-form" autocomplete="off">
+                    <input type="text" id="chat-input" class="chat-input" placeholder="Ask a follow-up question..." maxlength="500" data-i18n-placeholder="chat_placeholder">
+                    <button type="submit" class="chat-send-btn" title="Send">&#9654;</button>
+                </form>
+            </div>
         </div>
 
         <!-- ── Recently Played widget ────────────────────── -->

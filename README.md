@@ -498,7 +498,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**1002 total tests** across 8 suites:
+**1017 total tests** across 8 suites:
 
 | Suite | Tests | Tool | Coverage |
 | --- | --- | --- | --- |
@@ -682,7 +682,7 @@ radiocalico/
 | App Server | gunicorn 22.0 | WSGI server, 4 workers in production |
 | Containerization | Docker + Docker Compose | Multi-stage builds, dev/prod profiles, Ollama service |
 | CI/CD | GitHub Actions | 13+ jobs: lint, test, security, E2E, browser, DAST, SBOM, V&V |
-| Testing | pytest + Jest + Selenium | 1002 tests across 8 suites (95%+ coverage) |
+| Testing | pytest + Jest + Selenium | 1017 tests across 8 suites (95%+ coverage) |
 | Linting | Ruff, ESLint, Stylelint, HTMLHint | Code quality across Python, JS, CSS, HTML |
 | Security | Bandit, Safety, npm audit, Hadolint, Trivy, ZAP | SAST, deps, Docker image, DAST |
 
