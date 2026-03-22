@@ -1309,8 +1309,7 @@ h1, h2, h3 {
 }
 
 .quiz-options li::before {
-    content: "▸ ";
-    color: var(--orange);
+    content: "";
 }
 
 .quiz-input-row {
