@@ -726,7 +726,7 @@ This Verification & Validation (V&V) test plan ensures that Radio Calico meets a
 | TC-804 | FR-803 | `static/js/player.test.js` | `updateStreamQualityDisplay > updates for AAC`, `STREAM_LABELS > has flac and aac entries` |
 | TC-805 | FR-804 | `static/js/player.test.js` | `settings dropdown > toggles open class on settings button click`, `settings dropdown > closes on outside click` |
 | TC-901 | NFR-101, NFR-102 | `tests/test_e2e.py` | `TestStaticFiles::test_static_cache_headers` |
-| TC-902 | NFR-107, NFR-604 | -- | Manual inspection required |
+| TC-902 | NFR-107, NFR-604 | `tests/playwright/radio-calico.spec.js` | Response header inspection for WebP content-type |
 | TC-903 | NFR-203, NFR-204 | `tests/test_e2e.py` | `TestSecurityHeaders::test_x_content_type_options`, `test_x_frame_options`, `test_csp_header`, `test_permissions_policy`, `test_server_version_hidden` |
 | TC-904 | NFR-402 | `tests/test_e2e.py` | `TestSecurityHeaders::test_request_id_header` |
 | TC-905 | NFR-401, NFR-406 | `static/js/player.test.js` | `log > log.info outputs JSON to console.log`, `log > log.warn outputs JSON to console.warn`, `log > log.error outputs JSON to console.error` |
@@ -871,9 +871,11 @@ The following test cases require manual execution because they involve subjectiv
 
 **Test run date**: 2026-03-22 — all automated suites executed locally (MySQL 5.7 + Docker prod stack).
 
-**Results**: 50 TCs verified across automated suites — **50 ✅ Approved, 0 ❌ Rejected**. 3 TCs require manual execution.
+**Results**: 52 TCs verified across automated suites — **52 ✅ Approved, 0 ❌ Rejected**. 1 TC requires manual execution.
 
-**Test Type key**: JS Unit = Jest/jsdom (`player.test.js`) · Python Unit = pytest (`test_app.py`) · Integration = pytest (`test_integration.py`) · E2E = pytest (`test_e2e.py`) · Browser = Selenium (`test_browser.py`) · Skills = pytest (`test_skills.py`) · Manual = requires human interaction
+**Test Type key**: JS Unit = Jest/jsdom (`player.test.js`) · Python Unit = pytest (`test_app.py`) · Integration = pytest (`test_integration.py`) · E2E = pytest (`test_e2e.py`) · Browser = Selenium (`test_browser.py`) · Playwright = Playwright + Chromium (`radio-calico.spec.js`) · Skills = pytest (`test_skills.py`) · Manual = requires human interaction
+
+**Note**: Playwright automates previously manual V&V test cases (TC-106, TC-902) using network interception and response header inspection.
 
 **Status legend**: ✅ **Approved** &nbsp; ❌ **Rejected** &nbsp; 🚧 **Blocked** &nbsp; 🔕 **Ignored** &nbsp; ⬛ **Not Executed**
 
@@ -884,7 +886,7 @@ The following test cases require manual execution because they involve subjectiv
 | TC-103 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-22 | ✅ **Approved** | Audio quality requires manual verification |
 | TC-104 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-22 | ✅ **Approved** | Volume level requires manual verification |
 | TC-105 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-22 | ✅ **Approved** | Mute output requires manual verification |
-| TC-106 | Audio Streaming | Manual | — | — | ⬛ **Not Executed** | Requires network disconnect simulation |
+| TC-106 | Audio Streaming | Playwright | Playwright | 2026-03-23 | ✅ **Approved** | Network interception simulates HLS failure |
 | TC-201 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-22 | ✅ **Approved** |  |
 | TC-202 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-22 | ✅ **Approved** |  |
 | TC-203 | Track Metadata | JS Unit | Jest | 2026-03-22 | ✅ **Approved** |  |
@@ -927,7 +929,7 @@ The following test cases require manual execution because they involve subjectiv
 | TC-804 | Theme & Settings | JS Unit | Jest | 2026-03-22 | ✅ **Approved** |  |
 | TC-805 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-22 | ✅ **Approved** |  |
 | TC-901 | Non-Functional | E2E | pytest | 2026-03-22 | ✅ **Approved** | Docker prod stack required |
-| TC-902 | Non-Functional | Manual | — | — | ⬛ **Not Executed** | Requires DevTools WebP inspection |
+| TC-902 | Non-Functional | Playwright | Playwright | 2026-03-23 | ✅ **Approved** | Response header inspection for WebP content-type |
 | TC-903 | Non-Functional | E2E | pytest | 2026-03-22 | ✅ **Approved** | Docker prod stack required |
 | TC-904 | Non-Functional | E2E | pytest | 2026-03-22 | ✅ **Approved** | Docker prod stack required |
 | TC-905 | Non-Functional | JS Unit | Jest | 2026-03-22 | ✅ **Approved** |  |

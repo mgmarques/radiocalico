@@ -1,3 +1,8 @@
+# Playwright
+test-results/
+playwright-report/
+tests/playwright/screenshots/
+
 # Environment variables and secrets
 .env
 .mcp.json

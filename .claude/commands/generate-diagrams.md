@@ -90,7 +90,7 @@ Create/update the file `docs/architecture.md` with the following Mermaid diagram
    - DOM events: click handlers for play, mute, rate, share, filter, settings, drawer
 
 6. **CI/CD Pipeline** — Flowchart (graph LR) of GitHub Actions jobs:
-   - lint → [python-tests, integration-tests, js-tests, skills-tests] → [e2e-tests, zap]
+   - lint → [python-tests, integration-tests, js-tests, skills-tests] → [e2e-tests, browser-tests, playwright-tests, zap]
    - Parallel security jobs: bandit, safety, npm-audit, hadolint, trivy
 
 7. **Database Schema** — ER diagram showing:

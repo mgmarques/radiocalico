@@ -17,7 +17,7 @@ Radio Calico is a live audio streaming web player with a Flask backend for ratin
 - **Logging**: Structured JSON — Python (`python-json-logger`), nginx, JS (`log.info/warn/error`). X-Request-ID correlation.
 - **LLM**: Ollama (Llama 3.2) via OpenAI SDK for song info (lyrics, details, facts, merchandise, jokes, quiz, ticker). SSE streaming responses. Follow-up chat. Music taste profile. Docker service with host GPU fallback. Response cache (24h TTL).
 - **i18n**: English (default), Brazilian Portuguese, Spanish. UI labels translated; song metadata always in original language.
-- **Testing**: 1017 tests (81 unit + 62 LLM + 19 integration + 253 JS + 24 E2E + 47 browser + 492 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
+- **Testing**: 1055 tests (81 unit + 74 LLM + 19 integration + 259 JS + 24 E2E + 47 browser + 20 Playwright + 492 skills/agents + 39 script unit). See `.claude/rules/testing.md`.
 - **CI/CD**: GitHub Actions (13 jobs). Linting: Ruff, ESLint, Stylelint, HTMLHint.
 - **Performance**: WebP images, dns-prefetch, iTunes cache, API pagination, LLM response cache (24h TTL).
 
@@ -49,6 +49,7 @@ make test-integration  # 19 API integration tests
 make test-e2e          # 24 E2E tests (Docker prod required)
 make test-skills       # 492 skill + agent validation tests
 make test-browser      # 47 Selenium browser tests (Docker + Chrome)
+make test-playwright   # 20 Playwright E2E tests (Docker + Chromium)
 make test-scripts      # 39 SBOM script unit tests
 
 # Hard refresh after static file edits: Cmd+Shift+R

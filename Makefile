@@ -14,7 +14,7 @@ E2E_BASE_URL ?= http://127.0.0.1:5050
 .PHONY: install test test-py test-js test-scripts coverage coverage-js ci clean \
         lint lint-py lint-js lint-css lint-html fix-py \
         security security-all bandit safety audit-npm hadolint trivy zap \
-        test-integration test-skills test-browser test-e2e docker-e2e \
+        test-integration test-skills test-browser test-playwright test-e2e docker-e2e \
         docker-dev docker-prod docker-down docker-build docker-test docker-security \
         generate-sbom
 
@@ -144,6 +144,10 @@ test-scripts:
 ## Run Selenium browser tests (requires Docker prod + Chrome)
 test-browser:
 	E2E_BASE_URL=$(E2E_BASE_URL) $(ACTIVATE) pip install selenium webdriver-manager -q && pytest tests/test_browser.py -v
+
+## Run Playwright E2E tests (requires Docker prod stack + Chromium)
+test-playwright:
+	npx playwright test --reporter=list
 
 ## Run end-to-end tests against running Docker prod stack
 test-e2e:
