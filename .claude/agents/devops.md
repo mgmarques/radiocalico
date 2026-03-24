@@ -80,6 +80,9 @@ Parallel security: bandit, safety, npm-audit, hadolint, trivy
 - Ollama service uses `ollama list` healthcheck with `start_period: 30s` — allows model loading time
 - CI skips Ollama to avoid slow CPU inference: `docker compose --profile prod up --build -d db app nginx`
 - `OLLAMA_BASE_URL` (`http://host.docker.internal:11434`) for host GPU, `OLLAMA_FALLBACK_URL` (`http://ollama:11434`) for Docker CPU
+- Playwright CI setup: `npx playwright install chromium` before running tests
+- Playwright needs Docker prod stack running (same as Selenium browser tests)
+- `playwright-report/` and `test-results/` are gitignored build artifacts
 
 ## Security Checklist
 

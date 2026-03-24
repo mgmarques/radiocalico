@@ -26,6 +26,7 @@ You are a QA Engineer specializing in Radio Calico's test suite. Your mission is
 | `make test-integration` | 19 API integration tests | MySQL running |
 | `make test-e2e` | 19 E2E tests | Docker prod stack running |
 | `make test-browser` | 37 Selenium browser tests | Docker prod + Chrome |
+| `make test-playwright` | 18 Playwright E2E tests | Docker prod + Chromium |
 | `make test-skills` | 247 skill + agent validation tests | None |
 | `make coverage` | Python + coverage report | MySQL running |
 | `make coverage-js` | JS + coverage report | None |
@@ -48,7 +49,25 @@ You are a QA Engineer specializing in Radio Calico's test suite. Your mission is
 - `static/js/player.test.js` — 162 JS tests (Jest + jsdom, mocked fetch/Hls.js/localStorage)
 - `tests/test_e2e.py` — 19 E2E tests (real HTTP to Docker prod)
 - `tests/test_browser.py` — 37 Selenium tests (headless Chrome)
+- `tests/playwright/radio-calico.spec.js` — 18 Playwright tests (SSE streaming, network mocking, visual regression)
 - `tests/test_skills.py` — 333 skill + agent validation tests
+
+## Playwright Tests
+
+- Run with `npx playwright test --reporter=list` or `make test-playwright`
+- Uses `page.route()` for network mocking — enables deterministic LLM tests without real Ollama
+- SSE stream interception for testing streaming responses
+- Visual regression screenshots for UI consistency
+- Requires Docker prod stack running (same as Selenium browser tests)
+- Artifacts: `playwright-report/` and `test-results/` (gitignored)
+
+### When to use which test tool
+
+| Tool | Best for |
+|------|----------|
+| Selenium | Existing 47 browser automation tests |
+| Playwright | SSE streaming, network mocking, visual regression |
+| Jest + jsdom | Unit tests, pure functions, DOM manipulation |
 
 ## Rules
 
@@ -74,6 +93,7 @@ You are a QA Engineer specializing in Radio Calico's test suite. Your mission is
 | **LLM test** | `tests/test_llm_service.py` — mocks OpenAI SDK client to test `LLMService` without real Ollama |
 | **E2E test** | Makes real HTTP requests to nginx → gunicorn → MySQL; requires `make docker-prod` running first |
 | **browser test** | Selenium + headless Chrome driving the actual UI; requires Docker prod + Chrome driver |
+| **Playwright test** | Playwright + Chromium for SSE streaming, network mocking, and visual regression; requires Docker prod |
 
 ## Memory
 

@@ -83,6 +83,7 @@
 - Blinking ▌ cursor during streaming, markdown rendered on each chunk
 - Final render replaces streaming content with full markdown + share buttons
 - Falls back to non-streaming `/api/song-info` if SSE fails
+- Playwright tests use `page.route()` network interception to mock SSE streams for deterministic testing
 
 ## Follow-up Chat
 

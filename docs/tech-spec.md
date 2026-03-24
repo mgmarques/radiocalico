@@ -1036,7 +1036,7 @@ graph LR
     style trivy fill:#D8F2D5,stroke:#1F4E23,color:#231F20
 ```
 
-### 9.2 Test Suites (843 Total Tests)
+### 9.2 Test Suites (861 Total Tests)
 
 | Suite | File | Tests | Tool | Coverage Threshold |
 |-------|------|-------|------|--------------------|
@@ -1046,6 +1046,7 @@ graph LR
 | JavaScript unit | `static/js/player.test.js` | 238 | Jest + jsdom | 95% statement / 97% line |
 | End-to-end | `tests/test_e2e.py` | 24 | pytest + requests | -- |
 | Browser | `tests/test_browser.py` | 47 | Selenium + headless Chrome | -- |
+| Playwright E2E | `tests/playwright/radio-calico.spec.js` | 18 | Playwright + Chromium | -- |
 | Skills validation | `tests/test_skills.py` | 333 | pytest | -- |
 | Script unit | `tests/test_generate_sbom.py` | 39 | pytest | -- |
 
@@ -1060,6 +1061,8 @@ graph LR
 **End-to-end tests** (`tests/test_e2e.py`): Make real HTTP requests to the full Docker production stack (nginx, gunicorn, MySQL). Validate static file serving, security headers, API proxy behavior, health checks, song-info endpoints, quiz endpoints, and error handling.
 
 **Browser tests** (`tests/test_browser.py`): Use Selenium with headless Chrome against the Docker production stack. Validate page load, theme switching, drawer navigation, auth UI, rating buttons, retro radio buttons, info panel expand/collapse, share buttons, language switching, responsive layout, and settings dropdown.
+
+**Playwright E2E tests** (`tests/playwright/radio-calico.spec.js`): Use Playwright with Chromium against the Docker production stack. Leverage `page.route()` for network mocking (deterministic LLM tests without real Ollama), SSE stream interception, and visual regression screenshots. Automate previously manual V&V test cases (TC-106 HLS error recovery, TC-902 WebP support).
 
 **Skills validation tests** (`tests/test_skills.py`): Validate all 19 Claude Code slash commands + 10 agents for correct structure, version references, agent delegation, and file path accuracy (333 parametrized tests).
 
@@ -1186,6 +1189,7 @@ All configuration is loaded from environment variables via `python-dotenv`. The 
 | `make ci` | Full pipeline: lint + coverage + coverage-js + security |
 | `make test-integration` | API integration tests (requires MySQL) |
 | `make test-e2e` | E2E tests against running Docker prod stack |
+| `make test-playwright` | 18 Playwright E2E tests (Docker + Chromium) |
 | `make docker-e2e` | Start prod stack, run E2E tests, stop stack |
 | `make docker-dev` | Start development environment |
 | `make docker-prod` | Start production environment (detached) |

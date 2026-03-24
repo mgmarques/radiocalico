@@ -1384,6 +1384,10 @@ function markdownToHtml(md) {
     html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // Tables — collapse blank lines between pipe rows so they form one block
+    while (/(\|.+\|)\n\n+(\|)/.test(html)) {
+        html = html.replace(/(\|.+\|)\n\n+(\|)/g, '$1\n$2');
+    }
     // Tables — collect consecutive pipe rows into a single <table>
     html = html.replace(/(^\|.+\|$\n?)+/gm, (block) => {
         const rows = block.trim().split('\n').filter(r => r.startsWith('|'));

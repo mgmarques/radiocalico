@@ -498,7 +498,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 
 ### Test results
 
-**1017 total tests** across 8 suites:
+**1035 total tests** across 9 suites:
 
 | Suite | Tests | Tool | Coverage |
 | --- | --- | --- | --- |
@@ -508,6 +508,7 @@ make ci            # Full pipeline: Python + JS coverage + security
 | JavaScript unit | 238 | Jest + jsdom | 95% stmts / 97% lines |
 | E2E (Docker) | 24 | pytest + requests | nginx → gunicorn → MySQL |
 | Browser (Selenium) | 47 | Selenium + headless Chrome | UI, themes, auth, buttons, quiz |
+| Playwright E2E | 18 | Playwright + Chromium | SSE streaming, network mocking, visual regression |
 | Skills + Agents | 351 | pytest | 22 slash commands + 10 agents + 9 agent delegations |
 | Script unit | 39 | pytest | SBOM enrichment, policy compliance, OSV cache, multi-project, DB persistence |
 
@@ -682,7 +683,7 @@ radiocalico/
 | App Server | gunicorn 22.0 | WSGI server, 4 workers in production |
 | Containerization | Docker + Docker Compose | Multi-stage builds, dev/prod profiles, Ollama service |
 | CI/CD | GitHub Actions | 13+ jobs: lint, test, security, E2E, browser, DAST, SBOM, V&V |
-| Testing | pytest + Jest + Selenium | 1017 tests across 8 suites (95%+ coverage) |
+| Testing | pytest + Jest + Selenium + Playwright | 1035 tests across 9 suites (95%+ coverage) |
 | Linting | Ruff, ESLint, Stylelint, HTMLHint | Code quality across Python, JS, CSS, HTML |
 | Security | Bandit, Safety, npm audit, Hadolint, Trivy, ZAP | SAST, deps, Docker image, DAST |
 

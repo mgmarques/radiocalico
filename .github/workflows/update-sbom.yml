@@ -61,5 +61,6 @@ jobs:
           else
             git add docs/SBOM.md
             git commit -m "chore: update docs/SBOM.md [skip ci]"
+            git pull --rebase origin ${{ github.head_ref }} || true
             git push
           fi
