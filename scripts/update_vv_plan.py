@@ -39,6 +39,7 @@ SUITE_MAP = {
     "E2E": "e2e",
     "Browser": "browser",
     "Skills": "skills",
+    "Playwright": "playwright",
     "Manual": "manual",
 }
 
@@ -166,7 +167,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Update V&V plan Test Execution Summary with CI test results"
     )
-    for suite in ("python-unit", "integration", "js", "skills", "e2e", "browser"):
+    for suite in ("python-unit", "integration", "js", "skills", "e2e", "browser", "playwright"):
         parser.add_argument(
             f"--{suite}",
             choices=["pass", "fail", "blocked"],
@@ -187,6 +188,7 @@ def main() -> None:
         "skills": args.skills,
         "e2e": args.e2e,
         "browser": args.browser,
+        "playwright": args.playwright,
     }
 
     vv_plan = Path("docs/vv-test-plan.md")

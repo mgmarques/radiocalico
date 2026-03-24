@@ -1,6 +1,6 @@
 name: Update V&V Plan
 
-# Runs on every PR to main. Executes all six test suites, updates section 13
+# Runs on every PR to main. Executes all seven test suites, updates section 13
 # of docs/vv-test-plan.md with real pass/fail results, then commits the file
 # back to the PR branch.
 #
@@ -189,6 +189,20 @@ jobs:
           fi
         continue-on-error: true
 
+      # ── Playwright tests (network mocking, SSE, visual) ───────────────────
+
+      - name: Playwright tests
+        id: playwright
+        if: steps.stack_health.outcome == 'success'
+        run: |
+          npx playwright install chromium --with-deps
+          if npx playwright test --reporter=list; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+        continue-on-error: true
+
       # ── Tear down the prod stack ───────────────────────────────────────────
 
       - name: Stop production stack
@@ -207,7 +221,8 @@ jobs:
             --js=${{ steps.js.outputs.result }} \
             --skills=${{ steps.skills.outputs.result }} \
             --e2e="${{ steps.e2e.outputs.result || 'blocked' }}" \
-            --browser="${{ steps.browser.outputs.result || 'blocked' }}"
+            --browser="${{ steps.browser.outputs.result || 'blocked' }}" \
+            --playwright="${{ steps.playwright.outputs.result || 'blocked' }}"
 
       # ── Commit the updated file back to the PR branch ─────────────────────
 
