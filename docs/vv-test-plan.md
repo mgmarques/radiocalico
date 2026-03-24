@@ -871,7 +871,7 @@ The following test cases require manual execution because they involve subjectiv
 
 **Test run date**: 2026-03-24 — all automated suites executed locally (MySQL 5.7 + Docker prod stack).
 
-**Results**: 50 TCs verified across automated suites — **50 ✅ Approved, 0 ❌ Rejected**. 3 TCs require manual execution.
+**Results**: 52 TCs verified across automated suites — **52 ✅ Approved, 0 ❌ Rejected**. 1 TC require manual execution.
 
 **Test Type key**: JS Unit = Jest/jsdom (`player.test.js`) · Python Unit = pytest (`test_app.py`) · Integration = pytest (`test_integration.py`) · E2E = pytest (`test_e2e.py`) · Browser = Selenium (`test_browser.py`) · Playwright = Playwright + Chromium (`radio-calico.spec.js`) · Skills = pytest (`test_skills.py`) · Manual = requires human interaction
 
@@ -886,7 +886,7 @@ The following test cases require manual execution because they involve subjectiv
 | TC-103 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-24 | ✅ **Approved** | Audio quality requires manual verification |
 | TC-104 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-24 | ✅ **Approved** | Volume level requires manual verification |
 | TC-105 | Audio Streaming | JS Unit + Browser | Jest + Selenium | 2026-03-24 | ✅ **Approved** | Mute output requires manual verification |
-| TC-106 | Audio Streaming | Playwright | — | — | ⬛ **Not Executed** | Network interception simulates HLS failure |
+| TC-106 | Audio Streaming | Playwright | — | 2026-03-24 | ✅ **Approved** | Network interception simulates HLS failure |
 | TC-201 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-24 | ✅ **Approved** |  |
 | TC-202 | Track Metadata | JS Unit + Browser | Jest + Selenium | 2026-03-24 | ✅ **Approved** |  |
 | TC-203 | Track Metadata | JS Unit | Jest | 2026-03-24 | ✅ **Approved** |  |
@@ -929,7 +929,7 @@ The following test cases require manual execution because they involve subjectiv
 | TC-804 | Theme & Settings | JS Unit | Jest | 2026-03-24 | ✅ **Approved** |  |
 | TC-805 | Theme & Settings | JS Unit + Browser | Jest + Selenium | 2026-03-24 | ✅ **Approved** |  |
 | TC-901 | Non-Functional | E2E | pytest | 2026-03-24 | ✅ **Approved** | Docker prod stack required |
-| TC-902 | Non-Functional | Playwright | — | — | ⬛ **Not Executed** | Response header inspection for WebP content-type |
+| TC-902 | Non-Functional | Playwright | — | 2026-03-24 | ✅ **Approved** | Response header inspection for WebP content-type |
 | TC-903 | Non-Functional | E2E | pytest | 2026-03-24 | ✅ **Approved** | Docker prod stack required |
 | TC-904 | Non-Functional | E2E | pytest | 2026-03-24 | ✅ **Approved** | Docker prod stack required |
 | TC-905 | Non-Functional | JS Unit | Jest | 2026-03-24 | ✅ **Approved** |  |
