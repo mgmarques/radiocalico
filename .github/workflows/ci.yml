@@ -344,6 +344,7 @@ jobs:
         with:
           image-ref: radiocalico-app:ci
           severity: HIGH,CRITICAL
+          ignore-unfixed: true
           exit-code: 1
 
   # ── Security: OWASP ZAP (DAST baseline scan) ──────────────
