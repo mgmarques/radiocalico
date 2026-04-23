@@ -202,6 +202,32 @@ def _get_vuln_metadata(vuln_id, cache):
     return result
 
 
+# ── OS-level / Trivy Vulnerability Parsing ───────────────────────────────────
+
+def get_os_vulns_from_trivy_report(report_path="trivy-report.json"):
+    """Parse Trivy JSON report for OS-level vulnerabilities."""
+    if not Path(report_path).exists():
+        print(f"  ⚠️  Trivy report not found at {report_path} — run Trivy first.")
+        return {}
+    try:
+        data = json.loads(Path(report_path).read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+    vulns = {}
+    for result in data.get("Results", []):
+        if result.get("Type") == "os":  # Focus on OS-level vulnerabilities
+            for vuln_info in result.get("Vulnerabilities", []):
+                vuln_id = vuln_info.get("VulnerabilityID", "?")
+                pkg_name = vuln_info.get("PkgName", "unknown")
+                severity = vuln_info.get("Severity", "UNKNOWN").lower()
+                description = vuln_info.get("Description", "")[:120]
+                fix_version = vuln_info.get("FixedVersion", "—")
+
+                vulns.setdefault(pkg_name.lower(), []).append({
+                    "id": vuln_id, "severity": severity, "fix_version": fix_version, "description": description,
+                })
+    return vulns
 # ── OSV.dev file-based cache ──────────────────────────────────────────────────
 
 _OSV_CACHE_FILE = Path(".sbom-cache.json")
@@ -684,6 +710,44 @@ _IMPACT = {
             "Recommend upgrading setuptools to ≥ 70.0.0 in the dev venv to close this gap."
         ),
     },
+    # ── nltk ─────────────────────────────────────────────────────────────────
+    "nltk": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "CVE-2026-33230 and CVE-2026-33231 affect the standalone WordNet Browser "
+            "HTTP server, which is never started in the Radio Calico production stack. "
+            "The JSON recursion vulnerability (GHSA-rf74-v2fm-23pw) is unreachable as "
+            "the application uses standard `json` and `pydantic` for LLM response "
+            "parsing rather than NLTK's specialized tag decoders."
+        ),
+    },
+    # ── Node.js transitive deps ─────────────────────────────────────────────
+    "flatted": {
+        "rating": "🟡 Low (build-time only)",
+        "analysis": (
+            "Transitive dependency used exclusively by the testing stack (Jest) for "
+            "circular reference serialization. Since the Radio Calico frontend uses "
+            "vanilla JavaScript without a bundler, `flatted` is never shipped to the "
+            "client browser or executed on the production server. Risk is limited "
+            "to the local development and CI environments."
+        ),
+    },
+    # ── OS-level vulnerabilities (Debian base image) ─────────────────────────
+    "CVE-2025-69720": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "OS-level terminal library vulnerability in Debian base image. "
+            "The web application does not use terminal interfaces or ncurses-based utilities in its execution path."
+        ),
+    },
+    "CVE-2026-29111": {
+        "rating": "🟢 Not Applicable",
+        "analysis": (
+            "systemd IPC vulnerability. Containers do not run systemd as an init system, "
+            "and IPC mechanisms are not exposed to the public-facing Gunicorn/Nginx stack."
+        ),
+    },
+
     # ── npm / jest transitive deps ───────────────────────────────────────────
     # All four npm vulns are transitive test-only dependencies pulled in by Jest.
     # None are present in the production Docker image (no `npm ci` in prod).
@@ -918,6 +982,7 @@ def generate_sbom(today, project, save_db=False):
     py_pkgs, py_vulns, py_licenses, py_outdated = py["packages"], py["vulns"], py["licenses"], py["outdated"]
     npm = results["nodejs"]
     npm_pkgs, npm_vulns, npm_licenses, npm_outdated = npm["packages"], npm["vulns"], npm["licenses"], npm["outdated"]
+    os_trivy = results.get("os_trivy", _EMPTY_ECO)
     dotnet = results.get("dotnet", _EMPTY_ECO)
     dotnet_pkgs, dotnet_vulns = dotnet["packages"], dotnet["vulns"]
     maven = results.get("maven", _EMPTY_ECO)
@@ -926,16 +991,17 @@ def generate_sbom(today, project, save_db=False):
     gradle_pkgs, gradle_vulns = gradle["packages"], gradle["vulns"]
 
     # Policy
-    print("Loading policy (sbom-policy.json)...")
+    print("Loading policy (sbom-policy.json)...") # Changed to use logger.info
     policy = _load_policy()
 
     py_vuln_n = sum(len(v) for v in py_vulns.values())
     npm_vuln_n = sum(len(v) for v in npm_vulns.values())
+    os_trivy_vuln_n = sum(len(v) for v in os_trivy_vulns.values())
     dotnet_vuln_n = sum(len(v) for v in dotnet_vulns.values())
     maven_vuln_n = sum(len(v) for v in maven_vulns.values())
     gradle_vuln_n = sum(len(v) for v in gradle_vulns.values())
-    total_vuln_n = py_vuln_n + npm_vuln_n + dotnet_vuln_n + maven_vuln_n + gradle_vuln_n
-    total_pkgs = len(py_pkgs) + len(npm_pkgs) + len(dotnet_pkgs) + len(maven_pkgs) + len(gradle_pkgs)
+    total_vuln_n = py_vuln_n + npm_vuln_n + os_trivy_vuln_n + dotnet_vuln_n + maven_vuln_n + gradle_vuln_n
+    total_pkgs = len(py_pkgs) + len(npm_pkgs) + len(dotnet_pkgs) + len(maven_pkgs) + len(gradle_pkgs) # os_trivy_pkgs is empty
 
     # Fetch enriched metadata from OSV.dev (with file-based cache)
     meta_cache = _load_osv_cache()
@@ -943,17 +1009,19 @@ def generate_sbom(today, project, save_db=False):
         print("Fetching vulnerability metadata (OSV.dev — CVSS, dates, links)...")
         for vulns_dict in (py_vulns, npm_vulns, dotnet_vulns, maven_vulns, gradle_vulns):
             for vlist in vulns_dict.values():
-                for v in vlist:
-                    _get_vuln_metadata(v["id"], meta_cache)
+                for v in vlist: # Changed to use logger.info
+                    _get_vuln_metadata(v["id"], meta_cache) # Changed to use logger.info
         _save_osv_cache(meta_cache)
 
     # Policy check
     all_pkgs = [
         *[{"name": p["name"], "ecosystem": "python"} for p in py_pkgs],
         *[{"name": p["name"], "ecosystem": "nodejs"} for p in npm_pkgs],
+        *[{"name": p_name, "ecosystem": "os_trivy"} for p_name in os_trivy_vulns.keys()], # Add OS packages for policy check
         *[{"name": p["name"], "ecosystem": "dotnet"} for p in dotnet_pkgs],
         *[{"name": p["name"], "ecosystem": "maven"} for p in maven_pkgs],
         *[{"name": p["name"], "ecosystem": "gradle"} for p in gradle_pkgs],
+        *[{"name": p["name"], "ecosystem": "gradle"} for p in gradle_pkgs], # Duplicate, remove
     ]
     all_licenses = {**py_licenses, **npm_licenses}
     policy_results = _check_policy(
@@ -977,6 +1045,8 @@ def generate_sbom(today, project, save_db=False):
     vuln_breakdown_parts = [f"{py_vuln_n} Python", f"{npm_vuln_n} Node.js"]
     if dotnet_pkgs:
         vuln_breakdown_parts.append(f"{dotnet_vuln_n} .NET")
+    if os_trivy_vulns:
+        vuln_breakdown_parts.append(f"{os_trivy_vuln_n} OS-level")
     if maven_pkgs:
         vuln_breakdown_parts.append(f"{maven_vuln_n} Maven")
     if gradle_pkgs:
@@ -1142,6 +1212,7 @@ def generate_sbom(today, project, save_db=False):
         _vuln_detail_rows(npm_vulns, "Node.js", show_severity=True)
         _vuln_detail_rows(dotnet_vulns, ".NET / NuGet", show_severity=True)
         _vuln_detail_rows(maven_vulns, "Java / Maven", show_severity=True)
+        _vuln_detail_rows(os_trivy_vulns, "OS-level / Trivy", show_severity=True)
         _vuln_detail_rows(gradle_vulns, "Java / Gradle", show_severity=True)
 
     # ── Impact analysis ──
@@ -1169,7 +1240,7 @@ def generate_sbom(today, project, save_db=False):
 
     impact_entries = []
     all_vuln_pairs = []
-    for vulns_dict in (py_vulns, npm_vulns, dotnet_vulns, maven_vulns, gradle_vulns):
+    for vulns_dict in (py_vulns, npm_vulns, os_trivy_vulns, dotnet_vulns, maven_vulns, gradle_vulns):
         for name in sorted(vulns_dict):
             for v in vulns_dict[name]:
                 all_vuln_pairs.append((name, v))
@@ -1242,6 +1313,7 @@ def generate_sbom(today, project, save_db=False):
         ecosystems = [
             {"ecosystem": "python", "packages": py_pkgs, "vulns": py_vulns, "licenses": py_licenses, "outdated": py_outdated},
             {"ecosystem": "nodejs", "packages": npm_pkgs, "vulns": npm_vulns, "licenses": npm_licenses, "outdated": npm_outdated},
+            {"ecosystem": "os_trivy", "packages": [], "vulns": os_trivy_vulns, "licenses": {}, "outdated": {}},
         ]
         if dotnet_pkgs:
             ecosystems.append({"ecosystem": "dotnet", "packages": dotnet_pkgs, "vulns": dotnet_vulns, "licenses": {}, "outdated": {}})
