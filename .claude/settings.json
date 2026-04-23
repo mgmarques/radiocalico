@@ -32,8 +32,8 @@
       "Bash(ls *)",
       "Bash(mkdir *)",
       "Bash(python -m pytest test_app.py -q)",
-      "Bash(source /Users/marcelogomesmarques/Projects/ClaudeCode/radiocalico/api/venv/bin/activate)",
-      "Bash(python -m pytest /Users/marcelogomesmarques/Projects/ClaudeCode/radiocalico/tests/test_e2e.py -q)",
+      "Bash(source /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico/api/venv/bin/activate)",
+      "Bash(python -m pytest /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico/tests/test_e2e.py -q)",
       "Bash(git rebase:*)",
       "Bash(git fetch:*)",
       "Bash(git stash:*)",
@@ -60,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\"; if [ -n \"$file\" ]; then case \"$file\" in *.py) cd /Users/marcelogomesmarques/Projects/ClaudeCode/radiocalico && source api/venv/bin/activate && ruff check \"$file\" --quiet 2>&1 || true ;; *.js) cd /Users/marcelogomesmarques/Projects/ClaudeCode/radiocalico && npx eslint \"$file\" --quiet 2>&1 || true ;; *.css) cd /Users/marcelogomesmarques/Projects/ClaudeCode/radiocalico && npx stylelint \"$file\" --quiet 2>&1 || true ;; *.html) cd /Users/marcelogomesmarques/Projects/ClaudeCode/radiocalico && npx htmlhint \"$file\" 2>&1 || true ;; esac; fi"
+            "command": "file=\"$CLAUDE_TOOL_INPUT_FILE_PATH\"; if [ -n \"$file\" ]; then case \"$file\" in *.py) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && source api/venv/bin/activate && ruff check \"$file\" --quiet 2>&1 || true ;; *.js) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && npx eslint \"$file\" --quiet 2>&1 || true ;; *.css) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && npx stylelint \"$file\" --quiet 2>&1 || true ;; *.html) cd /Users/marcelogomesmarques/Projects/CloudeCode/radiocalico && npx htmlhint \"$file\" 2>&1 || true ;; esac; fi"
           }
         ]
       },

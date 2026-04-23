@@ -2,7 +2,7 @@
 <coverage generated="1774109770829" clover="3.2.0">
   <project timestamp="1774109770829" name="All files">
     <metrics statements="807" coveredstatements="617" conditionals="485" coveredconditionals="302" methods="147" coveredmethods="101" elements="1439" coveredelements="1020" complexity="0" loc="807" ncloc="807" packages="1" files="1" classes="1"/>
-    <file name="player.js" path="/Users/marcelogomesmarques/Projects/ClaudeCode/radiocalico/static/js/player.js">
+    <file name="player.js" path="/Users/marcelogomesmarques/Projects/CloudeCode/radiocalico/static/js/player.js">
       <metrics statements="807" coveredstatements="617" conditionals="485" coveredconditionals="302" methods="147" coveredmethods="101"/>
       <line num="20" count="1" type="stmt"/>
       <line num="22" count="18" type="stmt"/>
