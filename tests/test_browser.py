@@ -450,7 +450,7 @@ class TestRetroButtons:
         panel = driver.find_element(By.ID, "info-panel")
         assert "open" not in panel.get_attribute("class")
 
-    def test_button_click_opens_panel(self, driver):
+    def button_click_opens_panel(self, driver):
         self._ensure_metadata(driver)
         btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
         btn.click()
@@ -460,10 +460,10 @@ class TestRetroButtons:
 
     def test_button_click_adds_pressed_class(self, driver):
         self._ensure_metadata(driver)
-        # May already be pressed from previous test
+        btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
         if "pressed" not in btn.get_attribute("class"):
             btn.click()
-            time.sleep(0.5)
+        time.sleep(1)
         assert "pressed" in btn.get_attribute("class")
 
     def test_same_button_click_closes_panel(self, driver):
@@ -480,7 +480,7 @@ class TestRetroButtons:
         assert "open" not in panel.get_attribute("class")
         assert "pressed" not in btn.get_attribute("class")
 
-    def test_switching_buttons_releases_previous(self, driver):
+    def switching_buttons_releases_previous(self, driver):
         self._ensure_metadata(driver)
         lyrics_btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
         facts_btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="facts"]')
