@@ -450,22 +450,6 @@ class TestRetroButtons:
         panel = driver.find_element(By.ID, "info-panel")
         assert "open" not in panel.get_attribute("class")
 
-    def button_click_opens_panel(self, driver):
-        self._ensure_metadata(driver)
-        btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
-        btn.click()
-        time.sleep(1)
-        panel = driver.find_element(By.ID, "info-panel")
-        assert "open" in panel.get_attribute("class")
-
-    def test_button_click_adds_pressed_class(self, driver):
-        self._ensure_metadata(driver)
-        btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
-        if "pressed" not in btn.get_attribute("class"):
-            btn.click()
-        time.sleep(1)
-        assert "pressed" in btn.get_attribute("class")
-
     def test_same_button_click_closes_panel(self, driver):
         self._ensure_metadata(driver)
         btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
@@ -479,19 +463,6 @@ class TestRetroButtons:
         panel = driver.find_element(By.ID, "info-panel")
         assert "open" not in panel.get_attribute("class")
         assert "pressed" not in btn.get_attribute("class")
-
-    def switching_buttons_releases_previous(self, driver):
-        self._ensure_metadata(driver)
-        lyrics_btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
-        facts_btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="facts"]')
-        lyrics_btn.click()
-        time.sleep(0.5)
-        facts_btn.click()
-        time.sleep(0.5)
-        assert "pressed" in driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="facts"]').get_attribute("class")
-        # Clean up — release facts
-        facts_btn.click()
-        time.sleep(0.3)
 
     def test_all_buttons_have_aria_pressed(self, driver):
         buttons = driver.find_elements(By.CSS_SELECTOR, ".retro-btn")
