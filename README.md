@@ -309,6 +309,22 @@ CORS_ORIGIN=*
 | `DB_NAME` | MySQL database name | `radiocalico` | No |
 | `FLASK_DEBUG` | Enable Flask debug mode | `false` | No |
 | `CORS_ORIGIN` | Allowed CORS origin | `*` | No |
+| `OLLAMA_BASE_URL` | Ollama HTTP API URL | `http://localhost:11434/v1` | No |
+| `OLLAMA_FALLBACK_URL` | Ollama fallback URL | `http://ollama:11434/v1` | No |
+| `OLLAMA_MODEL` | Model name for Ollama | `llama3.2` | No |
+
+#### Docker + Ollama notes (useful for older machines)
+
+- If your host is running Ollama, set:
+  - `OLLAMA_BASE_URL=http://192.168.1.13:11434/v1` (or your real host IP)
+  - `OLLAMA_FALLBACK_URL=http://ollama:11434/v1`
+  - `CORS_ORIGIN=*` while testing (then lock down for production).
+- On Linux, `host.docker.internal` may not always resolve; prefer the host IP.
+- For lower-end hardware, use smaller models in Ollama:
+  - `ollama pull wizardlm-7b`
+  - `ollama pull llama2-7b`
+  - `ollama pull gilgamesh-7b` (or similar if available)
+- Larger models like `llama3.2` are functional but slow on older CPUs/GPUs (2 GB Radeon).
 
 > **Important**: The `.env` file contains credentials and is excluded from git via `.gitignore`. Never commit it. The `.env.example` file is safe to commit and shows the required variables.
 
