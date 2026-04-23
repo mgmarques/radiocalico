@@ -169,6 +169,11 @@ class TestTheme:
 class TestRatings:
     """Rating thumbs up/down buttons in real browser."""
 
+    def _ensure_metadata(self, driver):
+        """Ensure artist/track metadata is set so buttons are active."""
+        driver.execute_script("document.getElementById('artist').textContent = 'Test Artist';")
+        driver.execute_script("document.getElementById('track').textContent = 'Test Track';")
+
     def test_rate_buttons_visible(self, driver):
         up = driver.find_element(By.ID, "rate-up")
         down = driver.find_element(By.ID, "rate-down")
@@ -183,11 +188,8 @@ class TestRatings:
 
     def test_click_thumbs_up(self, driver):
         """Click thumbs up and verify feedback appears."""
-        # Wait for metadata to load a real track
-        WebDriverWait(driver, WAIT_TIMEOUT).until(
-            lambda d: d.find_element(By.ID, "artist").text != "Radio Calico"
-            or True  # Proceed even with default text
-        )
+        self._ensure_metadata(driver)
+        
         up = driver.find_element(By.ID, "rate-up")
         if "rated" not in up.get_attribute("class"):
             up.click()
@@ -422,6 +424,11 @@ class TestStreamQuality:
 class TestRetroButtons:
     """Retro radio buttons for AI song info."""
 
+    def _ensure_metadata(self, driver):
+        """Ensure artist/track metadata is set so buttons are active."""
+        driver.execute_script("document.getElementById('artist').textContent = 'Test Artist';")
+        driver.execute_script("document.getElementById('track').textContent = 'Test Track';")
+
     def test_buttons_row_exists(self, driver):
         row = driver.find_element(By.ID, "radio-buttons-row")
         assert row.is_displayed()
@@ -444,6 +451,7 @@ class TestRetroButtons:
         assert "open" not in panel.get_attribute("class")
 
     def test_button_click_opens_panel(self, driver):
+        self._ensure_metadata(driver)
         btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
         driver.execute_script("arguments[0].click();", btn)
         WebDriverWait(driver, 5).until(
@@ -451,29 +459,42 @@ class TestRetroButtons:
         )
 
     def test_button_click_adds_pressed_class(self, driver):
+        self._ensure_metadata(driver)
         btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
         driver.execute_script("arguments[0].click();", btn)
-        WebDriverWait(driver, 5).until(lambda d: "pressed" in btn.get_attribute("class"))
+        WebDriverWait(driver, 5).until(
+            lambda d: "pressed" in d.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]').get_attribute("class")
+        )
 
     def test_same_button_click_closes_panel(self, driver):
+        self._ensure_metadata(driver)
         btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
         # Ensure it's pressed first
         driver.execute_script("arguments[0].click();", btn)
-        WebDriverWait(driver, 5).until(lambda d: "pressed" in btn.get_attribute("class"))
+        WebDriverWait(driver, 5).until(
+            lambda d: "pressed" in d.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]').get_attribute("class")
+        )
         # Click again to release
         driver.execute_script("arguments[0].click();", btn)
-        WebDriverWait(driver, 5).until(lambda d: "pressed" not in btn.get_attribute("class"))
+        WebDriverWait(driver, 5).until(
+            lambda d: "pressed" not in d.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]').get_attribute("class")
+        )
         panel = driver.find_element(By.ID, "info-panel")
         assert "open" not in panel.get_attribute("class")
 
     def test_switching_buttons_releases_previous(self, driver):
+        self._ensure_metadata(driver)
         lyrics_btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]')
         facts_btn = driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="facts"]')
         driver.execute_script("arguments[0].click();", lyrics_btn)
-        WebDriverWait(driver, 5).until(lambda d: "pressed" in lyrics_btn.get_attribute("class"))
+        WebDriverWait(driver, 5).until(
+            lambda d: "pressed" in d.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]').get_attribute("class")
+        )
         driver.execute_script("arguments[0].click();", facts_btn)
-        WebDriverWait(driver, 5).until(lambda d: "pressed" not in lyrics_btn.get_attribute("class"))
-        assert "pressed" in facts_btn.get_attribute("class")
+        WebDriverWait(driver, 5).until(
+            lambda d: "pressed" not in d.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="lyrics"]').get_attribute("class")
+        )
+        assert "pressed" in driver.find_element(By.CSS_SELECTOR, '.retro-btn[data-query="facts"]').get_attribute("class")
         # Clean up — release facts
         driver.execute_script("arguments[0].click();", facts_btn)
 
